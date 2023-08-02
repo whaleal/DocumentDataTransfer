@@ -98,7 +98,7 @@ public class ReadOplog extends CommonTask {
     public void execute() {
         // 当出现异常时 可以进行进行查询
         while (!isReadScanOver) {
-            log.info("{} ready to com.whaleal.ddt.read oplog", workName);
+            log.info("{} ready to read oplog", workName);
             try {
                 BsonTimestamp startTime = new BsonTimestamp(startTimeOfOplog, 0);
                 // 获取oplog的最早时间
@@ -108,7 +108,7 @@ public class ReadOplog extends CommonTask {
                 // startTimeOfReady=0时代表为增量抽取数据。抽取范围[minTs,正无穷)
                 // 程序开始时间要大小oplog的开始时间600s,但是此时还不能保证原子性问题,可能出现游标掉线的问题
                 if ((startTime.getTime() - oplogStartTime.getTime()) < 600 && startTimeOfOplog != 0) {
-                    log.error("{} failed to com.whaleal.ddt.read oplog: missed sliding window time oplog is overwritten, this program is about to exit", workName);
+                    log.error("{} failed to read oplog: missed sliding window time oplog is overwritten, this program is about to exit", workName);
                     break;
                 }
                 source();
@@ -178,7 +178,7 @@ public class ReadOplog extends CommonTask {
                 lastOplogTs = (BsonTimestamp) document.get("ts");
                 // 判断是否在窗口期范围内
                 if (lastOplogTs.getTime() < startTimeOfOplog) {
-                    log.error("{} failed to com.whaleal.ddt.read oplog: missed sliding window time oplog is overwritten, this program is about to exit", workName);
+                    log.error("{} failed to read oplog: missed sliding window time oplog is overwritten, this program is about to exit", workName);
                     WorkStatus.updateWorkStatus(workName, WorkStatus.WORK_STOP);
                 }
                 {
@@ -241,11 +241,11 @@ public class ReadOplog extends CommonTask {
             WorkStatus.updateWorkStatus(workName, WorkStatus.WORK_STOP);
             isReadScanOver = true;
         } catch (Exception e) {
-            log.info("{} current com.whaleal.ddt.read oplog time:{}", workName, docTime.getTime());
+            log.info("{} current read oplog time:{}", workName, docTime.getTime());
             isReadScanOver = false;
             // 重新更新查询的开始时间和结束时间
             this.startTimeOfOplog = docTime.getTime();
-            log.error("{} com.whaleal.ddt.read oplog exception,msg:{}", workName, e.getMessage());
+            log.error("{} read oplog exception,msg:{}", workName, e.getMessage());
         }
     }
 }

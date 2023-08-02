@@ -127,7 +127,7 @@ public class SpliceNsData {
                 break;
             } else {
                 if (index == 3) {
-                    log.error("{} an error occurred when calculating the maximum and minimum values of [{}] table _id, and the error message was reported: Failed to com.whaleal.ddt.read three times, please check the source URL and permissions", dsName, ns);
+                    log.error("{} an error occurred when calculating the maximum and minimum values of [{}] table _id, and the error message was reported: Failed to read three times, please check the source URL and permissions", dsName, ns);
                 }
             }
         }

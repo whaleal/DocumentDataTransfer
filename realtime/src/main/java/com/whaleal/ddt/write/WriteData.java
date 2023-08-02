@@ -58,7 +58,7 @@ public class WriteData extends CommonTask {
 
     @Override
     public void execute() {
-        log.warn("{} the oplog com.whaleal.ddt.write data thread starts running", workName);
+        log.warn("{} the oplog write data thread starts running", workName);
         int idlingTime = 0;
         while (true) {
             try {
@@ -110,7 +110,7 @@ public class WriteData extends CommonTask {
     }
 
     /**
-     * com.whaleal.ddt.write
+     * write
      *
      * @param documentQueue 队列数据
      * @param bucketNum     桶号
@@ -182,12 +182,12 @@ public class WriteData extends CommonTask {
                 bulkWriteInfo(bulkWriteResult);
             } catch (MongoBulkWriteException e) {
                 for (BulkWriteError error : e.getWriteErrors()) {
-                    log.error("ns:{},failed to com.whaleal.ddt.write data:{}", ns, error.getMessage());
+                    log.error("ns:{},failed to write data:{}", ns, error.getMessage());
                 }
-                log.error("ns:{},com.whaleal.ddt.write failed:{}", ns, WriteModelUtil.writeModelToString(writeModel));
+                log.error("ns:{},write failed:{}", ns, WriteModelUtil.writeModelToString(writeModel));
             } catch (Exception e) {
-                log.error("ns:{},failed to com.whaleal.ddt.write data:{}", ns, e.getMessage());
-                log.error("ns:{},com.whaleal.ddt.write failed:{}", ns, WriteModelUtil.writeModelToString(writeModel));
+                log.error("ns:{},failed to write data:{}", ns, e.getMessage());
+                log.error("ns:{},write failed:{}", ns, WriteModelUtil.writeModelToString(writeModel));
             }
         }
     }

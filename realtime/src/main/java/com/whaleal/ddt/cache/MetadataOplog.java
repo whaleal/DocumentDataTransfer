@@ -354,16 +354,16 @@ public final class MetadataOplog {
 
             log.info("{} the current number of real-time synchronization caches:{}", workName, queueOfOplog.size());
 
-            log.info("{} current bucket batch data com.whaleal.ddt.cache number:{}", workName, cacheBucketQueueDataNum());
+            log.info("{} current bucket batch data read.cache number:{}", workName, cacheBucketQueueDataNum());
 
-            log.info("{} current table data com.whaleal.ddt.cache number:{}", workName, cacheQueueOfNsDataNum());
+            log.info("{} current table data read.cache number:{}", workName, cacheQueueOfNsDataNum());
 
             log.info("{} current number of synchronization tables:{}", workName, getQueueOfNsMap().size());
 
             log.info("{} number of executions:{}", workName, bulkWriteInfo);
 
             long exeCount = sumBulkWriteInfo();
-            log.info("{} total number of execution items:{},average com.whaleal.ddt.write speed:{} per/s",
+            log.info("{} total number of execution items:{},average write speed:{} per/s",
                     workName, exeCount, exeCount / ((System.currentTimeMillis() - workStartTime) / 1000));
 
             log.info("{} current round (10s) execution:{} per/s", workName, Math.round((exeCount - executeCountOld) / 10.0F));

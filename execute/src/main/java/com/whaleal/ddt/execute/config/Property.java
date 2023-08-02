@@ -53,7 +53,7 @@ public class Property {
             }
             log.info(propertiesMap.toString());
         } catch (Exception e) {
-            log.error("Failed to com.whaleal.ddt.read configuration file:fileName:" + fileName + ",exception:" + e.getMessage());
+            log.error("Failed to read configuration file:fileName:" + fileName + ",exception:" + e.getMessage());
         }
     }
 

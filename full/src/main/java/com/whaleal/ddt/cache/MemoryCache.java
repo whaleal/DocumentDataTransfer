@@ -221,16 +221,16 @@ public class MemoryCache {
             // 当前缓存区批数量
             log.info("{} number of batches remaining in the current buffer:{}", workName, computeBatchCount());
             // 当前缓存区条数量
-            log.info("{} number of documents remaining in the com.whaleal.ddt.cache:{}", workName, computeDocumentCount());
+            log.info("{} number of documents remaining in the read.cache:{}", workName, computeDocumentCount());
             // 已写入的条数
             long writeCount = writeDocCount.sum();
-            log.info("{} number of bars written:{},time cost:{}s,average com.whaleal.ddt.write speed:{} per/s",
+            log.info("{} number of bars written:{},time cost:{}s,average write speed:{} per/s",
                     workName, writeCount, diffTime, (writeCount / diffTime));
             // 已读取的条数
             long readCount = readDocCount.sum();
-            log.info("{} number of bars com.whaleal.ddt.read:{},time cost:{}s,average com.whaleal.ddt.write speed:{} per/s",
+            log.info("{} number of bars read:{},time cost:{}s,average write speed:{} per/s",
                     workName, readCount, diffTime, (readCount / diffTime));
-            log.info("{} the average com.whaleal.ddt.write speed of this round (10s):{} per/s", workName, Math.round((writeCount - writeCountOld) / 10));
+            log.info("{} the average write speed of this round (10s):{} per/s", workName, Math.round((writeCount - writeCountOld) / 10));
             return writeCount;
         } catch (Exception e) {
             log.error("{} error getting full program execution,msg:{}", workName, e.getMessage());

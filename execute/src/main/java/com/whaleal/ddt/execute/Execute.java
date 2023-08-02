@@ -17,6 +17,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * @author liheping
+ */
 @Log4j2
 public class Execute {
 
@@ -55,7 +58,7 @@ public class Execute {
      */
     public static void main(String[] args) {
         // 设置配置文件的路径
-        Property.setFileName("/Users/liheping/Desktop/mongoT-enterprise/execute/src/main/resources/mongodbT.properties");
+        Property.setFileName("/Users/liheping/Desktop/project/DocumentDataTransfer/execute/src/main/resources/mongodbT.properties");
 
         // 检查是否传入了正确的启动参数
         if (args.length == 1) {
