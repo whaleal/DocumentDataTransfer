@@ -101,6 +101,7 @@ public class GenerateSourceTask extends CommonTask {
                     if (parallelSync && taskQueue.size() % 2 == 0) {
                         // 并行同步，每生成两个任务，就交换位置，用于实现任务乱序
                         Range oldRange = taskQueue.poll();
+                        // 此队列为有限长度队列，否则当源端18w表，内存直接打爆
                         taskQueue.put(oldRange);
                     }
                 } catch (InterruptedException e) {

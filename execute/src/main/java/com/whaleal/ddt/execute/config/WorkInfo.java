@@ -81,9 +81,11 @@ public class WorkInfo implements Cloneable, Serializable {
 
     /**
      * 实时同步时
-     * 实时任务总的线程数
+     * 解析桶的线程数的线程数
+     * 写入数据的线程数
      */
-    private int realTimeThreadNum = Math.round(HostInfoUtil.computeTotalCpuCore() * 2);
+    private int nsBucketThreadNum = (int) Math.ceil((double) HostInfoUtil.computeTotalCpuCore() / 4.F);
+    private int writeThreadNum = (int) Math.ceil((double) HostInfoUtil.computeTotalCpuCore() / 4.F) * 3;
 
     /**
      * ddl处理超时参数 单位秒 默认600s

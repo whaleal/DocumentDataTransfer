@@ -20,13 +20,12 @@ import com.whaleal.ddt.connection.Datasource;
 import com.whaleal.ddt.connection.MongoDBConnection;
 import com.whaleal.ddt.metadata.source.MongoDBMetadata;
 import com.whaleal.ddt.metadata.target.ApplyMongoDBMetadata;
-import com.whaleal.ddt.util.HostInfoUtil;
 import com.whaleal.ddt.task.generate.GenerateSourceTask;
 import com.whaleal.ddt.task.generate.Range;
 import com.whaleal.ddt.task.generate.SubmitSourceTask;
-
 import com.whaleal.ddt.task.write.WriteTask;
 import com.whaleal.ddt.thread.pool.ThreadPoolManager;
+import com.whaleal.ddt.util.HostInfoUtil;
 import lombok.extern.log4j.Log4j2;
 
 import java.util.Set;
@@ -215,6 +214,7 @@ public class FullSync {
      */
     public void generateSourceTaskInfo(String dbTableWhite, AtomicBoolean isGenerateSourceTaskInfoOver,
                                        BlockingQueue<Range> taskQueue, boolean parallelSync) {
+
         LinkedBlockingQueue<String> nsQueue = new LinkedBlockingQueue<>(new MongoDBMetadata(sourceDsName).getNSList(dbTableWhite));
         // 3个线程去切分 暂时3线程切分 性能尚可
         for (int i = 0; i < 3; i++) {
@@ -337,4 +337,25 @@ public class FullSync {
         ThreadPoolManager.destroy(writeThreadPoolName);
         ThreadPoolManager.destroy(commonThreadPoolName);
     }
+
+    /**
+     * 计算与给定的数据库和表白名单匹配的所有命名空间中估计的文档总数。
+     *
+     * @param dbTableWhite 要考虑计算的数据库和表名白名单。
+     * @return 所有匹配的命名空间中估计的文档总数。
+     */
+    public long estimatedAllNsDocumentCount(String dbTableWhite) {
+        // 初始化变量以保存总计数
+        long totalCount = 0L;
+        // 使用提供的源数据源名称创建 MongoDBMetadata 对象
+        MongoDBMetadata metadata = new MongoDBMetadata(sourceDsName);
+        // 遍历基于提供的数据库和表白名单从元数据获取的命名空间列表
+        for (String ns : metadata.getNSList(dbTableWhite)) {
+            // 对于每个命名空间，将估计的文档计数添加到总计数中
+            totalCount += metadata.estimatedDocumentCount(ns);
+        }
+        // 返回所有匹配的命名空间中估计的文档总数
+        return totalCount;
+    }
+
 }

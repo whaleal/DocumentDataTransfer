@@ -16,9 +16,9 @@
 package com.whaleal.ddt.execute.config;
 
 import com.alibaba.fastjson2.JSON;
+import com.whaleal.ddt.util.HostInfoUtil;
 import com.whaleal.icefrog.core.text.CharSequenceUtil;
 import com.whaleal.icefrog.core.util.StrUtil;
-import com.whaleal.ddt.util.HostInfoUtil;
 import lombok.extern.log4j.Log4j2;
 
 import java.util.Arrays;
@@ -161,24 +161,40 @@ public class WorkInfoGenerator {
         if (workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_REAL_TIME) ||
                 workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL_AND_INCREMENT) ||
                 workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL_AND_REAL_TIME)) {
-            // 实时同步情况下总任务线程数（从配置文件读取，如果为空或不合法则使用默认值为当前主机CPU核心数的两倍）
-            String realTimeThreadNumStr = Property.getPropertiesByKey("realTimeThreadNum");
-            if (CharSequenceUtil.isBlank(realTimeThreadNumStr)) {
-                log.warn("实时同步情况下总任务线程数为空,则使用默认值{}", Math.round(HostInfoUtil.computeTotalCpuCore() * 2));
-                workInfo.setRealTimeThreadNum(Math.round(HostInfoUtil.computeTotalCpuCore() * 2));
-            } else if (!realTimeThreadNumStr.matches("\\d+")) {
-                log.warn("实时同步情况下总任务线程数填写错误,则使用默认值{}", Math.round(HostInfoUtil.computeTotalCpuCore() * 2));
-                workInfo.setRealTimeThreadNum(Math.round(HostInfoUtil.computeTotalCpuCore() * 2));
-            } else {
-                int realTimeThreadNum = Integer.parseInt(realTimeThreadNumStr);
-                // 设置范围限制，避免线程数过大或过小
-                if (realTimeThreadNum > 100 || realTimeThreadNum < 8) {
-                    log.warn("实时同步情况下总任务线程数填写错误,则使用默认值{}", Math.round(HostInfoUtil.computeTotalCpuCore() * 2));
-                    workInfo.setRealTimeThreadNum(Math.round(HostInfoUtil.computeTotalCpuCore() * 2));
+            {
+                String nsBucketThreadNumStr = Property.getPropertiesByKey("nsBucketThreadNum");
+                if (CharSequenceUtil.isBlank(nsBucketThreadNumStr)) {
+                    log.warn("实时同步情况下分桶任务线程数为空,则使用默认值{}", workInfo.getNsBucketThreadNum());
+                } else if (!nsBucketThreadNumStr.matches("\\d+")) {
+                    log.warn("实时同步情况下分桶任务线程数为填写错误,则使用默认值{}", workInfo.getNsBucketThreadNum());
                 } else {
-                    workInfo.setRealTimeThreadNum(realTimeThreadNum);
+                    int nsBucketThreadNum = Integer.parseInt(nsBucketThreadNumStr);
+                    // 设置范围限制，避免线程数过大或过小
+                    if (nsBucketThreadNum > 100 || nsBucketThreadNum < 8) {
+                        log.warn("实时同步情况下分桶任务线程数为值错误,则使用默认值{}", workInfo.getNsBucketThreadNum());
+                    } else {
+                        workInfo.setNsBucketThreadNum(nsBucketThreadNum);
+                    }
                 }
             }
+            {
+                String writeThreadNumStr = Property.getPropertiesByKey("writeThreadNum");
+                if (CharSequenceUtil.isBlank(writeThreadNumStr)) {
+                    log.warn("实时同步情况下分桶任务线程数为空,则使用默认值{}", workInfo.getWriteThreadNum());
+                } else if (!writeThreadNumStr.matches("\\d+")) {
+                    log.warn("实时同步情况下分桶任务线程数为填写错误,则使用默认值{}", workInfo.getWriteThreadNum());
+                } else {
+                    int writeThreadNum = Integer.parseInt(writeThreadNumStr);
+                    // 设置范围限制，避免线程数过大或过小
+                    if (writeThreadNum > 100 || writeThreadNum < 8) {
+                        log.warn("实时同步情况下分桶任务线程数为错误,则使用默认值{}", workInfo.getWriteThreadNum());
+                    } else {
+                        workInfo.setWriteThreadNum(writeThreadNum);
+                    }
+                }
+            }
+
+
         } else if (workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL) ||
                 workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL_AND_INCREMENT) ||
                 workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL_AND_REAL_TIME)) {

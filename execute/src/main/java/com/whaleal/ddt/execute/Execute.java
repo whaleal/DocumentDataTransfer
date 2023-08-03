@@ -16,15 +16,15 @@
 package com.whaleal.ddt.execute;
 
 
-import com.whaleal.ddt.cache.MetadataOplog;
 import com.whaleal.ddt.cache.MemoryCache;
+import com.whaleal.ddt.cache.MetadataOplog;
 import com.whaleal.ddt.execute.config.Property;
 import com.whaleal.ddt.execute.config.WorkInfo;
 import com.whaleal.ddt.execute.config.WorkInfoGenerator;
-import com.whaleal.ddt.util.HostInfoUtil;
 import com.whaleal.ddt.status.WorkStatus;
 import com.whaleal.ddt.task.CommonTask;
 import com.whaleal.ddt.task.generate.Range;
+import com.whaleal.ddt.util.HostInfoUtil;
 import lombok.extern.log4j.Log4j2;
 
 import java.util.concurrent.BlockingQueue;
@@ -37,7 +37,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 @Log4j2
 public class Execute {
-
 
     static {
         log.info("D2T启动信息:hostName[{}],pid[{}],启动目录:[{}]", HostInfoUtil.getHostName(), HostInfoUtil.getProcessID(), HostInfoUtil.getProcessDir());
@@ -122,6 +121,7 @@ public class Execute {
             workInfo.setWorkName(workName + "_full");
             startFullSync(workInfo);
             // 设置新的任务的时区
+            // todo 增量任务 也可以加上进度百分比
             workInfo.setEndOplogTime((int) (System.currentTimeMillis() / 1000));
             workInfo.setWorkName(workName + "_realTime");
             startRealTime(workInfo);
@@ -162,19 +162,23 @@ public class Execute {
         fullSync.submitTargetTask(workInfo.getTargetThreadNum());
         // 生成源数据库数据读取任务
         fullSync.generateSource(workInfo.getSourceThreadNum(), taskQueue, isGenerateSourceTaskInfoOver, workInfo.getBatchSize());
+        // 计算一共要同步数据量
+        long allNsDocumentCount = fullSync.estimatedAllNsDocumentCount(workInfo.getDbTableWhite());
+        // todo 加上进度百分比
         long writeCountOld = 0L;
         while (true) {
             try {
+                log.info("{} 此全量任务预计传输{}条数据", workInfo.getWorkName(), allNsDocumentCount);
                 // 每隔10秒输出一次信息
                 TimeUnit.SECONDS.sleep(10);
-                // 输出缓存区中的信息
-                if (WorkStatus.getWorkStatus(workInfo.getWorkName()) == WorkStatus.WORK_STOP) {
-                    break;
-                }
                 // 输出缓存区运行情况
                 writeCountOld = memoryCache.printCacheInfo(workInfo.getStartTime(), writeCountOld);
                 // 输出任务各线程运行情况
                 fullSync.printThreadInfo();
+                // 输出缓存区中的信息
+                if (WorkStatus.getWorkStatus(workInfo.getWorkName()) == WorkStatus.WORK_STOP) {
+                    break;
+                }
                 // 判断任务是否结束，如果结束则等待1分钟后退出循环
                 if (fullSync.judgeFullSyncOver(memoryCache, isGenerateSourceTaskInfoOver, taskQueue)) {
                     TimeUnit.MINUTES.sleep(1);
@@ -202,9 +206,9 @@ public class Execute {
         // 创建实时同步任务对象
         RealTime realTime = new RealTime(workInfo.getWorkName());
         // 初始化任务，连接源数据库和目标数据库
-        realTime.init(workInfo.getSourceDsUrl(), workInfo.getTargetDsUrl(), workInfo.getRealTimeThreadNum());
+        realTime.init(workInfo.getSourceDsUrl(), workInfo.getTargetDsUrl(), workInfo.getNsBucketThreadNum(), workInfo.getWriteThreadNum());
         // 创建写入任务
-        realTime.submitTask(workInfo, workInfo.getRealTimeThreadNum());
+        realTime.submitTask(workInfo, workInfo.getNsBucketThreadNum(), workInfo.getWriteThreadNum());
         long executeCountOld = 0L;
         while (true) {
             try {

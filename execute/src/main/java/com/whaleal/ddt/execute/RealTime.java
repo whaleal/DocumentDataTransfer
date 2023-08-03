@@ -87,17 +87,16 @@ public class RealTime {
      * 初始化方法，建立连接到源数据源和目标数据源，并根据给定的总线程数计算出用于读取oplog、解析ns、分桶操作和写入的线程数量。
      * 然后创建相应的线程池。
      *
-     * @param sourceDsUrl    源数据源的连接URL
-     * @param targetDsUrl    目标数据源的连接URL
-     * @param totalThreadNum 总线程数，用于计算各个任务的线程数量
+     * @param sourceDsUrl       源数据源的连接URL
+     * @param targetDsUrl       目标数据源的连接URL
+     * @param nsBucketThreadNum 分桶操作的线程数
+     * @param writeThreadNum    写入目标数据的线程数
      */
-    public void init(String sourceDsUrl, String targetDsUrl, int totalThreadNum) {
+    public void init(String sourceDsUrl, String targetDsUrl, int nsBucketThreadNum, int writeThreadNum) {
         // 建立连接 放在外部处理
         initConnection(sourceDsName, sourceDsUrl);
         initConnection(targetDsName, targetDsUrl);
         // 计算bucket 和 write部分的线程个数
-        int nsBucketThreadNum = (int) Math.ceil((double) totalThreadNum / 4);
-        int writeThreadNum = (int) Math.ceil((double) totalThreadNum / 4) * 3;
         // 初始化线程次
         intiThreadPool(readOplogThreadPoolName, 1);
         intiThreadPool(parseNSThreadPoolName, 1);
@@ -140,13 +139,12 @@ public class RealTime {
     /**
      * 提交实时同步任务的方法。根据给定的任务信息(WorkInfo)和总线程数，创建相应数量的线程用于写入操作、分桶操作、解析ns和读取oplog。
      *
-     * @param workInfo       实时同步任务的信息
-     * @param totalThreadNum 总线程数，用于计算各个任务的线程数量
+     * @param workInfo          实时同步任务的信息
+     * @param nsBucketThreadNum 分桶操作的线程数
+     * @param writeThreadNum    写入目标数据的线程数
      */
-    public void submitTask(WorkInfo workInfo, int totalThreadNum) {
-        // 线程数 todo 这个比例可以自己配置
-        int nsBucketThreadNum = (int) Math.ceil((double) totalThreadNum / 4);
-        int writeThreadNum = (int) Math.ceil((double) totalThreadNum / 4) * 3;
+    public void submitTask(WorkInfo workInfo, int nsBucketThreadNum, int writeThreadNum) {
+
         //  写入线程
         for (int i = 0; i < writeThreadNum; i++) {
             WriteData writeData = new WriteData(workName, targetDsName, workInfo.getBucketSize());
