@@ -16,10 +16,12 @@
 package com.whaleal.ddt.execute.config;
 
 import com.alibaba.fastjson2.JSON;
+import com.whaleal.ddt.connection.MongoDBConnection;
 import com.whaleal.ddt.util.HostInfoUtil;
 import com.whaleal.icefrog.core.text.CharSequenceUtil;
 import com.whaleal.icefrog.core.util.StrUtil;
 import lombok.extern.log4j.Log4j2;
+import org.bson.Document;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -180,14 +182,14 @@ public class WorkInfoGenerator {
             {
                 String writeThreadNumStr = Property.getPropertiesByKey("writeThreadNum");
                 if (CharSequenceUtil.isBlank(writeThreadNumStr)) {
-                    log.warn("实时同步情况下分桶任务线程数为空,则使用默认值{}", workInfo.getWriteThreadNum());
+                    log.warn("实时同步情况下写入数据任务线程数为空,则使用默认值{}", workInfo.getWriteThreadNum());
                 } else if (!writeThreadNumStr.matches("\\d+")) {
-                    log.warn("实时同步情况下分桶任务线程数为填写错误,则使用默认值{}", workInfo.getWriteThreadNum());
+                    log.warn("实时同步情况下写入数据任务线程数填写错误,则使用默认值{}", workInfo.getWriteThreadNum());
                 } else {
                     int writeThreadNum = Integer.parseInt(writeThreadNumStr);
                     // 设置范围限制，避免线程数过大或过小
                     if (writeThreadNum > 100 || writeThreadNum < 8) {
-                        log.warn("实时同步情况下分桶任务线程数为错误,则使用默认值{}", workInfo.getWriteThreadNum());
+                        log.warn("实时同步情况下写入数据任务线程数错误,则使用默认值{}", workInfo.getWriteThreadNum());
                     } else {
                         workInfo.setWriteThreadNum(writeThreadNum);
                     }
@@ -352,9 +354,13 @@ public class WorkInfoGenerator {
             workInfo.setClusterInfoSet(new HashSet<>(Arrays.asList(Property.getPropertiesByKey("clusterInfoSet").split(",|，"))));
         }
 
-        // 打印工作配置信息
-        log.info("work配置信息如下:{}", JSON.toJSONString(workInfo));
-
+        {
+            // 打印工作配置信息 主要对url 账号密码加密处理
+            Document document = Document.parse(JSON.toJSONString(workInfo));
+            document.append("sourceDsUrl", MongoDBConnection.getUrlInfo(workInfo.getWorkName(), workInfo.getSourceDsUrl()));
+            document.append("targetDsUrl", MongoDBConnection.getUrlInfo(workInfo.getWorkName(), workInfo.getTargetDsUrl()));
+            log.info("work配置信息如下:{}", document.toJson());
+        }
         // 返回生成的工作信息对象
         return workInfo;
     }

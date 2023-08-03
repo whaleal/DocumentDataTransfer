@@ -236,7 +236,7 @@ public class MemoryCache {
             // 当前缓存区批数量
             log.info("{} number of batches remaining in the current buffer:{}", workName, computeBatchCount());
             // 当前缓存区条数量
-            log.info("{} number of documents remaining in the read.cache:{}", workName, computeDocumentCount());
+            log.info("{} number of documents remaining in the cache:{}", workName, computeDocumentCount());
             // 已写入的条数
             long writeCount = writeDocCount.sum();
             log.info("{} number of bars written:{},time cost:{}s,average write speed:{} per/s",

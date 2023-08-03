@@ -59,8 +59,7 @@ public class MongoDBConnection {
             log.error("{}数据源已被创建", dsName);
             return false;
         } else {
-            // todo 输出url信息，会暴露账户密码
-            printUrlInfo(dsName, datasource.getUrl());
+            getUrlInfo(dsName, datasource.getUrl());
             // 创建链接
             MongoClient mongoClient = MongoClients.create(datasource.getUrl());
             // 再次检测url是否可达
@@ -191,7 +190,22 @@ public class MongoDBConnection {
         return version;
     }
 
-    public static void printUrlInfo(String dsName, String url) {
-        log.info("dsName:{},urlInfo:{}", dsName, new ConnectionString(url));
+    public static String getUrlInfo(String dsName, String url) {
+        // 可以定制化配置 防止额外信息输出
+        ConnectionString connectionString = new ConnectionString(url);
+        Document urlInfo = new Document();
+        urlInfo.append("database", connectionString.getDatabase());
+        urlInfo.append("hosts", connectionString.getHosts());
+        urlInfo.append("username", connectionString.getUsername());
+        if (connectionString.getPassword() != null && connectionString.getPassword().length > 0) {
+            urlInfo.append("password", connectionString.getPassword()[0] + "***加密***" + connectionString.getPassword()[Math.max(0, connectionString.getPassword().length - 1)]);
+        }
+        // todo 好像没有option
+        log.info("dsName:{},urlInfo:{}", dsName, urlInfo.toJson());
+        return urlInfo.toJson().trim();
+    }
+
+    public static void main(String[] args) {
+        getUrlInfo("1", "mongodb://172.31.16.215:24578/vivo");
     }
 }
