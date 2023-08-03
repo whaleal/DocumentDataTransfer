@@ -59,7 +59,7 @@ public class MongoDBConnection {
             log.error("{}数据源已被创建", dsName);
             return false;
         } else {
-            getUrlInfo(dsName, datasource.getUrl());
+            printAndGetURLInfo(dsName, datasource.getUrl());
             // 创建链接
             MongoClient mongoClient = MongoClients.create(datasource.getUrl());
             // 再次检测url是否可达
@@ -190,7 +190,7 @@ public class MongoDBConnection {
         return version;
     }
 
-    public static String getUrlInfo(String dsName, String url) {
+    public static String printAndGetURLInfo(String dsName, String url) {
         // 可以定制化配置 防止额外信息输出
         ConnectionString connectionString = new ConnectionString(url);
         Document urlInfo = new Document();
@@ -206,6 +206,6 @@ public class MongoDBConnection {
     }
 
     public static void main(String[] args) {
-        getUrlInfo("1", "mongodb://172.31.16.215:24578/vivo");
+        printAndGetURLInfo("1", "mongodb://172.31.16.215:24578/vivo");
     }
 }
