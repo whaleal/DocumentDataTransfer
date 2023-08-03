@@ -17,6 +17,7 @@ import lombok.extern.log4j.Log4j2;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -104,7 +105,6 @@ public class FullSync {
                 for (String ns : sourceMetadata.getNSList(dbTableWhite)) {
                     applyMongoDBMetadata.dropTable(ns);
                 }
-
             } catch (Exception e) {
                 e.printStackTrace();
                 log.error("{} 删除目标端已经存在的表,msg:{}", workName, e.getMessage());
@@ -266,6 +266,12 @@ public class FullSync {
                         ThreadPoolManager.getActiveThreadNum(readThreadPoolName) == 0 &&
                         ThreadPoolManager.getActiveThreadNum(commonThreadPoolName) == 0
         ) {
+            try {
+                TimeUnit.MINUTES.sleep(1);
+                // 如果发现关机 则睡眠1分钟 使数据写入到磁盘里面
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             return true;
         }
         return false;

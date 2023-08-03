@@ -1,12 +1,13 @@
 import com.mongodb.ConnectionString;
+import com.mongodb.Function;
 import com.mongodb.MongoClientSettings;
-import com.mongodb.reactivestreams.client.MongoClient;
-import com.mongodb.reactivestreams.client.MongoClients;
-import com.mongodb.reactivestreams.client.MongoCollection;
-import com.mongodb.reactivestreams.client.MongoDatabase;
+import com.mongodb.reactivestreams.client.*;
 import org.bson.Document;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
+import reactor.core.publisher.Flux;
+
+import java.util.concurrent.TimeUnit;
 
 public class MongoDBReader {
 
@@ -24,15 +25,22 @@ public class MongoDBReader {
 
         // 选择数据库和集合
         MongoDatabase database = mongoClient.getDatabase("doc");
-        MongoCollection<Document> collection = database.getCollection("lhp6");
+        final FindPublisher<Document> lhp6 = database.getCollection("lhp6").find();
 
-        // 执行查询操作
-        collection.find(new Document()).subscribe(new Subscriber<Document>() {
-            private Subscription s;
+        try {
+            TimeUnit.SECONDS.sleep(10);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+
+        Flux.from(lhp6).subscribe(new Subscriber<Document>() {
+            private Subscription ss;
 
             @Override
             public void onSubscribe(Subscription s) {
-                this.s = s;
+                System.out.println("init");
+                this.ss = s;
                 // 请求第一个数据项
                 s.request(1);
             }
@@ -43,7 +51,7 @@ public class MongoDBReader {
                 System.out.println(document);
 
                 // 继续请求下一个数据项
-                s.request(1);
+                ss.request(1);
             }
 
             @Override
@@ -57,6 +65,33 @@ public class MongoDBReader {
                 // 查询完成后的处理
                 System.out.println("Query completed.");
                 // 关闭MongoClient
+            }
+        });
+
+
+        Flux.range(1,4).subscribe(new Subscriber<Integer>() {
+            Subscription ss ;
+            @Override
+            public void onSubscribe(Subscription subscription) {
+               ss = subscription ;
+               ss.request(1);
+            }
+
+            @Override
+            public void onNext(Integer integer) {
+                System.out.println(integer);
+                ss.request(1);
+
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
             }
         });
 

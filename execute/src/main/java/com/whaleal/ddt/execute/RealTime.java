@@ -3,14 +3,16 @@ package com.whaleal.ddt.execute;
 import com.whaleal.ddt.connection.Datasource;
 import com.whaleal.ddt.connection.MongoDBConnection;
 import com.whaleal.ddt.execute.config.WorkInfo;
-import com.whaleal.ddt.thread.pool.ThreadPoolManager;
-import lombok.extern.log4j.Log4j2;
 import com.whaleal.ddt.parse.ns.ParseOplogNs;
 import com.whaleal.ddt.parse.oplog.BucketOplog;
 import com.whaleal.ddt.parse.oplog.BucketOplogForGteMongoDB5;
 import com.whaleal.ddt.parse.oplog.BucketOplogForLtMongoDB5;
 import com.whaleal.ddt.read.ReadOplog;
+import com.whaleal.ddt.thread.pool.ThreadPoolManager;
 import com.whaleal.ddt.write.WriteData;
+import lombok.extern.log4j.Log4j2;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * @desc: 实时同步
@@ -183,7 +185,16 @@ public class RealTime {
     public boolean judgeRealTimeSyncOver() {
         // 当不进行读取的时候 可以任务任务已经中断
         // todo 但是当读取完成后 未写入的数据怎么办？ 增量情况会缺少数据
-        return ThreadPoolManager.getActiveThreadNum(readOplogThreadPoolName) == 0;
+        if (ThreadPoolManager.getActiveThreadNum(readOplogThreadPoolName) == 0) {
+            try {
+                TimeUnit.MINUTES.sleep(1);
+                // 如果发现关机 则睡眠1分钟 使数据写入到磁盘里面
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            return true;
+        }
+        return false;
     }
 
     /**
