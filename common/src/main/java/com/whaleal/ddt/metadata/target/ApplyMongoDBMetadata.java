@@ -9,7 +9,7 @@ import com.mongodb.client.model.CreateViewOptions;
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.UpdateOptions;
 import com.whaleal.ddt.connection.MongoDBConnection;
-import com.whaleal.ddt.metadata.util.ParserMongoStructureUtil;
+import com.whaleal.ddt.util.ParserMongoStructureUtil;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.bson.Document;

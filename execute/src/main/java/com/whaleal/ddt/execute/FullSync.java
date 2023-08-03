@@ -5,7 +5,7 @@ import com.whaleal.ddt.connection.Datasource;
 import com.whaleal.ddt.connection.MongoDBConnection;
 import com.whaleal.ddt.metadata.source.MongoDBMetadata;
 import com.whaleal.ddt.metadata.target.ApplyMongoDBMetadata;
-import com.whaleal.ddt.metadata.util.HostInfoUtil;
+import com.whaleal.ddt.util.HostInfoUtil;
 import com.whaleal.ddt.task.generate.GenerateSourceTask;
 import com.whaleal.ddt.task.generate.Range;
 import com.whaleal.ddt.task.generate.SubmitSourceTask;

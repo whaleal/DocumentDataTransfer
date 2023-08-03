@@ -1,0 +1,163 @@
+db.createCollection("myTimeSeriesCollection", {
+  timeseries: {
+    timeField: "timestamp", // Replace "timestamp" with your actual timestamp field name
+    metaField: "metadata" // Optional: Replace "metadata" with the field name for additional metadata, if any.
+  }
+})
+
+
+MongoDB Enterprise myShard60_0:PRIMARY> db.oplog.rs.find({ns:"lhp.$cmd"}).pretty()
+{
+	"op" : "c",
+	"ns" : "lhp.$cmd",
+	"ui" : UUID("e99842ed-a3e1-46a6-9acb-30ee12c5f385"),
+	"o" : {
+		"create" : "system.buckets.myTimeSeriesCollection",
+		"validator" : {
+			"$jsonSchema" : {
+				"bsonType" : "object",
+				"required" : [
+					"_id",
+					"control",
+					"data"
+				],
+				"properties" : {
+					"_id" : {
+						"bsonType" : "objectId"
+					},
+					"control" : {
+						"bsonType" : "object",
+						"required" : [
+							"version",
+							"min",
+							"max"
+						],
+						"properties" : {
+							"version" : {
+								"bsonType" : "number"
+							},
+							"min" : {
+								"bsonType" : "object",
+								"required" : [
+									"timestamp"
+								],
+								"properties" : {
+									"timestamp" : {
+										"bsonType" : "date"
+									}
+								}
+							},
+							"max" : {
+								"bsonType" : "object",
+								"required" : [
+									"timestamp"
+								],
+								"properties" : {
+									"timestamp" : {
+										"bsonType" : "date"
+									}
+								}
+							},
+							"closed" : {
+								"bsonType" : "bool"
+							}
+						}
+					},
+					"data" : {
+						"bsonType" : "object"
+					},
+					"meta" : {
+
+					}
+				},
+				"additionalProperties" : false
+			}
+		},
+		"clusteredIndex" : true,
+		"timeseries" : {
+			"timeField" : "timestamp",
+			"metaField" : "metadata",
+			"granularity" : "seconds",
+			"bucketMaxSpanSeconds" : 3600
+		}
+	},
+	"ts" : Timestamp(1690967855, 3),
+	"t" : NumberLong(3),
+	"v" : NumberLong(2),
+	"wall" : ISODate("2023-08-02T09:17:35.716Z")
+}
+{
+	"op" : "c",
+	"ns" : "lhp.$cmd",
+	"ui" : UUID("2d24e6a1-7585-4f07-8ef9-ea27937dccf4"),
+	"o" : {
+		"create" : "system.views",
+		"idIndex" : {
+			"v" : 2,
+			"key" : {
+				"_id" : 1
+			},
+			"name" : "_id_"
+		}
+	},
+	"ts" : Timestamp(1690967855, 4),
+	"t" : NumberLong(3),
+	"v" : NumberLong(2),
+	"wall" : ISODate("2023-08-02T09:17:35.781Z")
+}
+MongoDB Enterprise myShard60_0:PRIMARY>
+
+
+db.myTimeSeriesCollection.insertOne({
+  timestamp: ISODate("2023-08-02T12:34:56Z"),
+  value: 42,
+  metadata: {
+    sensorId: "sensor001",
+    location: "Example City"
+  }
+})
+
+
+{
+	"op" : "i",
+	"ns" : "lhp.system.buckets.myTimeSeriesCollection",
+	"ui" : UUID("e99842ed-a3e1-46a6-9acb-30ee12c5f385"),
+	"o" : {
+		"_id" : ObjectId("64ca4d38205880521d915728"),
+		"control" : {
+			"version" : 1,
+			"min" : {
+				"_id" : ObjectId("64ca200a00d06a242c514b6f"),
+				"timestamp" : ISODate("2023-08-02T12:34:00Z"),
+				"value" : 42
+			},
+			"max" : {
+				"_id" : ObjectId("64ca200a00d06a242c514b6f"),
+				"timestamp" : ISODate("2023-08-02T12:34:56Z"),
+				"value" : 42
+			}
+		},
+		"meta" : {
+			"location" : "Example City",
+			"sensorId" : "sensor001"
+		},
+		"data" : {
+			"_id" : {
+				"0" : ObjectId("64ca200a00d06a242c514b6f")
+			},
+			"timestamp" : {
+				"0" : ISODate("2023-08-02T12:34:56Z")
+			},
+			"value" : {
+				"0" : 42
+			}
+		}
+	},
+	"o2" : {
+		"_id" : ObjectId("64ca4d38205880521d915728")
+	},
+	"ts" : Timestamp(1690968074, 2),
+	"t" : NumberLong(3),
+	"v" : NumberLong(2),
+	"wall" : ISODate("2023-08-02T09:21:14.957Z")
+}

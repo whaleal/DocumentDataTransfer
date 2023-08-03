@@ -1,7 +1,7 @@
 package com.whaleal.ddt.execute.config;
 
 
-import com.whaleal.ddt.metadata.util.HostInfoUtil;
+import com.whaleal.ddt.util.HostInfoUtil;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 

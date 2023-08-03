@@ -7,7 +7,7 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.*;
 import com.whaleal.ddt.cache.BatchDataEntity;
 import com.whaleal.ddt.connection.MongoDBConnection;
-import com.whaleal.ddt.metadata.util.ParserMongoStructureUtil;
+import com.whaleal.ddt.util.ParserMongoStructureUtil;
 import com.whaleal.ddt.status.WorkStatus;
 import com.whaleal.ddt.task.CommonTask;
 import lombok.extern.log4j.Log4j2;

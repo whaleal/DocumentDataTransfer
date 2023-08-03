@@ -381,10 +381,17 @@ public final class MetadataOplog {
                 // 输出ns的缓存数量
                 for (Map.Entry<String, BlockingQueue<Document>> entry : queueOfNsMap.entrySet()) {
                     int size = entry.getValue().size();
+                    if (size == 0) {
+                        continue;
+                    }
                     log.info("{} ns:{},remaining sync data:{}", workName, entry.getKey(), size);
                 }
                 // 输出桶的缓存数据
                 for (Map.Entry<Integer, BlockingQueue<BatchDataEntity>> entry : queueOfBucketMap.entrySet()) {
+                    int size = entry.getValue().size();
+                    if (size == 0) {
+                        continue;
+                    }
                     log.info("{} bucket:{},remaining sync data:{}", workName, entry.getKey(), entry.getValue().size());
                 }
             }

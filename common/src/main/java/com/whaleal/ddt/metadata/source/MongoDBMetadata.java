@@ -8,7 +8,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.CreateCollectionOptions;
 import com.whaleal.ddt.connection.MongoDBConnection;
-import com.whaleal.ddt.metadata.util.ParserMongoStructureUtil;
+import com.whaleal.ddt.util.ParserMongoStructureUtil;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.bson.Document;

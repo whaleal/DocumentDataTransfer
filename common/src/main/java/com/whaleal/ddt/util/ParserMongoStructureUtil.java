@@ -1,4 +1,4 @@
-package com.whaleal.ddt.metadata.util;
+package com.whaleal.ddt.util;
 
 import com.mongodb.client.model.*;
 import org.bson.Document;

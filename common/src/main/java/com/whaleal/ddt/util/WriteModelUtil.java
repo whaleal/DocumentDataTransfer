@@ -1,4 +1,4 @@
-package com.whaleal.ddt.metadata.util;
+package com.whaleal.ddt.util;
 
 import com.mongodb.client.model.*;
 import lombok.extern.log4j.Log4j2;

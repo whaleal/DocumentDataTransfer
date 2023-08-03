@@ -1,4 +1,4 @@
-package com.whaleal.ddt.metadata.util;
+package com.whaleal.ddt.util;
 
 
 import com.alibaba.fastjson2.JSON;

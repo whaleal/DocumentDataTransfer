@@ -6,7 +6,7 @@ import com.whaleal.ddt.cache.MemoryCache;
 import com.whaleal.ddt.execute.config.Property;
 import com.whaleal.ddt.execute.config.WorkInfo;
 import com.whaleal.ddt.execute.config.WorkInfoGenerator;
-import com.whaleal.ddt.metadata.util.HostInfoUtil;
+import com.whaleal.ddt.util.HostInfoUtil;
 import com.whaleal.ddt.status.WorkStatus;
 import com.whaleal.ddt.task.CommonTask;
 import com.whaleal.ddt.task.generate.Range;

@@ -12,7 +12,7 @@ import com.mongodb.client.model.BulkWriteOptions;
 import com.mongodb.client.model.WriteModel;
 import com.whaleal.ddt.cache.BatchDataEntity;
 import com.whaleal.ddt.connection.MongoDBConnection;
-import com.whaleal.ddt.metadata.util.WriteModelUtil;
+import com.whaleal.ddt.util.WriteModelUtil;
 import com.whaleal.ddt.status.WorkStatus;
 import com.whaleal.ddt.task.CommonTask;
 import lombok.extern.log4j.Log4j2;

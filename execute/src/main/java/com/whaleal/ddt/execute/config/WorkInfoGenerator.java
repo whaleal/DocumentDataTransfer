@@ -3,7 +3,7 @@ package com.whaleal.ddt.execute.config;
 import com.alibaba.fastjson2.JSON;
 import com.whaleal.icefrog.core.text.CharSequenceUtil;
 import com.whaleal.icefrog.core.util.StrUtil;
-import com.whaleal.ddt.metadata.util.HostInfoUtil;
+import com.whaleal.ddt.util.HostInfoUtil;
 import lombok.extern.log4j.Log4j2;
 
 import java.util.Arrays;
