@@ -18,8 +18,8 @@ package com.whaleal.ddt.execute;
 import com.whaleal.ddt.cache.MemoryCache;
 import com.whaleal.ddt.connection.Datasource;
 import com.whaleal.ddt.connection.MongoDBConnection;
+import com.whaleal.ddt.metadata.MongoDBClusterManager;
 import com.whaleal.ddt.metadata.source.MongoDBMetadata;
-import com.whaleal.ddt.metadata.target.ApplyMongoDBMetadata;
 import com.whaleal.ddt.task.generate.GenerateSourceTask;
 import com.whaleal.ddt.task.generate.Range;
 import com.whaleal.ddt.task.generate.SubmitSourceTask;
@@ -109,99 +109,8 @@ public class FullSync {
      * @param createIndexTimeOut 创建索引的超时时间。
      */
     public void applyClusterInfo(Set<String> clusterInfoSet, String dbTableWhite, int createIndexNum, long createIndexTimeOut) {
-        MongoDBMetadata sourceMetadata = new MongoDBMetadata(sourceDsName);
-        ApplyMongoDBMetadata applyMongoDBMetadata = new ApplyMongoDBMetadata(targetDsName, createIndexNum, createIndexTimeOut);
-        // 可以改成 枚举状态 多枚举开始
-        if (clusterInfoSet.contains("0")) {
-            try {
-                log.info("{} 开始删除目标端已经存在的表", workName);
-                // 获取用户信息
-                for (String ns : sourceMetadata.getNSList(dbTableWhite)) {
-                    applyMongoDBMetadata.dropTable(ns);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                log.error("{} 删除目标端已经存在的表,msg:{}", workName, e.getMessage());
-            }
-        }
-
-        if (clusterInfoSet.contains("1")) {
-            try {
-                log.info("{} start outputting user information", workName);
-                // 获取用户信息
-                sourceMetadata.printUserInfo();
-            } catch (Exception e) {
-                e.printStackTrace();
-                log.error("{} print out all user information in the shard,msg:{}", workName, e.getMessage());
-            }
-        }
-
-        if (clusterInfoSet.contains("2")) {
-            try {
-                log.info("{} synchronize database table structures", workName);
-                // 同步表结构
-                applyMongoDBMetadata.createCollection(sourceMetadata.getCollectionOptionMap(dbTableWhite));
-                applyMongoDBMetadata.createView(sourceMetadata.getViewOptionMap(dbTableWhite));
-            } catch (Exception e) {
-                e.printStackTrace();
-                log.error("{} synchronize database table structures,msg:{}", workName, e.getMessage());
-            }
-        }
-        // 先同步config.setting信息
-        if (clusterInfoSet.contains("6")) {
-            try {
-                log.info("{} synchronize config.setting table", workName);
-                // 同步config.setting表
-                applyMongoDBMetadata.updateConfigSetting(sourceMetadata.getConfigSettingList());
-            } catch (Exception e) {
-                e.printStackTrace();
-                log.error("{} synchronize config.setting table,msg:{}", workName, e.getMessage());
-            }
-        }
-
-        if (clusterInfoSet.contains("3")) {
-            try {
-                log.info("{} synchronize database table index information", workName);
-                // 同步索引信息
-                applyMongoDBMetadata.createIndex(sourceMetadata.getIndexList(dbTableWhite));
-            } catch (Exception e) {
-                e.printStackTrace();
-                log.error("{} synchronize database table index information,msg:{}", workName, e.getMessage());
-            }
-        }
-
-        if (clusterInfoSet.contains("4")) {
-            try {
-                log.info("{} enable library sharding for all libraries", workName);
-                // 开启库分片
-                applyMongoDBMetadata.enableShardingDataBase(sourceMetadata.getShardingDBNameList());
-            } catch (Exception e) {
-                e.printStackTrace();
-                log.error("{} enable library sharding for all libraries,msg:{}", workName, e.getMessage());
-            }
-        }
-
-        if (clusterInfoSet.contains("5")) {
-            try {
-                log.info("{} synchronize database table shard keys", workName);
-                // 同步shard key
-                applyMongoDBMetadata.createShardKey(sourceMetadata.getShardKey(dbTableWhite));
-            } catch (Exception e) {
-                e.printStackTrace();
-                log.error("{} synchronize database table shard keys,msg:{}", workName, e.getMessage());
-            }
-        }
-
-        if (clusterInfoSet.contains("7")) {
-            try {
-                log.info("{} pre-splitting chunks of database tables", workName);
-                // 预split表
-                applyMongoDBMetadata.splitShardTable(sourceMetadata.getShardCollectionSplit(dbTableWhite));
-            } catch (Exception e) {
-                e.printStackTrace();
-                log.error("{} pre-splitting chunks of database tables,msg:{}", workName, e.getMessage());
-            }
-        }
+        MongoDBClusterManager mongoDBClusterManager = new MongoDBClusterManager(sourceDsName, targetDsName, workName, createIndexNum, createIndexTimeOut);
+        mongoDBClusterManager.applyClusterInfo(clusterInfoSet, dbTableWhite);
     }
 
     /**
