@@ -32,14 +32,6 @@ import java.util.Set;
 @Log4j2
 public class MongoDBClusterManager {
     /**
-     * 源数据库名称
-     */
-    private final String sourceDsName;
-    /**
-     * 目标数据库名称
-     */
-    private final String targetDsName;
-    /**
      * 工作名称
      */
     private final String workName;
@@ -62,8 +54,6 @@ public class MongoDBClusterManager {
      * @param createIndexTimeOut 创建索引超时时间
      */
     public MongoDBClusterManager(String sourceDsName, String targetDsName, String workName, int createIndexNum, long createIndexTimeOut) {
-        this.sourceDsName = sourceDsName;
-        this.targetDsName = targetDsName;
         this.workName = workName;
         sourceMetadata = new MongoDBMetadata(sourceDsName);
         applyMongoDBMetadata = new ApplyMongoDBMetadata(targetDsName, createIndexNum, createIndexTimeOut);
