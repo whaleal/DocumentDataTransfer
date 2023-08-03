@@ -1,5 +1,5 @@
 /*
- * MongoT - An open-source project licensed under GPL+SSPL
+ * Document Data Transfer - An open-source project licensed under GPL+SSPL
  *
  * Copyright (C) [2023 - present ] [Whaleal]
  *
