@@ -180,11 +180,18 @@ public class ReadOplog extends CommonTask {
             // 带有范围的oplog
             condition.append("ts", new Document().append("$gte", docTime).append("$lte", new BsonTimestamp(endTimeOfOplog, 0)));
         }
-        // todo  Q：读取全部数据，会造成带宽浪费
-        // A：
-
-//        condition.append("ns", new Document("$regex", dbTableWhite));
-
+        //   Q：读取全部数据，会造成带宽浪费
+        //   A：增加正则表达式读取ns
+        // 不为全部库表
+        if (!".+".equals(dbTableWhite)) {
+            String regexStr = "(" + dbTableWhite + ")";
+//            if (filterDdl) {
+                // 读取所有的cmd和所有的system表
+                // system 跟视图 时许表 及3.2中的建立索引有关系
+                regexStr += "|(.+\\.\\$cmd)|(.+\\.system\\..+)";
+//            }
+            condition.append("ns", new Document("$regex", regexStr));
+        }
         log.info("{} the conditions for reading oplog.rs :{}", workName, condition.toJson());
         int readNum = 0;
         try {
@@ -296,5 +303,13 @@ public class ReadOplog extends CommonTask {
         final BsonTimestamp bsonTimestamp = new BsonTimestamp(System.currentTimeMillis());
         System.out.println(bsonTimestamp.getValue());
         System.out.println(bsonTimestamp.getTime());
+
+
+        Document condition = new Document();
+//        condition.append("ts", new Document().append("$gte", 0).append("$lte", new BsonTimestamp(1691486720, 0)));
+
+
+        condition.append("ns", new Document("$regex", "(lhp100.+)|(.+\\.\\$cmd)|(.+\\.system\\..+)"));
+        System.out.println(condition.toJson());
     }
 }
