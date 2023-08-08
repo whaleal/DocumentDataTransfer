@@ -55,7 +55,7 @@ public class HostInfoUtil {
      * 启动一个后台线程周期性地打印主机信息。
      */
     static {
-        new Thread(() -> {
+        final Thread thread = new Thread(() -> {
             while (true) {
                 try {
                     // 30s输出一次主机信息
@@ -65,11 +65,13 @@ public class HostInfoUtil {
 
                 }
             }
-        }).start();
+        });
+        thread.setName("hostInfo_print");
+        thread.start();
     }
 
     static {
-        new Thread(() -> {
+        final Thread thread = new Thread(() -> {
             while (true) {
                 try {
                     TimeUnit.MINUTES.sleep(10);
@@ -93,7 +95,9 @@ public class HostInfoUtil {
                 } catch (Exception ignored) {
                 }
             }
-        }).start();
+        });
+        thread.setName("hostInfo_limit");
+        thread.start();
     }
 
     /**

@@ -180,7 +180,8 @@ public class FullSync {
         // 活跃的读线程为0
         // 活跃的sys线程=0
         // 缓存中数据为0
-        // todo 不够严谨 缺少拉取的数据 是否都已经写入进去
+        // q: 不够严谨 缺少拉取的数据 是否都已经写入进去
+        // a: 增加睡眠1分钟。且 只有写入线程获取不到批数据，写入线程才退出。
         if (
                 memoryCache.computeDocumentCount() == 0 &&
                         memoryCache.computeBatchCount() == 0 &&
@@ -199,6 +200,23 @@ public class FullSync {
             return true;
         }
         return false;
+    }
+
+    public void waitWriteOver() {
+        long startTime = System.currentTimeMillis();
+        while (ThreadPoolManager.getActiveThreadNum(writeThreadPoolName) > 0) {
+            try {
+                TimeUnit.SECONDS.sleep(10);
+                log.info("{} 等待写入线程退出", workName);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            // 等待1小时
+            if (System.currentTimeMillis() - startTime > (3600 * 1000L)) {
+                log.error("{} 等待写入线程退出:超时1小时,强制退出", workName);
+                break;
+            }
+        }
     }
 
     /**

@@ -428,12 +428,11 @@ public abstract class BucketOplog extends CommonTask implements ParseOplogInterf
         Document o = (Document) document.get("o");
         String tableName = o.get("create").toString();
         CreateCollectionOptions collectionOptions = ParserMongoStructureUtil.parseCreateCollectionOption(o);
-        // todo 考虑一下 是否合理 是否强制删除
         if (ddlSet.contains(DROP_TABLE)) {
             // 建表前已经删表
             mongoClient.getDatabase(dbName).getCollection(tableName).drop();
         }
-        // 正式建表
+        // 正式建表 可能会出现建标失败，但是有日志捕获
         mongoClient.getDatabase(dbName).createCollection(tableName, collectionOptions);
     }
 
@@ -461,7 +460,8 @@ public abstract class BucketOplog extends CommonTask implements ParseOplogInterf
             renameCollectionOptions.dropTarget(true);
         }
         if (this.ddlSet.contains(RENAME_COLLECTION)) {
-            //  todo 是否合理 强制进行删除和重命名
+            //  q: 是否合理 强制进行删除和重命名
+            //  a: 当用户允许使用rename时,就强制删除目标段已经存在的表
             renameCollectionOptions.dropTarget(true);
         }
         this.mongoClient.getDatabase(dbName).getCollection(tableName).renameCollection(mongoNamespace, renameCollectionOptions);

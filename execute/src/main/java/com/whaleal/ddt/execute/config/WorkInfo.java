@@ -16,9 +16,12 @@
 package com.whaleal.ddt.execute.config;
 
 
+import com.alibaba.fastjson2.JSON;
+import com.whaleal.ddt.connection.MongoDBConnection;
 import com.whaleal.ddt.util.HostInfoUtil;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.bson.Document;
 
 import java.io.Serializable;
 import java.util.HashSet;
@@ -129,5 +132,16 @@ public class WorkInfo implements Cloneable, Serializable {
 
     public void setClusterInfoSet(Set<String> clusterInfoSet) {
         this.clusterInfoSet.addAll(clusterInfoSet);
+    }
+
+    @Override
+    public String toString() {
+        {
+            // 打印工作配置信息 主要对url 账号密码加密处理
+            Document document = Document.parse(JSON.toJSONString(this));
+            document.append("sourceDsUrl", MongoDBConnection.printAndGetURLInfo(this.getWorkName(), this.getSourceDsUrl()));
+            document.append("targetDsUrl", MongoDBConnection.printAndGetURLInfo(this.getWorkName(), this.getTargetDsUrl()));
+            return document.toJson();
+        }
     }
 }

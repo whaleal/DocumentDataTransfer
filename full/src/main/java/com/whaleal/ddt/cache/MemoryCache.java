@@ -68,6 +68,17 @@ public class MemoryCache {
     private final LongAdder writeDocCount = new LongAdder();
 
     /**
+     * 读取线程的空转次数
+     */
+    private final LongAdder readIdlingCount = new LongAdder();
+
+    /**
+     * 读取线程的空转次数
+     */
+    private final LongAdder writeIdlingCount = new LongAdder();
+
+
+    /**
      * 存储每个工作名称对应的内存缓存的映射。
      */
     private static Map<String, MemoryCache> memoryCacheMap = new ConcurrentHashMap<>();
@@ -144,6 +155,8 @@ public class MemoryCache {
                 partitionStateMap.get(partition).set(false);
             }
         }
+        // 添加重拾次数
+        //writeIdlingCount.add(idlingTime);
         return returnValue;
     }
 
@@ -185,7 +198,7 @@ public class MemoryCache {
                 }
             }
         }
-
+        //readIdlingCount.add(idlingTime);
     }
 
     /**

@@ -68,11 +68,6 @@ public class WriteTask extends CommonTask {
         MemoryCache memoryCache = MemoryCache.getMemoryCache(workName);
         // 循环执行数据写入任务
         while (true) {
-            // 写入端不用进行判断pause，直接写入
-            if (WorkStatus.getWorkStatus(workName) == WorkStatus.WORK_STOP) {
-                // 如果工作状态为停止，则跳出循环，结束任务执行
-                break;
-            }
             try {
                 // 从缓存中获取一批数据
                 BatchDataEntity batchDataEntity = memoryCache.getData();
@@ -84,6 +79,11 @@ public class WriteTask extends CommonTask {
                 } else {
                     // 缓存中没有数据，则可以进行睡眠一段时间，等待数据生成
                     TimeUnit.SECONDS.sleep(1);
+                    // 写入端不用进行判断pause，直接写入
+                    if (WorkStatus.getWorkStatus(workName) == WorkStatus.WORK_STOP) {
+                        // 如果工作状态为停止，则跳出循环，结束任务执行
+                        break;
+                    }
                 }
             } catch (Exception e) {
                 // 发生异常时，打印错误信息
@@ -137,8 +137,6 @@ public class WriteTask extends CommonTask {
      */
     public int bulkExecute(String ns, List<WriteModel<Document>> writeModelList) {
         int successWriteNum = 0;
-        // todo test使用
-        ns += "_temp";
         MongoNamespace mongoNamespace = new MongoNamespace(ns);
         try {
             if (writeModelList.isEmpty()) {

@@ -42,7 +42,8 @@ public class BucketOplogForGteMongoDB5 extends BucketOplog {
      */
     @Override
     public void parseUpdate(Document document) {
-        // todo 可读性不强 待梳理
+        // Q: 可读性不强 待梳理
+        // A: 可以单独进行培训讲解，代码走查
         // 获取_id字段的值
         String _id = ((Document) document.get("o2")).get("_id").toString();
         // 根据_id字段计算所属的bucketNum
@@ -76,6 +77,7 @@ public class BucketOplogForGteMongoDB5 extends BucketOplog {
             if (!deleteValue.isEmpty()) {
                 up.append("$unset", deleteValue);
             }
+            // 不可能出现 既无$set 也无$unset
             // 添加更新操作到bucketWriteModelListMap
             bucketWriteModelListMap.get(bucketNum).add(new UpdateOneModel<Document>(o2, up));
         } else if (o.get("$set") == null && o.get("$unset") == null) {

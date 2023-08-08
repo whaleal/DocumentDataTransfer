@@ -143,53 +143,65 @@ public class Execute {
      * @param workInfo 工作信息
      */
     private static void startFullSync(WorkInfo workInfo) {
-        // 设置程序状态为运行中
-        WorkStatus.updateWorkStatus(workInfo.getWorkName(), WorkStatus.WORK_RUN);
-        // 生成缓存区数据
-        MemoryCache memoryCache = new MemoryCache(workInfo.getWorkName(), workInfo.getBucketNum(), workInfo.getBucketSize());
-        // 创建全量同步任务对象
-        FullSync fullSync = new FullSync(workInfo.getWorkName());
-        // 开启任务执行，连接源数据库和目标数据库
-        fullSync.init(workInfo.getSourceDsUrl(), workInfo.getTargetDsUrl(), workInfo.getSourceThreadNum(), workInfo.getTargetThreadNum());
-        // 应用集群结构
-        fullSync.applyClusterInfo(workInfo.getClusterInfoSet(), workInfo.getDbTableWhite(), workInfo.getCreateIndexThreadNum(), Integer.MAX_VALUE);
-        // 生成sourceTaskInfo
-        AtomicBoolean isGenerateSourceTaskInfoOver = new AtomicBoolean(false);
-        // 默认缓存中128个读取任务
-        BlockingQueue<Range> taskQueue = new LinkedBlockingQueue<>(128);
-        fullSync.generateSourceTaskInfo(workInfo.getDbTableWhite(), isGenerateSourceTaskInfoOver, taskQueue, true);
-        // 生成写入任务
-        fullSync.submitTargetTask(workInfo.getTargetThreadNum());
-        // 生成源数据库数据读取任务
-        fullSync.generateSource(workInfo.getSourceThreadNum(), taskQueue, isGenerateSourceTaskInfoOver, workInfo.getBatchSize());
-        // 计算一共要同步数据量
-        long allNsDocumentCount = fullSync.estimatedAllNsDocumentCount(workInfo.getDbTableWhite());
-        // todo 加上进度百分比
-        long writeCountOld = 0L;
-        while (true) {
-            try {
-                log.info("{} 此全量任务预计传输{}条数据", workInfo.getWorkName(), allNsDocumentCount);
-                // 每隔10秒输出一次信息
-                TimeUnit.SECONDS.sleep(10);
-                // 输出缓存区运行情况
-                writeCountOld = memoryCache.printCacheInfo(workInfo.getStartTime(), writeCountOld);
-                // 输出任务各线程运行情况
-                fullSync.printThreadInfo();
-                // 输出缓存区中的信息
-                if (WorkStatus.getWorkStatus(workInfo.getWorkName()) == WorkStatus.WORK_STOP) {
-                    break;
+        Runnable runnable = () -> {
+            log.info("开启启动任务:{},任务配置信息:" + workInfo.getWorkName(), workInfo.toString());
+            // 设置程序状态为运行中
+            WorkStatus.updateWorkStatus(workInfo.getWorkName(), WorkStatus.WORK_RUN);
+            // 生成缓存区数据
+            MemoryCache memoryCache = new MemoryCache(workInfo.getWorkName(), workInfo.getBucketNum(), workInfo.getBucketSize());
+            // 创建全量同步任务对象
+            FullSync fullSync = new FullSync(workInfo.getWorkName());
+            // 开启任务执行，连接源数据库和目标数据库
+            fullSync.init(workInfo.getSourceDsUrl(), workInfo.getTargetDsUrl(), workInfo.getSourceThreadNum(), workInfo.getTargetThreadNum());
+            // 应用集群结构
+            fullSync.applyClusterInfo(workInfo.getClusterInfoSet(), workInfo.getDbTableWhite(), workInfo.getCreateIndexThreadNum(), Integer.MAX_VALUE);
+            // 生成sourceTaskInfo
+            AtomicBoolean isGenerateSourceTaskInfoOver = new AtomicBoolean(false);
+            // 默认缓存中128个读取任务
+            BlockingQueue<Range> taskQueue = new LinkedBlockingQueue<>(128);
+            fullSync.generateSourceTaskInfo(workInfo.getDbTableWhite(), isGenerateSourceTaskInfoOver, taskQueue, true);
+            // 生成写入任务
+            fullSync.submitTargetTask(workInfo.getTargetThreadNum());
+            // 生成源数据库数据读取任务
+            fullSync.generateSource(workInfo.getSourceThreadNum(), taskQueue, isGenerateSourceTaskInfoOver, workInfo.getBatchSize());
+            // 计算一共要同步数据量
+            long allNsDocumentCount = fullSync.estimatedAllNsDocumentCount(workInfo.getDbTableWhite());
+            long writeCountOld = 0L;
+            while (true) {
+                try {
+                    log.info("{} 此全量任务预计传输{}条数据", workInfo.getWorkName(), allNsDocumentCount);
+                    // 每隔10秒输出一次信息
+                    TimeUnit.SECONDS.sleep(10);
+                    // 输出缓存区运行情况
+                    writeCountOld = memoryCache.printCacheInfo(workInfo.getStartTime(), writeCountOld);
+                    // 输出任务各线程运行情况
+                    fullSync.printThreadInfo();
+                    // 输出缓存区中的信息
+                    if (WorkStatus.getWorkStatus(workInfo.getWorkName()) == WorkStatus.WORK_STOP) {
+                        break;
+                    }
+                    // 判断任务是否结束，如果结束则等待1分钟后退出循环
+                    if (fullSync.judgeFullSyncOver(memoryCache, isGenerateSourceTaskInfoOver, taskQueue)) {
+                        TimeUnit.MINUTES.sleep(1);
+                        WorkStatus.updateWorkStatus(workInfo.getWorkName(), WorkStatus.WORK_STOP);
+                        // 等待写入线程存活个数为0
+                        fullSync.waitWriteOver();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-                // 判断任务是否结束，如果结束则等待1分钟后退出循环
-                if (fullSync.judgeFullSyncOver(memoryCache, isGenerateSourceTaskInfoOver, taskQueue)) {
-                    TimeUnit.MINUTES.sleep(1);
-                    WorkStatus.updateWorkStatus(workInfo.getWorkName(), WorkStatus.WORK_STOP);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
             }
+            // 回收资源
+            fullSync.destroy(memoryCache);
+        };
+        Thread thread = new Thread(runnable);
+        thread.setName(workInfo.getWorkName() + "_execute");
+        thread.start();
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-        // 回收资源
-        fullSync.destroy(memoryCache);
     }
 
     /**
@@ -198,38 +210,49 @@ public class Execute {
      * @param workInfo 工作信息
      */
     private static void startRealTime(WorkInfo workInfo) {
-        // 设置程序状态为运行中
-        WorkStatus.updateWorkStatus(workInfo.getWorkName(), WorkStatus.WORK_RUN);
-        // 缓存区对线
-        int maxQueueSizeOfOplog = workInfo.getBucketNum() * workInfo.getBucketSize() * workInfo.getBucketSize();
-        MetadataOplog metadataOplog = new MetadataOplog(workInfo.getWorkName(), workInfo.getDdlWait(), maxQueueSizeOfOplog, workInfo.getBucketNum(), workInfo.getBucketSize());
-        // 创建实时同步任务对象
-        RealTime realTime = new RealTime(workInfo.getWorkName());
-        // 初始化任务，连接源数据库和目标数据库
-        realTime.init(workInfo.getSourceDsUrl(), workInfo.getTargetDsUrl(), workInfo.getNsBucketThreadNum(), workInfo.getWriteThreadNum());
-        // 创建写入任务
-        realTime.submitTask(workInfo, workInfo.getNsBucketThreadNum(), workInfo.getWriteThreadNum());
-        long executeCountOld = 0L;
-        while (true) {
-            try {
-                // 每隔10秒输出一次信息
-                TimeUnit.SECONDS.sleep(10);
-                // 输出线程运行情况
-                realTime.printThreadInfo();
-                // 输出缓存区运行情况
-                executeCountOld = metadataOplog.printCacheInfo(workInfo.getStartTime(), executeCountOld);
-                // 判断任务是否结束，如果结束则等待1分钟后退出循环
-                if (realTime.judgeRealTimeSyncOver()) {
-                    WorkStatus.updateWorkStatus(workInfo.getWorkName(), WorkStatus.WORK_STOP);
-                    TimeUnit.MINUTES.sleep(1);
-                    break;
+        Runnable runnable = () -> {
+            log.info("开启启动任务:{},任务配置信息:" + workInfo.getWorkName(), workInfo.toString());
+            // 设置程序状态为运行中
+            WorkStatus.updateWorkStatus(workInfo.getWorkName(), WorkStatus.WORK_RUN);
+            // 缓存区对线
+            int maxQueueSizeOfOplog = workInfo.getBucketNum() * workInfo.getBucketSize() * workInfo.getBucketSize();
+            MetadataOplog metadataOplog = new MetadataOplog(workInfo.getWorkName(), workInfo.getDdlWait(), maxQueueSizeOfOplog, workInfo.getBucketNum(), workInfo.getBucketSize());
+            // 创建实时同步任务对象
+            RealTime realTime = new RealTime(workInfo.getWorkName());
+            // 初始化任务，连接源数据库和目标数据库
+            realTime.init(workInfo.getSourceDsUrl(), workInfo.getTargetDsUrl(), workInfo.getNsBucketThreadNum(), workInfo.getWriteThreadNum());
+            // 创建写入任务
+            realTime.submitTask(workInfo, workInfo.getNsBucketThreadNum(), workInfo.getWriteThreadNum());
+            long executeCountOld = 0L;
+            while (true) {
+                try {
+                    // 每隔10秒输出一次信息
+                    TimeUnit.SECONDS.sleep(10);
+                    // 输出线程运行情况
+                    realTime.printThreadInfo();
+                    // 输出缓存区运行情况
+                    executeCountOld = metadataOplog.printCacheInfo(workInfo.getStartTime(), executeCountOld);
+                    // 判断任务是否结束，如果结束则等待1分钟后退出循环
+                    if (realTime.judgeRealTimeSyncOver()) {
+                        WorkStatus.updateWorkStatus(workInfo.getWorkName(), WorkStatus.WORK_STOP);
+                        TimeUnit.MINUTES.sleep(1);
+                        break;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
             }
+            // 回收资源
+            realTime.destroy();
+        };
+        Thread thread = new Thread(runnable);
+        thread.setName(workInfo.getWorkName() + "_execute");
+        thread.start();
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-        // 回收资源
-        realTime.destroy();
     }
 
 }

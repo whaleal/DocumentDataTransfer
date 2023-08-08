@@ -15,12 +15,12 @@
  */
 package com.whaleal.ddt.read;
 
-import com.whaleal.ddt.cache.MetadataOplog;
 import com.mongodb.BasicDBObject;
 import com.mongodb.CursorType;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
+import com.whaleal.ddt.cache.MetadataOplog;
 import com.whaleal.ddt.connection.MongoDBConnection;
 import com.whaleal.ddt.status.WorkStatus;
 import com.whaleal.ddt.task.CommonTask;
@@ -93,7 +93,7 @@ public class ReadOplog extends CommonTask {
     /**
      * 最新oplog时间戳信息
      */
-    public BsonTimestamp lastOplogTs = new BsonTimestamp();
+    public BsonTimestamp lastOplogTs = new BsonTimestamp(0);
 
     public ReadOplog(String workName, String dsName, boolean isFilterDdl, String dbTableWhite, int startTimeOfOplog, int endTimeOfOplog, int delayTime) {
         super(workName, dsName);
@@ -121,8 +121,8 @@ public class ReadOplog extends CommonTask {
                 log.info("{} check if sliding window time is missed:{ MongodbT start time:{},oplog.rs earliest record time:{} }", workName, startTime, startTimeOfOplog);
                 // 如果oplog的开始时间小于startTimeOfReady，即全表同步期间oplog没有被覆盖
                 // startTimeOfReady=0时代表为增量抽取数据。抽取范围[minTs,正无穷)
-                // 程序开始时间要大小oplog的开始时间600s,但是此时还不能保证原子性问题,可能出现游标掉线的问题
-                if ((startTime.getTime() - oplogStartTime.getTime()) < 600 && startTimeOfOplog != 0) {
+                // 程序开始时间要大小oplog的开始时间60s,但是此时还不能保证原子性问题,可能出现游标掉线的问题
+                if ((startTime.getTime() - oplogStartTime.getTime()) < 60 && startTimeOfOplog != 0) {
                     log.error("{} failed to read oplog: missed sliding window time oplog is overwritten, this program is about to exit", workName);
                     break;
                 }
@@ -157,8 +157,9 @@ public class ReadOplog extends CommonTask {
                 }
             }
         }
-        // todo 实在查询不到 就用当前时间
-        return new BsonTimestamp(System.currentTimeMillis());
+        // Q： 实在查询不到 ts
+        // A: 0
+        return new BsonTimestamp(0);
     }
 
 
@@ -180,6 +181,7 @@ public class ReadOplog extends CommonTask {
             condition.append("ts", new Document().append("$gte", docTime).append("$lte", new BsonTimestamp(endTimeOfOplog, 0)));
         }
         log.info("{} the conditions for reading oplog.rs :{}", workName, condition.toJson());
+        int readNum = 0;
         try {
             MongoCollection oplogCollection = mongoClient.getDatabase("local").getCollection("oplog.rs");
             MongoCursor<Document> cursor =
@@ -189,16 +191,26 @@ public class ReadOplog extends CommonTask {
             while (cursor.hasNext()) {
                 Document document = cursor.next();
                 String ns = document.get("ns").toString();
-                // 记录当前oplog的时间
-                lastOplogTs = (BsonTimestamp) document.get("ts");
+
+                // 10w条输出一次 或者10s输出一次
+                if (readNum++ > 102400 || (((BsonTimestamp) document.get("ts")).getValue() - lastOplogTs.getValue() > 10 * 1000L)) {
+                    // 记录当前oplog的时间
+                    lastOplogTs = (BsonTimestamp) document.get("ts");
+                    readNum = 0;
+                    log.info("{} current read oplog time:{}", workName, lastOplogTs.getTime());
+                    log.info("{} 当前oplog延迟时间:{} s", workName, (System.currentTimeMillis() - lastOplogTs.getValue()) / 1000L);
+                    // q: 如果后面一直没有数据的话，这个信息就一直不打印。确实会出现日志不全的问题
+                    // a: 为避免主线程的业务侵入性，暂时取舍。若是一直无oplog那就不打印罢了
+                }
+
+
                 // 判断是否在窗口期范围内
                 if (lastOplogTs.getTime() < startTimeOfOplog) {
                     log.error("{} failed to read oplog: missed sliding window time oplog is overwritten, this program is about to exit", workName);
                     WorkStatus.updateWorkStatus(workName, WorkStatus.WORK_STOP);
                 }
-                {
-                    // todo 定时输出当前读取oplog的时间和窗口期
-                }
+
+
                 {
                     // 检查任务状态
                     if (WorkStatus.getWorkStatus(this.workName) == WorkStatus.WORK_STOP) {
@@ -262,5 +274,11 @@ public class ReadOplog extends CommonTask {
             this.startTimeOfOplog = docTime.getTime();
             log.error("{} read oplog exception,msg:{}", workName, e.getMessage());
         }
+    }
+
+    public static void main(String[] args) {
+        final BsonTimestamp bsonTimestamp = new BsonTimestamp(System.currentTimeMillis());
+        System.out.println(bsonTimestamp.getValue());
+        System.out.println(bsonTimestamp.getTime());
     }
 }

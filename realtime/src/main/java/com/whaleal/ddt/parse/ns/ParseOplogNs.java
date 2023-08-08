@@ -204,7 +204,8 @@ public class ParseOplogNs extends CommonTask {
         } else if (o.get("renameCollection") != null) {
             fullDbTableName = parseRenameTable(document);
         } else if (o.get("convertToCapped") != null) {
-            // todo 可以加上此功能
+            // Q: 可以加上此功能
+            // A: convertToCapped=drop+create
         } else if (o.get("dropDatabase") != null) {
             parseDropDataBase(document);
         } else if (o.get("collMod") != null) {

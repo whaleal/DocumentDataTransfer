@@ -15,6 +15,7 @@
  */
 package com.whaleal.ddt.connection;
 
+import com.alibaba.fastjson2.JSON;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoNamespace;
 import com.mongodb.client.MongoClient;
@@ -194,18 +195,26 @@ public class MongoDBConnection {
         // 可以定制化配置 防止额外信息输出
         ConnectionString connectionString = new ConnectionString(url);
         Document urlInfo = new Document();
+        try {
+            urlInfo = Document.parse(JSON.toJSONString(connectionString));
+            urlInfo.remove("connectionString");
+            urlInfo.remove("credential");
+            urlInfo.remove("password");
+        }catch (Exception ignored){
+        }
+
         urlInfo.append("database", connectionString.getDatabase());
         urlInfo.append("hosts", connectionString.getHosts());
         urlInfo.append("username", connectionString.getUsername());
+
         if (connectionString.getPassword() != null && connectionString.getPassword().length > 0) {
             urlInfo.append("password", connectionString.getPassword()[0] + "***加密***" + connectionString.getPassword()[Math.max(0, connectionString.getPassword().length - 1)]);
         }
-        // todo 好像没有option
         log.info("dsName:{},urlInfo:{}", dsName, urlInfo.toJson());
         return urlInfo.toJson().trim();
     }
 
     public static void main(String[] args) {
-        printAndGetURLInfo("1", "mongodb://172.31.16.215:24578/vivo");
+        printAndGetURLInfo("1", "mongodb://username:password@host1:1,host2:2,host3:3/mydatabase?replicaSet=myReplSet&authSource=admin&maxIdleTimeMS=60000&readConcern=majority&retryWrites=true");
     }
 }

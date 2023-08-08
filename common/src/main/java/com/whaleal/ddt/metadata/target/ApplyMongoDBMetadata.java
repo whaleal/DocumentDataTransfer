@@ -171,7 +171,8 @@ public class ApplyMongoDBMetadata {
         };
 
         for (int i = 0; i < createIndexThreadNum; i++) {
-            // todo 可以改为线程池
+            // q: 可以改为线程池
+            // a: 不考虑线程池，用完即丢即可
             new Thread(runnable).start();
         }
 

@@ -354,13 +354,6 @@ public class WorkInfoGenerator {
             workInfo.setClusterInfoSet(new HashSet<>(Arrays.asList(Property.getPropertiesByKey("clusterInfoSet").split(",|，"))));
         }
 
-        {
-            // 打印工作配置信息 主要对url 账号密码加密处理
-            Document document = Document.parse(JSON.toJSONString(workInfo));
-            document.append("sourceDsUrl", MongoDBConnection.printAndGetURLInfo(workInfo.getWorkName(), workInfo.getSourceDsUrl()));
-            document.append("targetDsUrl", MongoDBConnection.printAndGetURLInfo(workInfo.getWorkName(), workInfo.getTargetDsUrl()));
-            log.info("work配置信息如下:{}", document.toJson());
-        }
         // 返回生成的工作信息对象
         return workInfo;
     }

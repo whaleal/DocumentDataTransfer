@@ -148,7 +148,8 @@ public class ReadTask extends CommonTask {
         }
         try {
             // 读取collection中的数据
-            // todo 考虑$natural排序 bson读取
+            // Q: 考虑$natural排序 bson读取
+            // A: $natural会加快查询速度。$natural排序排序后 就不能再次断点重传
             MongoCursor<Document> mongoCursor = this.mongoClient.getDatabase(mongoNamespace.getDatabaseName()).getCollection(mongoNamespace.getCollectionName()).
                     find(condition).sort(new BasicDBObject().append("_id", 1)).iterator();
             while (mongoCursor.hasNext()) {

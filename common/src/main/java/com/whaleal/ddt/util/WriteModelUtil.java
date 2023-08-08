@@ -13,6 +13,7 @@
  *
  * For more information, visit the official website: [www.whaleal.com]
  */
+
 package com.whaleal.ddt.util;
 
 import com.mongodb.client.model.*;
@@ -21,172 +22,130 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 
 /**
- * todo gpt优化的代码 不知道正确与否
+ * Utility class for converting WriteModel instances to String.
  */
 @Log4j2
 public class WriteModelUtil {
 
-    //    /**
-//     * writeModel转为String
-//     *
-//     * @param writeModel writeModel
-//     * @return String
-//     */
-//    public static String writeModelToString(WriteModel writeModel) {
-//        StringBuilder stringBuilder = new StringBuilder();
-//        try {
-//            stringBuilder.append("type").append(":").append(writeModel.getClass().getSimpleName()).append(",");
-//            if (writeModel instanceof InsertOneModel) {
-//                Document insertDoc = ((InsertOneModel<Document>) writeModel).getDocument();
-//                stringBuilder.append(insertDoc.toJson());
-//            } else if (writeModel instanceof ReplaceOneModel) {
-//                Bson filter = ((ReplaceOneModel<Document>) writeModel).getFilter();
-//                Document replacement = ((ReplaceOneModel<Document>) writeModel).getReplacement();
-//                stringBuilder.append("filter").append(":").append(filter.toString()).append(",");
-//                stringBuilder.append("replacement").append(":").append(replacement.toJson());
-//            } else if (writeModel instanceof DeleteManyModel) {
-//                Bson deleteManyFilterDoc = ((DeleteManyModel<Document>) writeModel).getFilter();
-//                stringBuilder.append("filter").append(":").append(deleteManyFilterDoc.toString());
-//            } else if (writeModel instanceof DeleteOneModel) {
-//                Bson deleteFilterDoc = ((DeleteOneModel<Document>) writeModel).getFilter();
-//                stringBuilder.append("filter").append(":").append(deleteFilterDoc.toString());
-//            } else if (writeModel instanceof UpdateOneModel) {
-//                Bson updateFilterDoc = ((UpdateOneModel<Document>) writeModel).getFilter();
-//                Bson update = ((UpdateOneModel<Document>) writeModel).getUpdate();
-//                stringBuilder.append("filter").append(":").append(updateFilterDoc.toString()).append(",");
-//                stringBuilder.append("replacement").append(":").append(update.toString());
-//            } else if (writeModel instanceof UpdateManyModel) {
-//                Bson updateFilterDoc = ((UpdateManyModel<Document>) writeModel).getFilter();
-//                Bson update = ((UpdateManyModel<Document>) writeModel).getUpdate();
-//                stringBuilder.append("filter").append(":").append(updateFilterDoc.toString()).append(",");
-//                stringBuilder.append("replacement").append(":").append(update.toString());
-//            } else {
-//                stringBuilder.append("unKnow").append(":").append(writeModel.toString());
-//            }
-//        } catch (Exception e) {
-//            stringBuilder.append(",");
-//            try {
-//                stringBuilder.append(writeModel.toString()).append(",");
-//            } catch (Exception ignored) {
-//            }
-//            stringBuilder.append(e.getMessage());
-//        }
-//        return stringBuilder.toString();
-//    }
-
     /**
-     * 将WriteModel实例转换为格式化的字符串表示。
+     * Converts a WriteModel to a String representation.
      *
-     * @param writeModel 要转换的WriteModel实例。
-     * @return 包含WriteModel类型和内容的字符串表示。
+     * @param writeModel the WriteModel to convert
+     * @return a String representation of the WriteModel
      */
-    public static String writeModelToString(WriteModel<?> writeModel) {
-        StringBuilder resultStringBuilder = new StringBuilder();
-        try {
-            // 添加WriteModel的类型（类名）到结果字符串中。
-            resultStringBuilder.append("type").append(":").append(writeModel.getClass().getSimpleName()).append(",");
+    public static String writeModelToString(WriteModel writeModel) {
+        StringBuilder stringBuilder = new StringBuilder();
 
-            // 确定WriteModel的类型并调用相应的处理方法。
+        try {
+            // Append the class name of the WriteModel
+            stringBuilder.append("type").append(":").append(writeModel.getClass().getSimpleName()).append(",");
+
+            // Handle different types of WriteModel
             if (writeModel instanceof InsertOneModel) {
-                handleInsertOneModel(resultStringBuilder, (InsertOneModel<?>) writeModel);
+                stringBuilder.append(handleInsertOneModel((InsertOneModel<Document>) writeModel));
             } else if (writeModel instanceof ReplaceOneModel) {
-                handleReplaceOneModel(resultStringBuilder, (ReplaceOneModel<?>) writeModel);
+                stringBuilder.append(handleReplaceOneModel((ReplaceOneModel<Document>) writeModel));
             } else if (writeModel instanceof DeleteManyModel) {
-                handleDeleteManyModel(resultStringBuilder, (DeleteManyModel<?>) writeModel);
+                stringBuilder.append(handleDeleteManyModel((DeleteManyModel<Document>) writeModel));
             } else if (writeModel instanceof DeleteOneModel) {
-                handleDeleteOneModel(resultStringBuilder, (DeleteOneModel<?>) writeModel);
+                stringBuilder.append(handleDeleteOneModel((DeleteOneModel<Document>) writeModel));
             } else if (writeModel instanceof UpdateOneModel) {
-                handleUpdateOneModel(resultStringBuilder, (UpdateOneModel<?>) writeModel);
+                stringBuilder.append(handleUpdateOneModel((UpdateOneModel<Document>) writeModel));
             } else if (writeModel instanceof UpdateManyModel) {
-                handleUpdateManyModel(resultStringBuilder, (UpdateManyModel<?>) writeModel);
+                stringBuilder.append(handleUpdateManyModel((UpdateManyModel<Document>) writeModel));
             } else {
-                // 处理未知的WriteModel类型。
-                resultStringBuilder.append("unknown").append(":").append(writeModel.toString());
+                // Unknown WriteModel type
+                stringBuilder.append("unKnown").append(":").append(writeModel.toString());
             }
         } catch (Exception e) {
-            // 处理处理过程中可能发生的异常。
-            resultStringBuilder.append(",").append(writeModel.toString()).append(",");
-            resultStringBuilder.append("出现错误：").append(e.getMessage());
+            handleException(stringBuilder, writeModel, e);
         }
-        return resultStringBuilder.toString();
+
+        return stringBuilder.toString();
     }
 
     /**
-     * 处理InsertOneModel，并将其内容（Document）附加到结果中。
+     * Handles an InsertOneModel, returning its document as a JSON string.
      *
-     * @param resultStringBuilder 用于附加内容的StringBuilder。
-     * @param insertOneModel      要处理的InsertOneModel。
+     * @param model the InsertOneModel to handle
+     * @return a JSON string representation of the document
      */
-    private static void handleInsertOneModel(StringBuilder resultStringBuilder, InsertOneModel<?> insertOneModel) {
-        // 从InsertOneModel中提取Document，并将其以JSON形式附加到结果中。
-        Document insertDoc = (Document) insertOneModel.getDocument();
-        resultStringBuilder.append(insertDoc.toJson());
+    private static String handleInsertOneModel(InsertOneModel<Document> model) {
+        Document insertDoc = model.getDocument();
+        return insertDoc.toJson();
     }
 
     /**
-     * 处理ReplaceOneModel，并将其过滤器和替换内容（Documents）附加到结果中。
+     * Handles a ReplaceOneModel, returning its filter and replacement as strings.
      *
-     * @param resultStringBuilder 用于附加内容的StringBuilder。
-     * @param replaceOneModel     要处理的ReplaceOneModel。
+     * @param model the ReplaceOneModel to handle
+     * @return a string representation of the filter and replacement
      */
-    private static void handleReplaceOneModel(StringBuilder resultStringBuilder, ReplaceOneModel<?> replaceOneModel) {
-        // 从ReplaceOneModel中提取过滤器和替换内容（Documents），并将它们以JSON形式附加到结果中。
-        Bson filter = (Bson) replaceOneModel.getFilter();
-        Document replacement = (Document) replaceOneModel.getReplacement();
-        resultStringBuilder.append("filter").append(":").append(filter.toString()).append(",");
-        resultStringBuilder.append("replacement").append(":").append(replacement.toJson());
+    private static String handleReplaceOneModel(ReplaceOneModel<Document> model) {
+        Bson filter = model.getFilter();
+        Document replacement = model.getReplacement();
+        return "filter:" + filter.toString() + ",replacement:" + replacement.toJson();
     }
 
     /**
-     * 处理DeleteManyModel，并将其过滤器（Bson）附加到结果中。
+     * Handles a DeleteManyModel, returning its filter as a string.
      *
-     * @param resultStringBuilder 用于附加内容的StringBuilder。
-     * @param deleteManyModel     要处理的DeleteManyModel。
+     * @param model the DeleteManyModel to handle
+     * @return a string representation of the filter
      */
-    private static void handleDeleteManyModel(StringBuilder resultStringBuilder, DeleteManyModel<?> deleteManyModel) {
-        // 从DeleteManyModel中提取过滤器（Bson），并将其以字符串形式附加到结果中。
-        Bson deleteManyFilterDoc = (Bson) deleteManyModel.getFilter();
-        resultStringBuilder.append("filter").append(":").append(deleteManyFilterDoc.toString());
+    private static String handleDeleteManyModel(DeleteManyModel<Document> model) {
+        Bson deleteManyFilterDoc = model.getFilter();
+        return "filter:" + deleteManyFilterDoc.toString();
     }
 
     /**
-     * 处理DeleteOneModel，并将其过滤器（Bson）附加到结果中。
+     * Handles a DeleteOneModel, returning its filter as a string.
      *
-     * @param resultStringBuilder 用于附加内容的StringBuilder。
-     * @param deleteOneModel      要处理的DeleteOneModel。
+     * @param model the DeleteOneModel to handle
+     * @return a string representation of the filter
      */
-    private static void handleDeleteOneModel(StringBuilder resultStringBuilder, DeleteOneModel<?> deleteOneModel) {
-        // 从DeleteOneModel中提取过滤器（Bson），并将其以字符串形式附加到结果中。
-        Bson deleteFilterDoc = (Bson) deleteOneModel.getFilter();
-        resultStringBuilder.append("filter").append(":").append(deleteFilterDoc.toString());
+    private static String handleDeleteOneModel(DeleteOneModel<Document> model) {
+        Bson deleteFilterDoc = model.getFilter();
+        return "filter:" + deleteFilterDoc.toString();
     }
 
     /**
-     * 处理UpdateOneModel，并将其过滤器和更新内容（Bson）附加到结果中。
+     * Handles an UpdateOneModel, returning its filter and update as strings.
      *
-     * @param resultStringBuilder 用于附加内容的StringBuilder。
-     * @param updateOneModel      要处理的UpdateOneModel。
+     * @param model the UpdateOneModel to handle
+     * @return a string representation of the filter and update
      */
-    private static void handleUpdateOneModel(StringBuilder resultStringBuilder, UpdateOneModel<?> updateOneModel) {
-        // 从UpdateOneModel中提取过滤器和更新内容（Bson），并将它们以JSON形式附加到结果中。
-        Bson updateFilterDoc = (Bson) updateOneModel.getFilter();
-        Bson update = (Bson) updateOneModel.getUpdate();
-        resultStringBuilder.append("filter").append(":").append(updateFilterDoc.toString()).append(",");
-        resultStringBuilder.append("replacement").append(":").append(update.toString());
+    private static String handleUpdateOneModel(UpdateOneModel<Document> model) {
+        Bson updateFilterDoc = model.getFilter();
+        Bson update = model.getUpdate();
+        return "filter:" + updateFilterDoc.toString() + ",update:" + update.toString();
     }
 
     /**
-     * 处理UpdateManyModel，并将其过滤器和更新内容（Bson）附加到结果中。
+     * Handles an UpdateManyModel, returning its filter and update as strings.
      *
-     * @param resultStringBuilder 用于附加内容的StringBuilder。
-     * @param updateManyModel     要处理的UpdateManyModel。
+     * @param model the UpdateManyModel to handle
+     * @return a string representation of the filter and update
      */
-    private static void handleUpdateManyModel(StringBuilder resultStringBuilder, UpdateManyModel<?> updateManyModel) {
-        // 从UpdateManyModel中提取过滤器和更新内容（Bson），并将它们以JSON形式附加到结果中。
-        Bson updateFilterDoc = (Bson) updateManyModel.getFilter();
-        Bson update = (Bson) updateManyModel.getUpdate();
-        resultStringBuilder.append("filter").append(":").append(updateFilterDoc.toString()).append(",");
-        resultStringBuilder.append("replacement").append(":").append(update.toString());
+    private static String handleUpdateManyModel(UpdateManyModel<Document> model) {
+        Bson updateFilterDoc = model.getFilter();
+        Bson update = model.getUpdate();
+        return "filter:" + updateFilterDoc.toString() + ",update:" + update.toString();
     }
 
+    /**
+     * Handles any exceptions that occur while converting a WriteModel to a string.
+     *
+     * @param stringBuilder the StringBuilder to append the exception message to
+     * @param writeModel    the WriteModel that caused the exception
+     * @param e             the exception that occurred
+     */
+    private static void handleException(StringBuilder stringBuilder, WriteModel writeModel, Exception e) {
+        stringBuilder.append(",");
+        try {
+            stringBuilder.append(writeModel.toString()).append(",");
+        } catch (Exception ignored) {
+        }
+        stringBuilder.append(e.getMessage());
+    }
 }

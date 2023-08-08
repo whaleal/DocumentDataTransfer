@@ -16,20 +16,19 @@
 package com.whaleal.ddt.write;
 
 
-import com.whaleal.ddt.cache.MetadataOplog;
 import com.mongodb.MongoBulkWriteException;
 import com.mongodb.MongoNamespace;
-import com.mongodb.WriteConcern;
 import com.mongodb.bulk.BulkWriteError;
 import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.BulkWriteOptions;
 import com.mongodb.client.model.WriteModel;
 import com.whaleal.ddt.cache.BatchDataEntity;
+import com.whaleal.ddt.cache.MetadataOplog;
 import com.whaleal.ddt.connection.MongoDBConnection;
-import com.whaleal.ddt.util.WriteModelUtil;
 import com.whaleal.ddt.status.WorkStatus;
 import com.whaleal.ddt.task.CommonTask;
+import com.whaleal.ddt.util.WriteModelUtil;
 import lombok.extern.log4j.Log4j2;
 import org.bson.Document;
 
@@ -167,9 +166,10 @@ public class WriteData extends CommonTask {
             if (metadataOplog.getUniqueIndexCollection().containsKey(dbName + "." + tableName)) {
                 bulkWriteOptions.ordered(true);
             }
-            // todo 写入方式 要适配不同版本mongodb 最好可以自定义
+            // q: 写入方式
+            // a: 用户自己在url上配置
             BulkWriteResult bulkWriteResult = this.mongoClient.getDatabase(dbName).getCollection(tableName).
-                    withWriteConcern(WriteConcern.W1.withJournal(true)).bulkWrite(list, bulkWriteOptions);
+                    bulkWrite(list, bulkWriteOptions);
             bulkWriteInfo(bulkWriteResult);
         } catch (Exception e) {
             // 出现异常 就一条一条数据写入
@@ -186,14 +186,15 @@ public class WriteData extends CommonTask {
     public void singleExecute(BatchDataEntity batchDataEntity) {
         String ns = batchDataEntity.getNs();
         List<WriteModel<Document>> list = batchDataEntity.getDataList();
-        // todo 注意
-        MongoNamespace mongoNamespace = new MongoNamespace(ns + "_temp");
+        MongoNamespace mongoNamespace = new MongoNamespace(ns);
         for (WriteModel<Document> writeModel : list) {
             try {
                 List<WriteModel<Document>> writeModelList = new ArrayList<>();
                 writeModelList.add(writeModel);
+                // q: 写入方式
+                // a: 用户自己在url上配置
                 BulkWriteResult bulkWriteResult = this.mongoClient.getDatabase(mongoNamespace.getDatabaseName()).getCollection(mongoNamespace.getCollectionName()).
-                        withWriteConcern(WriteConcern.W1.withJournal(true)).bulkWrite(writeModelList, new BulkWriteOptions().ordered(true));
+                        bulkWrite(writeModelList, new BulkWriteOptions().ordered(true));
                 bulkWriteInfo(bulkWriteResult);
             } catch (MongoBulkWriteException e) {
                 for (BulkWriteError error : e.getWriteErrors()) {
