@@ -15,6 +15,7 @@
  */
 package com.whaleal.ddt.execute;
 
+import com.whaleal.ddt.cache.MetadataOplog;
 import com.whaleal.ddt.connection.Datasource;
 import com.whaleal.ddt.connection.MongoDBConnection;
 import com.whaleal.ddt.execute.config.WorkInfo;
@@ -197,8 +198,12 @@ public class RealTime {
      */
     public boolean judgeRealTimeSyncOver() {
         // 当不进行读取的时候 可以任务任务已经中断
-        // todo 但是当读取完成后 未写入的数据怎么办？ 增量情况会缺少数据
+        // Q: 但是当读取完成后 未写入的数据怎么办？ 增量情况会缺少数据
+        // A：执行 MetadataOplog.getOplogMetadata(workName).waitCacheExe()
         if (ThreadPoolManager.getActiveThreadNum(readOplogThreadPoolName) == 0) {
+            // 等待缓存中的数据写完
+            MetadataOplog.getOplogMetadata(workName).waitCacheExe();
+            // 等待缓存为空
             try {
                 TimeUnit.MINUTES.sleep(1);
                 // 如果发现关机 则睡眠1分钟 使数据写入到磁盘里面

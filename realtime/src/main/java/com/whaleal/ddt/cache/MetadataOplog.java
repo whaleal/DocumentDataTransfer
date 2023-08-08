@@ -369,9 +369,9 @@ public final class MetadataOplog {
 
             log.info("{} the current number of real-time synchronization caches:{}", workName, queueOfOplog.size());
 
-            log.info("{} current bucket batch data read.cache number:{}", workName, cacheBucketQueueDataNum());
+            log.info("{} current bucket batch data cache number:{}", workName, cacheBucketQueueDataNum());
 
-            log.info("{} current table data read.cache number:{}", workName, cacheQueueOfNsDataNum());
+            log.info("{} current table data cache number:{}", workName, cacheQueueOfNsDataNum());
 
             log.info("{} current number of synchronization tables:{}", workName, getQueueOfNsMap().size());
 

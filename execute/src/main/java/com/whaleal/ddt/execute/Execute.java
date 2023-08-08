@@ -92,7 +92,7 @@ public class Execute {
         }
 
         // 生成工作信息
-        WorkInfo workInfo = WorkInfoGenerator.generateWorkInfo();
+        final WorkInfo workInfo = WorkInfoGenerator.generateWorkInfo();
         // 启动任务
         start(workInfo);
         // 退出程序
@@ -104,7 +104,7 @@ public class Execute {
      *
      * @param workInfo 工作信息
      */
-    private static void start(WorkInfo workInfo) {
+    private static void start(final WorkInfo workInfo) {
         // 获取工作名称
         String workName = workInfo.getWorkName();
         // 根据同步模式选择不同的启动方式
@@ -121,7 +121,8 @@ public class Execute {
             workInfo.setWorkName(workName + "_full");
             startFullSync(workInfo);
             // 设置新的任务的时区
-            // todo 增量任务 也可以加上进度百分比
+            // Q: 增量任务 也可以加上进度百分比
+            // A: 已在ReadOplog 增加进度百分比
             workInfo.setEndOplogTime((int) (System.currentTimeMillis() / 1000));
             workInfo.setWorkName(workName + "_realTime");
             startRealTime(workInfo);
@@ -142,7 +143,7 @@ public class Execute {
      *
      * @param workInfo 工作信息
      */
-    private static void startFullSync(WorkInfo workInfo) {
+    private static void startFullSync(final WorkInfo workInfo) {
         Runnable runnable = () -> {
             log.info("开启启动任务:{},任务配置信息:" + workInfo.getWorkName(), workInfo.toString());
             // 设置程序状态为运行中
@@ -209,7 +210,7 @@ public class Execute {
      *
      * @param workInfo 工作信息
      */
-    private static void startRealTime(WorkInfo workInfo) {
+    private static void startRealTime(final WorkInfo workInfo) {
         Runnable runnable = () -> {
             log.info("开启启动任务:{},任务配置信息:" + workInfo.getWorkName(), workInfo.toString());
             // 设置程序状态为运行中
@@ -226,6 +227,7 @@ public class Execute {
             long executeCountOld = 0L;
             while (true) {
                 try {
+
                     // 每隔10秒输出一次信息
                     TimeUnit.SECONDS.sleep(10);
                     // 输出线程运行情况

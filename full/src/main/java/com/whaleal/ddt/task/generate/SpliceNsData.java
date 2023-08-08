@@ -78,8 +78,8 @@ public class SpliceNsData {
         Map<Integer, Range> typeMap = new HashMap<>();
         MongoNamespace mongoNamespace = new MongoNamespace(ns);
         BasicDBObject basicDBObject = new BasicDBObject();
-        for (Map.Entry<Class<?>, BsonType> next : BsonTypeMap.getMongodbTypeMemberMap().entrySet()) {
-            int type = next.getValue().getValue();
+        for (Map.Entry<String,Integer> next : BsonTypeMap.getMongodbTypeMemberMap().entrySet()) {
+            int type = next.getValue();
             // 过滤不可能为主键数据的类型
 //            if (type == 4 || type == 6 || type == 10 || type == 12 || type == -1 || type == 127) {
 //                continue;
@@ -91,7 +91,7 @@ public class SpliceNsData {
                         .projection(new BasicDBObject().append("_id", 1)).first();
                 // 判断某类型的主键是否有数据
                 if (document != null) {
-                    log.info("{} {}表存在_id类型为:{}", dsName, ns, next.getKey().toString());
+                    log.info("{} {}表存在_id类型为:{}", dsName, ns, next.getKey());
                     Range range = getMaxAndMinIdByNs(ns, type);
                     typeMap.put(type, range);
                 }

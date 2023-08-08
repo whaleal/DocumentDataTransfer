@@ -180,6 +180,11 @@ public class ReadOplog extends CommonTask {
             // 带有范围的oplog
             condition.append("ts", new Document().append("$gte", docTime).append("$lte", new BsonTimestamp(endTimeOfOplog, 0)));
         }
+        // todo  Q：读取全部数据，会造成带宽浪费
+        // A：
+
+//        condition.append("ns", new Document("$regex", dbTableWhite));
+
         log.info("{} the conditions for reading oplog.rs :{}", workName, condition.toJson());
         int readNum = 0;
         try {
@@ -193,14 +198,25 @@ public class ReadOplog extends CommonTask {
                 String ns = document.get("ns").toString();
 
                 // 10w条输出一次 或者10s输出一次
-                if (readNum++ > 102400 || (((BsonTimestamp) document.get("ts")).getValue() - lastOplogTs.getValue() > 10 * 1000L)) {
+                if (readNum++ > 102400 || (((BsonTimestamp) document.get("ts")).getTime() - lastOplogTs.getTime() > 60)) {
                     // 记录当前oplog的时间
                     lastOplogTs = (BsonTimestamp) document.get("ts");
                     readNum = 0;
                     log.info("{} current read oplog time:{}", workName, lastOplogTs.getTime());
-                    log.info("{} 当前oplog延迟时间:{} s", workName, (System.currentTimeMillis() - lastOplogTs.getValue()) / 1000L);
+                    log.info("{} 当前oplog延迟时间:{} s", workName, Math.abs(System.currentTimeMillis() / 1000F - lastOplogTs.getTime()));
                     // q: 如果后面一直没有数据的话，这个信息就一直不打印。确实会出现日志不全的问题
                     // a: 为避免主线程的业务侵入性，暂时取舍。若是一直无oplog那就不打印罢了
+
+                    // 只有增量任务才有进度百分比
+                    if (endTimeOfOplog != 0) {
+                        // endTimeOfOplog- startTimeOfOplog 的总时间
+                        // endTimeOfOplog -lastOplogTs 的总时间
+                        int percentage = (Math.round((0.0F + lastOplogTs.getTime() - startTimeOfOplog) / ((0.0F + endTimeOfOplog - startTimeOfOplog))));
+                        if (percentage < 0) {
+                            percentage = 0;
+                        }
+                        log.info("{} 当前增量进度{}%", workName, percentage);
+                    }
                 }
 
 
