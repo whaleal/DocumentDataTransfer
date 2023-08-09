@@ -16,10 +16,10 @@
  */
 
 
-package com.whaleal.ddt.metadata;
+package com.whaleal.ddt.sync.metadata;
 
-import com.whaleal.ddt.metadata.source.MongoDBMetadata;
-import com.whaleal.ddt.metadata.target.ApplyMongoDBMetadata;
+import com.whaleal.ddt.sync.metadata.source.MongoDBMetadata;
+import com.whaleal.ddt.sync.metadata.target.ApplyMongoDBMetadata;
 import lombok.extern.log4j.Log4j2;
 
 import java.util.Set;

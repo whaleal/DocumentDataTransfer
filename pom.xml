@@ -14,6 +14,7 @@
         <module>realtime-sync-oplog</module>
         <module>execute-sync</module>
         <module>test</module>
+        <module>mongodb-driver</module>
     </modules>
 
     <properties>

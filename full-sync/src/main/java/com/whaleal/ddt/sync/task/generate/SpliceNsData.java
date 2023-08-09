@@ -19,9 +19,10 @@ package com.whaleal.ddt.sync.task.generate;
 import com.mongodb.BasicDBObject;
 import com.mongodb.MongoNamespace;
 import com.mongodb.client.MongoClient;
-import com.whaleal.ddt.connection.Datasource;
-import com.whaleal.ddt.connection.MongoDBConnection;
-import com.whaleal.ddt.metadata.BsonTypeMap;
+
+import com.whaleal.ddt.common.Datasource;
+import com.whaleal.ddt.sync.connection.MongoDBConnection;
+import com.whaleal.ddt.common.BsonTypeMap;
 import lombok.extern.log4j.Log4j2;
 import org.bson.Document;
 

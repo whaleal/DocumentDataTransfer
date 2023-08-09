@@ -17,7 +17,7 @@ package com.whaleal.ddt.sync.parse.ns;
 
 import com.whaleal.ddt.sync.cache.MetadataOplog;
 import com.mongodb.client.MongoClient;
-import com.whaleal.ddt.connection.MongoDBConnection;
+import com.whaleal.ddt.sync.connection.MongoDBConnection;
 import com.whaleal.ddt.status.WorkStatus;
 import com.whaleal.ddt.task.CommonTask;
 import lombok.extern.log4j.Log4j2;

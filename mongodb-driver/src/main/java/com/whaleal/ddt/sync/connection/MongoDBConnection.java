@@ -13,13 +13,14 @@
  *
  * For more information, visit the official website: [www.whaleal.com]
  */
-package com.whaleal.ddt.connection;
+package com.whaleal.ddt.sync.connection;
 
 import com.alibaba.fastjson2.JSON;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoNamespace;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
+import com.whaleal.ddt.common.Datasource;
 import lombok.extern.log4j.Log4j2;
 import org.bson.Document;
 

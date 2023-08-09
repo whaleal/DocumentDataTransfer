@@ -24,7 +24,7 @@ import com.mongodb.client.model.BulkWriteOptions;
 import com.mongodb.client.model.WriteModel;
 import com.whaleal.ddt.cache.BatchDataEntity;
 import com.whaleal.ddt.sync.cache.MemoryCache;
-import com.whaleal.ddt.connection.MongoDBConnection;
+import com.whaleal.ddt.sync.connection.MongoDBConnection;
 import com.whaleal.ddt.util.WriteModelUtil;
 import com.whaleal.ddt.status.WorkStatus;
 import com.whaleal.ddt.task.CommonTask;

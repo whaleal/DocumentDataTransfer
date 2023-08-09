@@ -15,9 +15,10 @@
  */
 package com.whaleal.ddt.sync.execute;
 
+import com.whaleal.ddt.common.Datasource;
 import com.whaleal.ddt.sync.cache.MetadataOplog;
-import com.whaleal.ddt.connection.Datasource;
-import com.whaleal.ddt.connection.MongoDBConnection;
+
+import com.whaleal.ddt.sync.connection.MongoDBConnection;
 import com.whaleal.ddt.sync.execute.config.WorkInfo;
 import com.whaleal.ddt.sync.parse.ns.ParseOplogNs;
 import com.whaleal.ddt.sync.parse.oplog.BucketOplog;

@@ -13,7 +13,7 @@
  *
  * For more information, visit the official website: [www.whaleal.com]
  */
-package com.whaleal.ddt.metadata;
+package com.whaleal.ddt.common;
 
 import com.mongodb.lang.Nullable;
 import lombok.Getter;

@@ -17,7 +17,7 @@ package com.whaleal.ddt.sync.execute.config;
 
 
 import com.alibaba.fastjson2.JSON;
-import com.whaleal.ddt.connection.MongoDBConnection;
+import com.whaleal.ddt.sync.connection.MongoDBConnection;
 import com.whaleal.ddt.util.HostInfoUtil;
 import lombok.Data;
 import lombok.NoArgsConstructor;

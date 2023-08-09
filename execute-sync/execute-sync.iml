@@ -35,5 +35,6 @@
     <orderEntry type="library" name="Maven: com.whaleal.icefrog:icefrog-all:1.1.7" level="project" />
     <orderEntry type="module" module-name="full-sync" />
     <orderEntry type="module" module-name="realtime-sync-oplog" />
+    <orderEntry type="module" module-name="mongodb-driver" />
   </component>
 </module>

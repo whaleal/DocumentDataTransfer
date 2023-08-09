@@ -13,7 +13,7 @@
  *
  * For more information, visit the official website: [www.whaleal.com]
  */
-package com.whaleal.ddt.metadata.target;
+package com.whaleal.ddt.sync.metadata.target;
 
 import com.alibaba.fastjson2.JSON;
 import com.mongodb.BasicDBObject;
@@ -23,7 +23,8 @@ import com.mongodb.client.model.CreateCollectionOptions;
 import com.mongodb.client.model.CreateViewOptions;
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.UpdateOptions;
-import com.whaleal.ddt.connection.MongoDBConnection;
+
+import com.whaleal.ddt.sync.connection.MongoDBConnection;
 import com.whaleal.ddt.util.ParserMongoStructureUtil;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;

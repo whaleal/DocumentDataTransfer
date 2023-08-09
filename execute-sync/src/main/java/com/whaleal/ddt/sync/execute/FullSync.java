@@ -15,11 +15,12 @@
  */
 package com.whaleal.ddt.sync.execute;
 
+import com.whaleal.ddt.common.Datasource;
 import com.whaleal.ddt.sync.cache.MemoryCache;
-import com.whaleal.ddt.connection.Datasource;
-import com.whaleal.ddt.connection.MongoDBConnection;
-import com.whaleal.ddt.metadata.MongoDBClusterManager;
-import com.whaleal.ddt.metadata.source.MongoDBMetadata;
+
+import com.whaleal.ddt.sync.connection.MongoDBConnection;
+import com.whaleal.ddt.sync.metadata.MongoDBClusterManager;
+import com.whaleal.ddt.sync.metadata.source.MongoDBMetadata;
 import com.whaleal.ddt.sync.task.generate.GenerateSourceTask;
 import com.whaleal.ddt.sync.task.generate.Range;
 import com.whaleal.ddt.sync.task.generate.SubmitSourceTask;
