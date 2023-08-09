@@ -193,7 +193,7 @@ public class HostInfoUtil {
                 Map<String, Object> diskIOInfoMap = new HashMap<>();
                 diskIOInfoMap.put("name", disk.getName());
                 diskIOInfoMap.put("readBytes", disk.getReadBytes());
-                diskIOInfoMap.put("WriteBytes", disk.getWriteBytes());
+                diskIOInfoMap.put("writeBytes", disk.getWriteBytes());
                 log.info("diskInfo:" + JSON.toJSONString(diskIOInfoMap));
             }
         } catch (Exception ignored) {
@@ -238,7 +238,7 @@ public class HostInfoUtil {
                     networkMap.get(networkIF.getName()).put("bytesSent", bytesSent - oldS);
                 }
                 for (Map.Entry<String, Map<String, Object>> entry : networkMap.entrySet()) {
-                    log.info("netInfo:{}", JSON.toJSONString(entry));
+                    log.info("netInfo:{}", JSON.toJSONString(entry.getValue()));
                 }
             }
         } catch (Exception ignored) {

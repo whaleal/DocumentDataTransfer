@@ -17,7 +17,7 @@ package com.whaleal.ddt.sync.parse.ns;
 
 import com.whaleal.ddt.sync.cache.MetadataOplog;
 import com.mongodb.client.MongoClient;
-import com.whaleal.ddt.sync.connection.MongoDBConnection;
+import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
 import com.whaleal.ddt.status.WorkStatus;
 import com.whaleal.ddt.task.CommonTask;
 import lombok.extern.log4j.Log4j2;
@@ -63,7 +63,7 @@ public class ParseOplogNs extends CommonTask {
         this.dbTableWhite = dbTableWhite;
         this.workName = workName;
         this.metadataOplog = MetadataOplog.getOplogMetadata(workName);
-        this.mongoClient = MongoDBConnection.getMongoClient(dsName);
+        this.mongoClient = MongoDBConnectionSync.getMongoClient(dsName);
         this.maxQueueSizeOfNs = maxQueueSizeOfNs;
         this.isDropDataBase = isDropDataBase;
     }

@@ -21,7 +21,7 @@ import com.mongodb.MongoNamespace;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.*;
 import com.whaleal.ddt.cache.BatchDataEntity;
-import com.whaleal.ddt.sync.connection.MongoDBConnection;
+import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
 import com.whaleal.ddt.util.ParserMongoStructureUtil;
 import com.whaleal.ddt.status.WorkStatus;
 import com.whaleal.ddt.task.CommonTask;
@@ -49,7 +49,7 @@ public abstract class BucketOplog extends CommonTask implements ParseOplogInterf
         this.ddlSet = ddlSet;
         this.workName = workName;
         this.ddlWait = ddlWait;
-        this.mongoClient = MongoDBConnection.getMongoClient(dsName);
+        this.mongoClient = MongoDBConnectionSync.getMongoClient(dsName);
     }
 
     /**

@@ -23,7 +23,7 @@ import com.mongodb.client.model.InsertOneModel;
 import com.mongodb.client.model.WriteModel;
 import com.whaleal.ddt.cache.BatchDataEntity;
 import com.whaleal.ddt.sync.cache.MemoryCache;
-import com.whaleal.ddt.sync.connection.MongoDBConnection;
+import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
 import com.whaleal.ddt.status.WorkStatus;
 import com.whaleal.ddt.sync.task.SourceTaskInfo;
 import com.whaleal.ddt.task.CommonTask;
@@ -85,7 +85,7 @@ public class FullSyncReadTask extends CommonTask {
         // 调用父类的构造函数，初始化工作名称和数据源名称
         super(workName, dsName);
         // 获取对应数据源的MongoDB连接客户端
-        this.mongoClient = MongoDBConnection.getMongoClient(dsName);
+        this.mongoClient = MongoDBConnectionSync.getMongoClient(dsName);
         // 初始化其他成员变量
         this.taskMetadata = taskMetadata;
         this.dataBatchSize = dataBatchSize;

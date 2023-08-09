@@ -21,7 +21,7 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.whaleal.ddt.sync.cache.MetadataOplog;
-import com.whaleal.ddt.sync.connection.MongoDBConnection;
+import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
 import com.whaleal.ddt.status.WorkStatus;
 import com.whaleal.ddt.task.CommonTask;
 import lombok.extern.log4j.Log4j2;
@@ -104,8 +104,8 @@ public class ReadOplog extends CommonTask {
         this.workName = workName;
         this.delayTime = delayTime;
         this.metadataOplog = MetadataOplog.getOplogMetadata(workName);
-        this.mongoClient = MongoDBConnection.getMongoClient(dsName);
-        this.dbVersion = MongoDBConnection.getVersion(dsName);
+        this.mongoClient = MongoDBConnectionSync.getMongoClient(dsName);
+        this.dbVersion = MongoDBConnectionSync.getVersion(dsName);
     }
 
 

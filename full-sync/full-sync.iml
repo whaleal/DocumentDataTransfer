@@ -34,5 +34,9 @@
     <orderEntry type="library" name="Maven: net.java.dev.jna:jna:4.5.2" level="project" />
     <orderEntry type="library" name="Maven: com.whaleal.icefrog:icefrog-all:1.1.7" level="project" />
     <orderEntry type="module" module-name="mongodb-driver" />
+    <orderEntry type="library" name="Maven: org.mongodb:mongodb-driver-reactivestreams:4.10.2" level="project" />
+    <orderEntry type="library" name="Maven: org.reactivestreams:reactive-streams:1.0.4" level="project" />
+    <orderEntry type="library" name="Maven: io.projectreactor:reactor-core:3.5.0" level="project" />
+    <orderEntry type="library" name="Maven: io.reactivex.rxjava3:rxjava:3.1.6" level="project" />
   </component>
 </module>

@@ -18,7 +18,7 @@ package com.whaleal.ddt.sync.execute;
 import com.whaleal.ddt.common.Datasource;
 import com.whaleal.ddt.sync.cache.MetadataOplog;
 
-import com.whaleal.ddt.sync.connection.MongoDBConnection;
+import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
 import com.whaleal.ddt.sync.execute.config.WorkInfo;
 import com.whaleal.ddt.sync.parse.ns.ParseOplogNs;
 import com.whaleal.ddt.sync.parse.oplog.BucketOplog;
@@ -114,7 +114,7 @@ public class RealTime {
      * @param url    数据源连接URL
      */
     private void initConnection(String dsName, String url) {
-        MongoDBConnection.createMonoDBClient(dsName, new Datasource(url));
+        MongoDBConnectionSync.createMonoDBClient(dsName, new Datasource(url));
     }
 
     /**
@@ -172,7 +172,7 @@ public class RealTime {
      * @return 分桶操作的任务实例
      */
     private BucketOplog generateOplogNsBucketTask(WorkInfo workInfo) {
-        String version = MongoDBConnection.getVersion(sourceDsName);
+        String version = MongoDBConnectionSync.getVersion(sourceDsName);
         // 高版本 要对update的oplog特殊处理
         if (version.startsWith("5") || version.startsWith("6") || version.startsWith("7") || version.startsWith("8")) {
             return new BucketOplogForGteMongoDB5(workName, targetDsName, workInfo.getBucketNum(), workInfo.getClusterInfoSet(), workInfo.getDdlWait());
@@ -223,8 +223,8 @@ public class RealTime {
         // 清除gc
         //
         // 关闭连接池
-        MongoDBConnection.close(sourceDsName);
-        MongoDBConnection.close(targetDsName);
+        MongoDBConnectionSync.close(sourceDsName);
+        MongoDBConnectionSync.close(targetDsName);
         // 关闭线程池
         ThreadPoolManager.destroy(readOplogThreadPoolName);
         ThreadPoolManager.destroy(parseNSThreadPoolName);

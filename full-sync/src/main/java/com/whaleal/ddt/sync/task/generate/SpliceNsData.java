@@ -21,7 +21,7 @@ import com.mongodb.MongoNamespace;
 import com.mongodb.client.MongoClient;
 
 import com.whaleal.ddt.common.Datasource;
-import com.whaleal.ddt.sync.connection.MongoDBConnection;
+import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
 import com.whaleal.ddt.common.BsonTypeMap;
 import lombok.extern.log4j.Log4j2;
 import org.bson.Document;
@@ -62,7 +62,7 @@ public class SpliceNsData {
     public SpliceNsData(String dsName, int mbSize) {
         this.mbSize = mbSize;
         this.dsName = dsName;
-        this.mongoClient = MongoDBConnection.getMongoClient(dsName);
+        this.mongoClient = MongoDBConnectionSync.getMongoClient(dsName);
     }
 
     /**
@@ -277,7 +277,7 @@ public class SpliceNsData {
 
 
     public static void main(String[] args) {
-        MongoDBConnection.createMonoDBClient("test", new Datasource("mongodb://192.168.12.200:24578"));
+        MongoDBConnectionSync.createMonoDBClient("test", new Datasource("mongodb://192.168.12.200:24578"));
         SpliceNsData spliceNsData = new SpliceNsData("test", 16);
         final List<Range> rangeList = spliceNsData.getRangeList("doc.lhp6");
         for (Range range : rangeList) {

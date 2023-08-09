@@ -22,7 +22,7 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.CreateCollectionOptions;
-import com.whaleal.ddt.sync.connection.MongoDBConnection;
+import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
 import com.whaleal.ddt.util.ParserMongoStructureUtil;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
@@ -49,7 +49,7 @@ public class MongoDBMetadata {
 
     public MongoDBMetadata(String dsName) {
         this.dsName = dsName;
-        this.client = MongoDBConnection.getMongoClient(dsName);
+        this.client = MongoDBConnectionSync.getMongoClient(dsName);
     }
 
     /**

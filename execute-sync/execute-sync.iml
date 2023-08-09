@@ -36,5 +36,9 @@
     <orderEntry type="module" module-name="full-sync" />
     <orderEntry type="module" module-name="realtime-sync-oplog" />
     <orderEntry type="module" module-name="mongodb-driver" />
+    <orderEntry type="library" name="Maven: org.mongodb:mongodb-driver-reactivestreams:4.10.2" level="project" />
+    <orderEntry type="library" name="Maven: org.reactivestreams:reactive-streams:1.0.4" level="project" />
+    <orderEntry type="library" name="Maven: io.projectreactor:reactor-core:3.5.0" level="project" />
+    <orderEntry type="library" name="Maven: io.reactivex.rxjava3:rxjava:3.1.6" level="project" />
   </component>
 </module>

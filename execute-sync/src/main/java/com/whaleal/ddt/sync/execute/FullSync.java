@@ -18,7 +18,7 @@ package com.whaleal.ddt.sync.execute;
 import com.whaleal.ddt.common.Datasource;
 import com.whaleal.ddt.sync.cache.MemoryCache;
 
-import com.whaleal.ddt.sync.connection.MongoDBConnection;
+import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
 import com.whaleal.ddt.sync.metadata.MongoDBClusterManager;
 import com.whaleal.ddt.sync.metadata.source.MongoDBMetadata;
 import com.whaleal.ddt.sync.task.generate.GenerateSourceTask;
@@ -227,7 +227,7 @@ public class FullSync {
      * @param url    数据库的URL。
      */
     private void initConnection(String dsName, String url) {
-        MongoDBConnection.createMonoDBClient(dsName, new Datasource(url));
+        MongoDBConnectionSync.createMonoDBClient(dsName, new Datasource(url));
     }
 
     /**
@@ -258,8 +258,8 @@ public class FullSync {
         // 清除gc
         memoryCache.gcMemoryCache();
         // 关闭连接池
-        MongoDBConnection.close(sourceDsName);
-        MongoDBConnection.close(targetDsName);
+        MongoDBConnectionSync.close(sourceDsName);
+        MongoDBConnectionSync.close(targetDsName);
         // 关闭线程池
         ThreadPoolManager.destroy(readThreadPoolName);
         ThreadPoolManager.destroy(writeThreadPoolName);

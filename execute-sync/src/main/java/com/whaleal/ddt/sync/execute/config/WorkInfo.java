@@ -17,7 +17,7 @@ package com.whaleal.ddt.sync.execute.config;
 
 
 import com.alibaba.fastjson2.JSON;
-import com.whaleal.ddt.sync.connection.MongoDBConnection;
+import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
 import com.whaleal.ddt.util.HostInfoUtil;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -139,8 +139,8 @@ public class WorkInfo implements Cloneable, Serializable {
         {
             // 打印工作配置信息 主要对url 账号密码加密处理
             Document document = Document.parse(JSON.toJSONString(this));
-            document.append("sourceDsUrl", MongoDBConnection.printAndGetURLInfo(this.getWorkName(), this.getSourceDsUrl()));
-            document.append("targetDsUrl", MongoDBConnection.printAndGetURLInfo(this.getWorkName(), this.getTargetDsUrl()));
+            document.append("sourceDsUrl", MongoDBConnectionSync.printAndGetURLInfo(this.getWorkName(), this.getSourceDsUrl()));
+            document.append("targetDsUrl", MongoDBConnectionSync.printAndGetURLInfo(this.getWorkName(), this.getTargetDsUrl()));
             return document.toJson();
         }
     }

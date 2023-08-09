@@ -24,7 +24,7 @@ import com.mongodb.client.model.CreateViewOptions;
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.UpdateOptions;
 
-import com.whaleal.ddt.sync.connection.MongoDBConnection;
+import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
 import com.whaleal.ddt.util.ParserMongoStructureUtil;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
@@ -56,7 +56,7 @@ public class ApplyMongoDBMetadata {
 
     public ApplyMongoDBMetadata(String dsName, int createIndexThreadNum, long createIndexTimeOut) {
         this.dsName = dsName;
-        this.client = MongoDBConnection.getMongoClient(dsName);
+        this.client = MongoDBConnectionSync.getMongoClient(dsName);
         this.createIndexThreadNum = createIndexThreadNum;
         this.createIndexTimeOut = createIndexTimeOut;
     }
