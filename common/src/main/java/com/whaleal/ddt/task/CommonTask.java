@@ -40,14 +40,14 @@ public abstract class CommonTask implements Runnable {
     protected CommonTask(String workName, String dsName) {
         this.workName = workName;
         this.dsName = dsName;
-        printCopyRight();
+        copyRight();
     }
 
     protected CommonTask(String workName) {
         this.workName = workName;
     }
 
-    public static void printCopyRight() {
+    public static void copyRight() {
         // 版本信息
         log.info(
                 "\n" +

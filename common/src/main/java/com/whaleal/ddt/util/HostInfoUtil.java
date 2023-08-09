@@ -59,7 +59,7 @@ public class HostInfoUtil {
             while (true) {
                 try {
                     // 30s输出一次主机信息
-                    TimeUnit.MINUTES.sleep(30);
+                    TimeUnit.SECONDS.sleep(30);
                     printHostInfo();
                 } catch (Exception ignored) {
 
@@ -74,7 +74,7 @@ public class HostInfoUtil {
         final Thread thread = new Thread(() -> {
             while (true) {
                 try {
-                    TimeUnit.MINUTES.sleep(10);
+                    TimeUnit.SECONDS.sleep(10);
                     boolean isLimitTemp = false;
                     // 10s判断一下 是否要进行限速代码
                     if (computeJvmMemoryOverLoad() || computeHostMemoryOverLoad()) {

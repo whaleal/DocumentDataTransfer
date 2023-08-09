@@ -61,7 +61,7 @@ public class Execute {
                 "See the GNU General Public License and SSPL for more details.\n" +
                 "  \n" +
                 "For more information, visit the official website: [www.whaleal.com]");
-        CommonTask.printCopyRight();
+        CommonTask.copyRight();
     }
 
 
@@ -120,6 +120,7 @@ public class Execute {
             workInfo.setStartOplogTime((int) (System.currentTimeMillis() / 1000));
             workInfo.setWorkName(workName + "_full");
             startFullSync(workInfo);
+            workInfo.setStartTime(System.currentTimeMillis());
             // 设置新的任务的时区
             // Q: 增量任务 也可以加上进度百分比
             // A: 已在ReadOplog 增加进度百分比
@@ -132,6 +133,7 @@ public class Execute {
             workInfo.setStartOplogTime((int) (System.currentTimeMillis() / 1000));
             workInfo.setWorkName(workName + "_full");
             startFullSync(workInfo);
+            workInfo.setStartTime(System.currentTimeMillis());
             // 设置新的任务的时区
             workInfo.setWorkName(workName + "_realTime");
             startRealTime(workInfo);
@@ -171,6 +173,7 @@ public class Execute {
             while (true) {
                 try {
                     log.info("{} 此全量任务预计传输{}条数据", workInfo.getWorkName(), allNsDocumentCount);
+                    log.info("{} current task queue cache status:{}", workInfo.getWorkName(), taskQueue.size());
                     // 每隔10秒输出一次信息
                     TimeUnit.SECONDS.sleep(10);
                     // 输出缓存区运行情况
