@@ -99,7 +99,7 @@ public abstract class BucketOplog extends CommonTask implements ParseOplogInterf
             try {
                 // 判断任务状态
                 if (WorkStatus.getWorkStatus(this.workName) == WorkStatus.WORK_STOP) {
-                    log.info("{} 线程{}退出执行解析bucket", workName, Thread.currentThread().getName());
+                    log.info("{} the {} thread exits from parsing the bucket", workName, Thread.currentThread().getName());
                     break;
                 }
                 if (WorkStatus.getWorkStatus(this.workName) == WorkStatus.WORK_PAUSE) {

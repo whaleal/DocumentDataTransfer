@@ -85,13 +85,13 @@ public class GenerateSourceTask extends CommonTask {
                 break;
             }
             // 输出日志，表示开始切分指定数据源的表数据
-            log.info("{} 开始切分NS {}的表数据", workName, ns);
+            log.info("{} the table data of NS {} is shred", workName, ns);
             // 创建 SpliceNsData 对象，并指定切分大小为32（可以根据实际情况配置）
             SpliceNsData spliceNsData = new SpliceNsData(dsName, 32);
             // 获取数据源切分后的任务范围列表
             List<Range> rangeList = spliceNsData.getRangeList(ns);
             // 输出日志，表示生成了多少个任务
-            log.info("{} {}生成{}个任务", workName, ns, rangeList.size());
+            log.info("{} {} generates {} tasks", workName, ns, rangeList.size());
             // 遍历任务范围列表，并将每个任务放入任务队列中
             for (Range range : rangeList) {
                 range.setNs(ns);

@@ -16,8 +16,8 @@
 package com.whaleal.ddt.sync.task.generate;
 
 import com.whaleal.ddt.sync.task.SourceTaskInfo;
-import com.whaleal.ddt.task.CommonTask;
 import com.whaleal.ddt.sync.task.read.FullSyncReadTask;
+import com.whaleal.ddt.task.CommonTask;
 import com.whaleal.ddt.thread.pool.ThreadPoolManager;
 import lombok.extern.log4j.Log4j2;
 
@@ -126,7 +126,7 @@ public class SubmitSourceTask extends CommonTask {
         sourceTaskInfo.setStartTime(System.currentTimeMillis());
         sourceTaskInfo.setEndTime(0);
         // 输出日志，表示提交了一个任务
-        log.info("提交任务:" + sourceTaskInfo.toString());
+        log.info("{} submit task:{}", workName, sourceTaskInfo.toString());
         // 提交读取任务到线程池中执行，使用线程池管理器进行任务提交
         ThreadPoolManager.submit(readThreadPoolName, new FullSyncReadTask(workName, dsName, batchSize, sourceTaskInfo));
     }

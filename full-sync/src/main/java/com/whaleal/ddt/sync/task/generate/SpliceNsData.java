@@ -91,7 +91,7 @@ public class SpliceNsData {
                         .projection(new BasicDBObject().append("_id", 1)).first();
                 // 判断某类型的主键是否有数据
                 if (document != null) {
-                    log.info("{} {}表存在_id类型为:{}", dsName, ns, next.getKey());
+                    log.info("{} {} the _id type of the table is:{}", dsName, ns, next.getKey());
                     Range range = getMaxAndMinIdByNs(ns, type);
                     typeMap.put(type, range);
                 }
@@ -234,7 +234,7 @@ public class SpliceNsData {
         // 查询改表的collStats
         Document collStats = mongoClient.getDatabase(mongoNamespace.getDatabaseName()).runCommand(new Document("collStats", mongoNamespace.getCollectionName()));
         collStats.remove("wiredTiger");
-        log.info("{} ns集合状态信息:{}", dsName, collStats.toJson());
+        log.info("{} ns collection status information:{}", dsName, collStats.toJson());
         // 可以任务没有数据
         if (!collStats.containsKey("avgObjSize")) {
             return 10240;
@@ -261,7 +261,7 @@ public class SpliceNsData {
         MongoNamespace mongoNamespace = new MongoNamespace(ns);
         long count = mongoClient.getDatabase(mongoNamespace.getDatabaseName()).getCollection(mongoNamespace.getCollectionName()).estimatedDocumentCount();
         int batchSize = computeBatchSize(ns);
-        log.info("{} ns中预估数据量:{},预计每批数据{}条", dsName, count, batchSize);
+        log.info("{} estimated amount of data in ns :{}, each batch of data is expected to {}", dsName, count, batchSize);
         if (count > 0) {
             Map<Integer, Range> map = getIdTypes(ns);
             for (Map.Entry<Integer, Range> next : map.entrySet()) {

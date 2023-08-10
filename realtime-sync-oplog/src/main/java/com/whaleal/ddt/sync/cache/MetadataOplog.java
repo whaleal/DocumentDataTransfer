@@ -271,7 +271,7 @@ public final class MetadataOplog {
             }
             // 最多等待某个轮询操作600秒
             if (System.currentTimeMillis() - startWaitTime > 1000L * ddlWait) {
-                log.error("{} 正在判断ns数据是否解析完成时发生异常：等待超时{}秒", workName, ddlWait);
+                log.error("{} an exception occurred while determining whether the ns data has been parsed: Wait timeout {} seconds", workName, ddlWait);
                 break;
             } else {
                 try {
@@ -302,7 +302,7 @@ public final class MetadataOplog {
                     log.error(e.getMessage());
                 }
                 if (currentTime - startWaitTime > 1000L * ddlWait) {
-                    log.error("{} 正在判断ns数据是否解析完成时发生异常：等待超时{}秒", workName, ddlWait);
+                    log.error("{} an exception occurred while determining whether the ns data has been parsed: Wait timeout {} seconds", workName, ddlWait);
                     break;
                 }
                 continue;
@@ -316,7 +316,7 @@ public final class MetadataOplog {
                 boolean pre = atomicBoolean.get();
                 // CAS操作
                 if (!queue.isEmpty()) {
-                    log.warn("ns: {} 剩余 {} 条数据尚未执行", dbTableName, queue.size());
+                    log.warn("ns: {} remaining {} data has not been executed", dbTableName, queue.size());
                 }
                 if (queue.isEmpty() && !pre && atomicBoolean.compareAndSet(false, true)) {
                     // 已经获取到此ns的锁
@@ -341,7 +341,7 @@ public final class MetadataOplog {
             }
             // 最多等待某个轮询操作600秒
             if (currentTime - startWaitTime > 1000L * ddlWait) {
-                log.error("{} 正在判断ns数据是否解析完成时发生异常：等待超时{}秒", workName, ddlWait);
+                log.error("{} an exception occurred while determining whether the ns data has been parsed: Wait timeout {} seconds", workName, ddlWait);
                 break;
             } else {
                 try {
@@ -364,9 +364,9 @@ public final class MetadataOplog {
      */
     public long printCacheInfo(long workStartTime, long executeCountOld) {
         try {
-            log.info("{} 当前一共读取oplog个数:{}", workName, readNum.sum());
+            log.info("{} the total number of oplog read currently:{}", workName, readNum.sum());
 
-            log.info("{} 当前总缓存个数:{}", workName, getTotalCacheNum());
+            log.info("{} the current total number of caches:{}", workName, getTotalCacheNum());
 
             log.info("{} the current number of real-time synchronization caches:{}", workName, queueOfOplog.size());
 

@@ -40,6 +40,28 @@ public class MongoDBReader {
 
         // 选择数据库和集合
         MongoDatabase database = mongoClient.getDatabase("doc");
+        database.runCommand(new Document()).subscribe(new Subscriber<Document>() {
+            @Override
+            public void onSubscribe(Subscription subscription) {
+
+            }
+
+            @Override
+            public void onNext(Document document) {
+
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
+
         final FindPublisher<Document> lhp6 = database.getCollection("lhp6").find();
 
         try {

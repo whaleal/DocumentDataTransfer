@@ -210,7 +210,7 @@ public class ReadOplog extends CommonTask {
                     lastOplogTs = (BsonTimestamp) document.get("ts");
                     readNum = 0;
                     log.info("{} current read oplog time:{}", workName, lastOplogTs.getTime());
-                    log.info("{} 当前oplog延迟时间:{} s", workName, Math.abs(System.currentTimeMillis() / 1000F - lastOplogTs.getTime()));
+                    log.info("{} current oplog delay time:{} s", workName, Math.abs(System.currentTimeMillis() / 1000F - lastOplogTs.getTime()));
                     // q: 如果后面一直没有数据的话，这个信息就一直不打印。确实会出现日志不全的问题
                     // a: 为避免主线程的业务侵入性，暂时取舍。若是一直无oplog那就不打印罢了
 
@@ -222,7 +222,7 @@ public class ReadOplog extends CommonTask {
                         if (percentage < 0) {
                             percentage = 0;
                         }
-                        log.info("{} 当前增量进度{}%", workName, percentage);
+                        log.info("{} current incremental progress{}%", workName, percentage);
                     }
                 }
 

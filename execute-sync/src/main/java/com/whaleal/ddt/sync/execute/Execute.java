@@ -16,14 +16,14 @@
 package com.whaleal.ddt.sync.execute;
 
 
+import com.whaleal.ddt.status.WorkStatus;
 import com.whaleal.ddt.sync.cache.MemoryCache;
 import com.whaleal.ddt.sync.cache.MetadataOplog;
 import com.whaleal.ddt.sync.execute.config.Property;
 import com.whaleal.ddt.sync.execute.config.WorkInfo;
 import com.whaleal.ddt.sync.execute.config.WorkInfoGenerator;
-import com.whaleal.ddt.status.WorkStatus;
-import com.whaleal.ddt.task.CommonTask;
 import com.whaleal.ddt.sync.task.generate.Range;
+import com.whaleal.ddt.task.CommonTask;
 import com.whaleal.ddt.util.HostInfoUtil;
 import lombok.extern.log4j.Log4j2;
 
@@ -72,7 +72,7 @@ public class Execute {
      */
     public static void main(String[] args) {
         // 设置配置文件的路径
-       // Property.setFileName("/Users/liheping/Desktop/project/DocumentDataTransfer/execute/src/main/resources/mongodbT.properties");
+        // Property.setFileName("/Users/liheping/Desktop/project/DocumentDataTransfer/execute/src/main/resources/mongodbT.properties");
 
         // 检查是否传入了正确的启动参数
         if (args.length == 1) {
@@ -109,9 +109,11 @@ public class Execute {
         String workName = workInfo.getWorkName();
         // 根据同步模式选择不同的启动方式
         if (workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL)) {
+            workInfo.setWorkName(workName + "_full");
             // 全量同步模式
             startFullSync(workInfo);
         } else if (workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_REAL_TIME)) {
+            workInfo.setWorkName(workName + "_realTime");
             // 实时同步模式
             startRealTime(workInfo);
         } else if (workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL_AND_INCREMENT)) {
@@ -172,7 +174,7 @@ public class Execute {
             long writeCountOld = 0L;
             while (true) {
                 try {
-                    log.info("{} 此全量任务预计传输{}条数据", workInfo.getWorkName(), allNsDocumentCount);
+                    log.info("{} this full task is expected to transfer {} bars of data", workInfo.getWorkName(), allNsDocumentCount);
                     log.info("{} current task queue cache status:{}", workInfo.getWorkName(), taskQueue.size());
                     // 每隔10秒输出一次信息
                     TimeUnit.SECONDS.sleep(10);

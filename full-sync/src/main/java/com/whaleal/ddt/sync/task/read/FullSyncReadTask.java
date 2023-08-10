@@ -101,7 +101,7 @@ public class FullSyncReadTask extends CommonTask {
         while (!this.scanOver) {
             try {
                 // 输出日志，标识开始执行源任务
-                log.info("{} 开始执行源任务: {}", this.workName, this.taskMetadata.toString());
+                log.info("{} the source task starts: {}", this.workName, this.taskMetadata.toString());
                 if (WorkStatus.getWorkStatus(this.workName) == WorkStatus.WORK_STOP) {
                     // 如果工作状态为停止，则跳出循环，结束任务执行
                     break;
@@ -113,7 +113,7 @@ public class FullSyncReadTask extends CommonTask {
             } catch (Exception e) {
                 // 发生异常时，打印错误信息
                 e.printStackTrace();
-                log.error("{} 读取全量数据失败: {}", this.workName, e.getMessage());
+                log.error("{} failed to read the full data. Procedure: {}", this.workName, e.getMessage());
             } finally {
                 // 设置taskMetadata的结束时间，后期会使用到该参数
                 this.taskMetadata.setEndTime(System.currentTimeMillis());
@@ -123,7 +123,7 @@ public class FullSyncReadTask extends CommonTask {
         // 计算任务执行时间
         long timeDiff = (this.taskMetadata.getEndTime() - this.taskMetadata.getStartTime());
         // 输出日志，标识源任务查询完成
-        log.info("{} 源任务查询完成: {}, 使用时间 {} 毫秒, 读取 {} 条数据"
+        log.info("{} source task query completed: {}, the time is {} milliseconds, read {} data"
                 , this.workName, this.taskMetadata.toString(), timeDiff, this.readNum);
     }
 
@@ -178,7 +178,7 @@ public class FullSyncReadTask extends CommonTask {
         } catch (Exception e) {
             // 发生异常时，打印错误信息
             e.printStackTrace();
-            log.error("{} 读取 [{}] 数据时发生错误, 错误信息: {}", this.workName, range.toString(), e.getMessage());
+            log.error("{} error message occurred while reading [{}] data:{}", this.workName, range.toString(), e.getMessage());
             Range rangeTemp = new Range();
             rangeTemp.setMinValue(minValueTemp);
             rangeTemp.setMaxValue(range.getMaxValue());

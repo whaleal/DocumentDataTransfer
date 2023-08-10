@@ -87,7 +87,7 @@ public class FullSyncWriteTask extends CommonTask {
                 }
             } catch (Exception e) {
                 // 发生异常时，打印错误信息
-                log.error("{} 写入数据时发生错误，错误信息:{}", workName, e.getMessage());
+                log.error("{} an error occurred while writing data. Error message:{}", workName, e.getMessage());
             }
         }
     }
@@ -116,13 +116,13 @@ public class FullSyncWriteTask extends CommonTask {
             } catch (MongoBulkWriteException e) {
                 // 如果写入出现异常，打印错误信息
                 for (BulkWriteError error : e.getWriteErrors()) {
-                    log.error("ns:{},写入数据失败:{}", ns, error.getMessage());
+                    log.error("ns:{},data write failure:{}", ns, error.getMessage());
                 }
-                log.error("ns:{},写入数据失败:{}", ns, WriteModelUtil.writeModelToString(writeModel));
+                log.error("ns:{},Ddata write failure:{}", ns, WriteModelUtil.writeModelToString(writeModel));
             } catch (Exception e) {
                 // 如果写入出现其他异常，打印错误信息
-                log.error("ns:{},写入数据失败:{}", ns, e.getMessage());
-                log.error("ns:{},写入数据失败:{}", ns, WriteModelUtil.writeModelToString(writeModel));
+                log.error("ns:{},data write failure:{}", ns, e.getMessage());
+                log.error("ns:{},data write failure:{}", ns, WriteModelUtil.writeModelToString(writeModel));
             }
         }
         return successWriteNum;
