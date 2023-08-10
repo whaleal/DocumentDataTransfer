@@ -15,6 +15,7 @@
  */
 package com.whaleal.ddt.sync.cache;
 
+import com.alibaba.fastjson2.JSON;
 import com.whaleal.ddt.cache.BatchDataEntity;
 import lombok.Data;
 import lombok.ToString;
@@ -376,7 +377,7 @@ public final class MetadataOplog {
 
             log.info("{} current number of synchronization tables:{}", workName, getQueueOfNsMap().size());
 
-            log.info("{} number of executions:{}", workName, bulkWriteInfo);
+            log.info("{} number of executions:{}", workName, JSON.toJSONString(bulkWriteInfo));
 
             long exeCount = sumBulkWriteInfo();
             log.info("{} total number of execution items:{},average write speed:{} per/s",

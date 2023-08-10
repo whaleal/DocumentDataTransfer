@@ -177,7 +177,7 @@ public class HostInfoUtil {
                 stackList.add(stackTraceElement.toString());
             }
             threadInfoMap.put("stack", stackList);
-            log.info("threadInfo:{}", JSON.toJSONString(threadInfoMap));
+           // log.info("threadInfo:{}", JSON.toJSONString(threadInfoMap));
         }
     }
 

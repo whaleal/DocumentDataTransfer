@@ -208,13 +208,13 @@ public class FullSync {
         while (ThreadPoolManager.getActiveThreadNum(writeThreadPoolName) > 0) {
             try {
                 TimeUnit.SECONDS.sleep(10);
-                log.info("{} 等待写入线程退出", workName);
+                log.info("{} wait for the write thread to exit", workName);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
             // 等待1小时
             if (System.currentTimeMillis() - startTime > (3600 * 1000L)) {
-                log.error("{} 等待写入线程退出:超时1小时,强制退出", workName);
+                log.error("{} wait for the write thread to exit: The write thread is forced to exit after a timeout of one hour", workName);
                 break;
             }
         }

@@ -264,6 +264,7 @@ public class MemoryCache {
         } catch (Exception e) {
             log.error("{} error getting full program execution,msg:{}", workName, e.getMessage());
         }
+
         return 0L;
     }
 }
