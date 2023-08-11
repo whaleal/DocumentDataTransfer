@@ -24,7 +24,7 @@
 //import com.mongodb.client.model.BulkWriteOptions;
 //import com.mongodb.client.model.WriteModel;
 //import com.whaleal.ddt.cache.BatchDataEntity;
-//import com.whaleal.ddt.cache.MetadataOplog;
+//import com.whaleal.ddt.cache.MetadataEvent;
 //import com.whaleal.ddt.status.WorkStatus;
 //import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
 //import com.whaleal.ddt.task.CommonTask;
@@ -51,7 +51,7 @@
 //    /**
 //     * oplog元数据库类
 //     */
-//    private final MetadataOplog metadataOplog;
+//    private final MetadataEvent metadataOplog;
 //    /**
 //     * mongoClient
 //     */
@@ -63,7 +63,7 @@
 //
 //    public RealTimeSyncWriteData(String workName, String dsName, int bucketSize) {
 //        super(workName, dsName);
-//        this.metadataOplog = MetadataOplog.getOplogMetadata(workName);
+//        this.metadataOplog = MetadataEvent.getOplogMetadata(workName);
 //        this.dsName = dsName;
 //        this.mongoClient = MongoDBConnectionSync.getMongoClient(dsName);
 //        this.workName = workName;
