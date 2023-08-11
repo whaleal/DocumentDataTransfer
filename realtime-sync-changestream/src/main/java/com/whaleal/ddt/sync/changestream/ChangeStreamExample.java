@@ -22,13 +22,9 @@ public class ChangeStreamExample {
         //todo 是否可以条件筛选,fullDocument相关参数,
         //1. 操作的类型如何筛选，筛选namespace，时间问题确认一下
 
-//        List<Bson> pipeline = singletonList(
-//                Aggregates.match(Filters.and(
-//                        Document.parse("{'ns.coll': 'doc.test'}")
-//                )));
 
-        ChangeStreamIterable<Document> changeStream = mongoClient.watch()
-                .fullDocument(FullDocument.UPDATE_LOOKUP);
+
+        ChangeStreamIterable<Document> changeStream = mongoClient.watch();
         // 创建ChangeStream
         try (MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = changeStream.cursor()) {
             while (cursor.hasNext()) {

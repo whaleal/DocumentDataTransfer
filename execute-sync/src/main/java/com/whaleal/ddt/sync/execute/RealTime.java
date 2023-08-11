@@ -24,7 +24,7 @@ import com.whaleal.ddt.sync.parse.oplog.BucketOplog;
 import com.whaleal.ddt.sync.parse.oplog.BucketOplogForGteMongoDB5;
 import com.whaleal.ddt.sync.parse.oplog.BucketOplogForLtMongoDB5;
 import com.whaleal.ddt.sync.read.ReadOplog;
-import com.whaleal.ddt.sync.write.RealTimeSyncWriteData;
+import com.whaleal.ddt.sync.write.RealTimeWriteOplogData;
 import com.whaleal.ddt.thread.pool.ThreadPoolManager;
 import lombok.extern.log4j.Log4j2;
 
@@ -148,8 +148,8 @@ public class RealTime {
 
         //  写入线程
         for (int i = 0; i < writeThreadNum; i++) {
-            RealTimeSyncWriteData realTimeSyncWriteData = new RealTimeSyncWriteData(workName, targetDsName, workInfo.getBucketSize());
-            createTask(writeThreadPoolName, realTimeSyncWriteData);
+            RealTimeWriteOplogData realTimeWriteOplogData = new RealTimeWriteOplogData(workName, targetDsName, workInfo.getBucketSize());
+            createTask(writeThreadPoolName, realTimeWriteOplogData);
         }
         // 分桶线程
         for (int i = 0; i < nsBucketThreadNum; i++) {

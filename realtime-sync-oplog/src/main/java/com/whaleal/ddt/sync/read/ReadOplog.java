@@ -20,8 +20,8 @@ import com.mongodb.CursorType;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
-import com.whaleal.ddt.status.WorkStatus;
 import com.whaleal.ddt.sync.cache.MetadataOplog;
+import com.whaleal.ddt.status.WorkStatus;
 import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
 import com.whaleal.ddt.task.CommonTask;
 import lombok.extern.log4j.Log4j2;
@@ -207,6 +207,7 @@ public class ReadOplog extends CommonTask {
                 if (readNum++ > 102400 || (((BsonTimestamp) document.get("ts")).getTime() - lastOplogTs.getTime() > 60)) {
                     // 记录当前oplog的时间
                     lastOplogTs = (BsonTimestamp) document.get("ts");
+                    docTime = (BsonTimestamp) document.get("ts");
                     readNum = 0;
                     log.info("{} current read oplog time:{}", workName, lastOplogTs.getTime());
                     log.info("{} current oplog delay time:{} s", workName, Math.abs(System.currentTimeMillis() / 1000F - lastOplogTs.getTime()));
@@ -284,7 +285,6 @@ public class ReadOplog extends CommonTask {
                     // 保留本次oplog的ts读取时间
                     metadataOplog.getQueueOfOplog().put(document);
                     metadataOplog.getReadNum().add(1);
-                    docTime = (BsonTimestamp) document.get("ts");
                 }
             }
             // 如果程序能够正常走到这里 则代表查询完毕 更新程序的状态
