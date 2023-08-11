@@ -80,13 +80,13 @@ public class HostInfoUtil {
                     if (computeJvmMemoryOverLoad() || computeHostMemoryOverLoad()) {
                         isLimit = true;
                         Runtime.getRuntime().gc();
-                        log.info("D2T 内存负载过大,启动限速");
+                        log.info("D2T description The memory is overloaded, and the rate limit is enabled");
                         isLimitTemp = true;
                     }
                     if (computeJvmCpuOverLoad() || computeHostCpuOverLoad()) {
                         isLimit = true;
                         Runtime.getRuntime().gc();
-                        log.info("D2T cpu负载过大,启动限速");
+                        log.info("D2T the cpu is overloaded, and the rate limit is enabled. Procedure");
                         isLimitTemp = true;
                     }
                     if (!isLimitTemp) {
@@ -329,7 +329,7 @@ public class HostInfoUtil {
     public static boolean computeHostCpuOverLoad() {
         OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
         double cpuLoad = osBean.getSystemCpuLoad() * 100;
-        log.info("当前host cpu使用率:{}", cpuLoad);
+        log.info("current host cpu usage:{}", cpuLoad);
         return cpuLoad > WARNING_THRESHOLD;
     }
 
@@ -342,7 +342,7 @@ public class HostInfoUtil {
     public static boolean computeJvmCpuOverLoad() {
         OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
         double cpuLoad = osBean.getProcessCpuLoad() * 100;
-        log.info("当前java cpu使用率:{}", cpuLoad);
+        log.info("current java cpu usage:{}", cpuLoad);
         return cpuLoad > WARNING_THRESHOLD;
     }
 
@@ -362,7 +362,7 @@ public class HostInfoUtil {
         long usedPhysicalMemorySize = totalPhysicalMemorySize - freePhysicalMemorySize;
         // 计算内存使用百分比
         double memoryUsagePercentage = (usedPhysicalMemorySize * 100.0) / totalPhysicalMemorySize;
-        log.info("当前host 内存使用率:{}", memoryUsagePercentage);
+        log.info("current host memory usage:{}", memoryUsagePercentage);
         return memoryUsagePercentage > WARNING_THRESHOLD;
     }
 
@@ -382,7 +382,7 @@ public class HostInfoUtil {
         // 计算内存使用百分比
         double memoryUsagePercentage = (usedMemory * 100.0) / totalMemory;
         // 计算内存使用率
-        log.info("当前java堆栈使用率:{}", memoryUsagePercentage);
+        log.info("current java stack usage:{}", memoryUsagePercentage);
         return memoryUsagePercentage > WARNING_THRESHOLD;
     }
 }

@@ -50,6 +50,7 @@ public abstract class BucketOplog extends CommonTask implements ParseOplogInterf
         this.workName = workName;
         this.ddlWait = ddlWait;
         this.mongoClient = MongoDBConnectionSync.getMongoClient(dsName);
+
     }
 
     /**
@@ -161,10 +162,6 @@ public abstract class BucketOplog extends CommonTask implements ParseOplogInterf
 
     public void parseDDL(Document document) {
         try {
-            // 把数据推到下一层级
-            putDataToCache();
-            // 已经推送给下级的DDL 全部已经处理完
-            metadataOplog.waitWriteData();
             // 当处理DDL时候 已经把所有数据推到下一层级
             Document o = (Document) document.get("o");
             // DDL 强制进行等待全部数据写入操作

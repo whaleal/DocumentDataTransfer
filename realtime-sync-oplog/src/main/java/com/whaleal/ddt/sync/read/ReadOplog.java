@@ -20,9 +20,9 @@ import com.mongodb.CursorType;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
+import com.whaleal.ddt.status.WorkStatus;
 import com.whaleal.ddt.sync.cache.MetadataOplog;
 import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
-import com.whaleal.ddt.status.WorkStatus;
 import com.whaleal.ddt.task.CommonTask;
 import lombok.extern.log4j.Log4j2;
 import org.bson.BsonTimestamp;
@@ -76,7 +76,7 @@ public class ReadOplog extends CommonTask {
     /**
      * 是否同步DDL
      */
-    private final boolean filterDdl;
+    private final boolean captureDDL;
     /**
      * oplog元数据库类保存数据信息的地方
      */
@@ -95,9 +95,9 @@ public class ReadOplog extends CommonTask {
      */
     public BsonTimestamp lastOplogTs = new BsonTimestamp(0);
 
-    public ReadOplog(String workName, String dsName, boolean isFilterDdl, String dbTableWhite, int startTimeOfOplog, int endTimeOfOplog, int delayTime) {
+    public ReadOplog(String workName, String dsName, boolean captureDDL, String dbTableWhite, int startTimeOfOplog, int endTimeOfOplog, int delayTime) {
         super(workName, dsName);
-        this.filterDdl = isFilterDdl;
+        this.captureDDL = captureDDL;
         this.dbTableWhite = dbTableWhite;
         this.endTimeOfOplog = endTimeOfOplog;
         this.startTimeOfOplog = startTimeOfOplog;
@@ -183,17 +183,16 @@ public class ReadOplog extends CommonTask {
         //   Q：读取全部数据，会造成带宽浪费
         //   A：增加正则表达式读取ns
         // 不为全部库表
-        if (!".+".equals(dbTableWhite)) {
+        if (!(".+").equals(dbTableWhite)) {
             String regexStr = "(" + dbTableWhite + ")";
-//            if (filterDdl) {
-                // 读取所有的cmd和所有的system表
-                // system 跟视图 时许表 及3.2中的建立索引有关系
-                regexStr += "|(.+\\.\\$cmd)|(.+\\.system\\..+)";
-//            }
+            // 读取所有的cmd和所有的system表
+            // system 跟视图 时许表 及3.2中的建立索引有关系
+            regexStr += "|(.+\\.\\$cmd)|(.+\\.system\\..+)";
             condition.append("ns", new Document("$regex", regexStr));
         }
         log.info("{} the conditions for reading oplog.rs :{}", workName, condition.toJson());
-        int readNum = 0;
+
+        int readNum = 1024000;
         try {
             MongoCollection oplogCollection = mongoClient.getDatabase("local").getCollection("oplog.rs");
             MongoCursor<Document> cursor =
@@ -224,13 +223,12 @@ public class ReadOplog extends CommonTask {
                         }
                         log.info("{} current incremental progress{}%", workName, percentage);
                     }
-                }
-
-
-                // 判断是否在窗口期范围内
-                if (lastOplogTs.getTime() < startTimeOfOplog) {
-                    log.error("{} failed to read oplog: missed sliding window time oplog is overwritten, this program is about to exit", workName);
-                    WorkStatus.updateWorkStatus(workName, WorkStatus.WORK_STOP);
+                    // 读取的第一条数据，一定会进来
+                    // 判断是否在窗口期范围内
+                    if (lastOplogTs.getTime() < startTimeOfOplog) {
+                        log.error("{} failed to read oplog: missed sliding window time oplog is overwritten, this program is about to exit", workName);
+                        WorkStatus.updateWorkStatus(workName, WorkStatus.WORK_STOP);
+                    }
                 }
 
 
@@ -267,7 +265,9 @@ public class ReadOplog extends CommonTask {
                 if (!ns.matches(dbTableWhite)) {
                     // 没有通过库表过滤,则进入判断是否通过ddl判断
                     // cmd的进行下一级步骤进行过滤
-                    if (!filterDdl || !"c".equals(document.get("op"))) {
+                    if (captureDDL && "c".equals(document.get("op"))) {
+                        // cmd的进行下一级步骤进行过滤
+                    } else {
                         continue;
                     }
                 }

@@ -15,10 +15,10 @@
  */
 package com.whaleal.ddt.sync.parse.ns;
 
-import com.whaleal.ddt.sync.cache.MetadataOplog;
 import com.mongodb.client.MongoClient;
-import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
 import com.whaleal.ddt.status.WorkStatus;
+import com.whaleal.ddt.sync.cache.MetadataOplog;
+import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
 import com.whaleal.ddt.task.CommonTask;
 import lombok.extern.log4j.Log4j2;
 import org.bson.Document;
@@ -53,19 +53,15 @@ public class ParseOplogNs extends CommonTask {
      * 每个ns队列最大缓存个数
      */
     private final int maxQueueSizeOfNs;
-    /**
-     * 是否执行删库操作
-     */
-    private boolean isDropDataBase = false;
 
-    public ParseOplogNs(String workName, String dbTableWhite, String dsName, int maxQueueSizeOfNs, boolean isDropDataBase) {
+
+    public ParseOplogNs(String workName, String dbTableWhite, String dsName, int maxQueueSizeOfNs) {
         super(workName, dsName);
         this.dbTableWhite = dbTableWhite;
         this.workName = workName;
         this.metadataOplog = MetadataOplog.getOplogMetadata(workName);
         this.mongoClient = MongoDBConnectionSync.getMongoClient(dsName);
         this.maxQueueSizeOfNs = maxQueueSizeOfNs;
-        this.isDropDataBase = isDropDataBase;
     }
 
     @Override
@@ -175,6 +171,8 @@ public class ParseOplogNs extends CommonTask {
             Document updateIndexInfo = new Document();
             updateIndexInfo.put("op", "updateIndexInfo");
             metadataOplog.getQueueOfNsMap().get(fullDbTableName).put(updateIndexInfo);
+            // 保证DDL顺序性问题
+            metadataOplog.waitCacheExe();
         }
         metadataOplog.getQueueOfNsMap().get(fullDbTableName).put(document);
         if (isDDL) {
@@ -207,6 +205,7 @@ public class ParseOplogNs extends CommonTask {
             // Q: 可以加上此功能
             // A: convertToCapped=drop+create
         } else if (o.get("dropDatabase") != null) {
+            //此方法 不会用到 删除的语句 会变成删除n个删除表语句
             parseDropDataBase(document);
         } else if (o.get("collMod") != null) {
             return parseCollMod(document);
@@ -237,20 +236,6 @@ public class ParseOplogNs extends CommonTask {
      */
     public void parseDropDataBase(Document document) {
         // 此方法 不会用到 删除的语句 会变成删除n个删除表语句
-        String ns = document.get("ns").toString();
-        String[] nsSplit = ns.split("\\.", 2);
-        String dbName = nsSplit[0];
-        if (!(dbName + ".").matches(dbTableWhite)) {
-            return;
-        }
-        log.warn("{} drop database operation:{}", workName, document.toJson());
-        if (isDropDataBase) {
-            // 等待缓存中数据写完
-            metadataOplog.waitCacheExe();
-            // 后续数据都写入后 进行删库操作
-            mongoClient.getDatabase(dbName).drop();
-            log.warn("{} the drop database operation is complete:{}", workName, dbName);
-        }
     }
 
     /**

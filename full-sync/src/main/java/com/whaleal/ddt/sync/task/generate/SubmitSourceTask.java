@@ -82,6 +82,7 @@ public class SubmitSourceTask extends CommonTask {
     @Override
     public void execute() {
         // 循环执行任务提交，直到满足退出条件
+        int submitTaskNum = 0;
         while (true) {
             try {
                 // 获取当前活跃的读取线程数量
@@ -104,6 +105,7 @@ public class SubmitSourceTask extends CommonTask {
                 }
                 // 提交源任务到线程池中执行
                 submitSourceTask(poll, batchSize);
+                log.info("{} total number of submitted read tasks:{}", workName, ++submitTaskNum);
             } catch (Exception ignored) {
                 // 忽略异常
             }

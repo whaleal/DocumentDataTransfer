@@ -15,7 +15,6 @@
  */
 package com.whaleal.ddt.sync.cache;
 
-import com.alibaba.fastjson2.JSON;
 import com.whaleal.ddt.cache.BatchDataEntity;
 import lombok.Data;
 import lombok.ToString;
@@ -230,16 +229,16 @@ public final class MetadataOplog {
 
 
     public void waitCacheExe() {
-        waitWriteData();
+        waitPushDataWriteOver();
         waitOplogNsBucketTask();
-        waitWriteData();
+        waitPushDataWriteOver();
         waitOplogNsBucketTask();
     }
 
     /**
      * 在执行DDL之前等待数据写入完成
      */
-    public void waitWriteData() {
+    private void waitPushDataWriteOver() {
         long startWaitTime = System.currentTimeMillis();
         // 已经获取到的ns的csa锁的Set集合
         Set<Integer> bucketSet = new HashSet<>();
@@ -247,9 +246,14 @@ public final class MetadataOplog {
             for (Map.Entry<Integer, BlockingQueue<BatchDataEntity>> next : queueOfBucketMap.entrySet()) {
                 // 桶号
                 Integer bucketNum = next.getKey();
+                final BlockingQueue<BatchDataEntity> queue = next.getValue();
                 AtomicBoolean atomicBoolean = stateOfBucketMap.get(bucketNum);
                 boolean pre = atomicBoolean.get();
-                if (next.getValue().isEmpty() && (!pre) && atomicBoolean.compareAndSet(false, true)) {
+                // CAS操作
+                if (!queue.isEmpty()) {
+                    log.warn("bucket: {} remaining {} data has not been executed", bucketNum, queue.size());
+                }
+                if (queue.isEmpty() && (!pre) && atomicBoolean.compareAndSet(false, true)) {
                     // 已经获取到此ns的锁
                     bucketSet.add(bucketNum);
                     // 释放锁
@@ -267,12 +271,12 @@ public final class MetadataOplog {
                 }
             }
             // 已经获取到了全部key的锁 && 缓存中没有数据了
-            if (isAll && cacheQueueOfNsDataNum() == 0) {
+            if (isAll && cacheBucketQueueDataNum() == 0) {
                 break;
             }
             // 最多等待某个轮询操作600秒
             if (System.currentTimeMillis() - startWaitTime > 1000L * ddlWait) {
-                log.error("{} an exception occurred while determining whether the ns data has been parsed: Wait timeout {} seconds", workName, ddlWait);
+                log.error("{} an exception occurred while determining whether the bucket data has been parsed: Wait timeout {} seconds", workName, ddlWait);
                 break;
             } else {
                 try {
@@ -294,20 +298,6 @@ public final class MetadataOplog {
         // 已经获取到的ns的csa锁的Set集合
         Set<String> nsSet = new HashSet<>();
         while (true) {
-            long currentTime = System.currentTimeMillis();
-            if (cacheQueueOfNsDataNum() > 0) {
-                try {
-                    TimeUnit.SECONDS.sleep(1);
-                } catch (Exception e) {
-                    // 无需处理
-                    log.error(e.getMessage());
-                }
-                if (currentTime - startWaitTime > 1000L * ddlWait) {
-                    log.error("{} an exception occurred while determining whether the ns data has been parsed: Wait timeout {} seconds", workName, ddlWait);
-                    break;
-                }
-                continue;
-            }
             for (Map.Entry<String, BlockingQueue<Document>> next : queueOfNsMap.entrySet()) {
                 // 表名
                 String dbTableName = next.getKey();
@@ -341,7 +331,7 @@ public final class MetadataOplog {
                 break;
             }
             // 最多等待某个轮询操作600秒
-            if (currentTime - startWaitTime > 1000L * ddlWait) {
+            if (System.currentTimeMillis() - startWaitTime > 1000L * ddlWait) {
                 log.error("{} an exception occurred while determining whether the ns data has been parsed: Wait timeout {} seconds", workName, ddlWait);
                 break;
             } else {
@@ -377,7 +367,11 @@ public final class MetadataOplog {
 
             log.info("{} current number of synchronization tables:{}", workName, getQueueOfNsMap().size());
 
-            log.info("{} number of executions:{}", workName, JSON.toJSONString(bulkWriteInfo));
+            Document execute = new Document();
+            for (Map.Entry<String, LongAdder> entry : bulkWriteInfo.entrySet()) {
+                execute.append(entry.getKey(), entry.getValue().sum());
+            }
+            log.info("{} number of executions:{}", workName, execute.toJson());
 
             long exeCount = sumBulkWriteInfo();
             log.info("{} total number of execution items:{},average write speed:{} per/s",

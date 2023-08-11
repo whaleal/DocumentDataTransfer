@@ -19,10 +19,9 @@ package com.whaleal.ddt.sync.task.generate;
 import com.mongodb.BasicDBObject;
 import com.mongodb.MongoNamespace;
 import com.mongodb.client.MongoClient;
-
+import com.whaleal.ddt.common.BsonTypeMap;
 import com.whaleal.ddt.common.Datasource;
 import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
-import com.whaleal.ddt.common.BsonTypeMap;
 import lombok.extern.log4j.Log4j2;
 import org.bson.Document;
 
@@ -78,7 +77,7 @@ public class SpliceNsData {
         Map<Integer, Range> typeMap = new HashMap<>();
         MongoNamespace mongoNamespace = new MongoNamespace(ns);
         BasicDBObject basicDBObject = new BasicDBObject();
-        for (Map.Entry<String,Integer> next : BsonTypeMap.getMongodbTypeMemberMap().entrySet()) {
+        for (Map.Entry<String, Integer> next : BsonTypeMap.getMongodbTypeMemberMap().entrySet()) {
             int type = next.getValue();
             // 过滤不可能为主键数据的类型
 //            if (type == 4 || type == 6 || type == 10 || type == 12 || type == -1 || type == 127) {
@@ -243,7 +242,16 @@ public class SpliceNsData {
         long avgObjSize = Long.parseLong(collStats.get("avgObjSize").toString());
         try {
             // 最大一批数据 一百万一批数据
-            return Math.round(Math.min(mbSize * 1024L * 1024L / (avgObjSize + 0.0F), 999)) + 1;
+            int batchSize = Math.round(mbSize * 1024L * 1024L / (avgObjSize + 0.0F));
+            // 100万
+            if (batchSize >= 1024000) {
+                return 1024000;
+            }
+            // 1千
+            if (batchSize <= 1024) {
+                return 1024;
+            }
+            return batchSize;
         } catch (Exception e) {
             return 10240;
         }

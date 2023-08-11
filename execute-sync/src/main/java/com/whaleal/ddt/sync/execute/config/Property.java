@@ -66,7 +66,7 @@ public class Property {
                 String strValue = pps.getProperty(strKey).trim();
                 propertiesMap.put(strKey, strValue);
             }
-            log.info(propertiesMap.toString());
+            //log.info(propertiesMap.toString());
         } catch (Exception e) {
             log.error("Failed to read configuration file:fileName:" + fileName + ",exception:" + e.getMessage());
         }

@@ -17,7 +17,6 @@ package com.whaleal.ddt.sync.execute;
 
 import com.whaleal.ddt.common.Datasource;
 import com.whaleal.ddt.sync.cache.MemoryCache;
-
 import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
 import com.whaleal.ddt.sync.metadata.MongoDBClusterManager;
 import com.whaleal.ddt.sync.metadata.source.MongoDBMetadata;
@@ -127,7 +126,7 @@ public class FullSync {
 
         LinkedBlockingQueue<String> nsQueue = new LinkedBlockingQueue<>(new MongoDBMetadata(sourceDsName).getNSList(dbTableWhite));
         // 3个线程去切分 暂时3线程切分 性能尚可
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < HostInfoUtil.computeTotalCpuCore()/2; i++) {
             GenerateSourceTask generateSourceTask = new GenerateSourceTask(workName, sourceDsName,
                     isGenerateSourceTaskInfoOver, taskQueue, parallelSync,
                     nsQueue);

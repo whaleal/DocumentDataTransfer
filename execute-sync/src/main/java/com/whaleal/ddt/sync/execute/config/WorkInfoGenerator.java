@@ -25,21 +25,17 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * 工作信息生成器，用于生成WorkInfo对象
- * 该类负责从配置文件中读取参数，构造WorkInfo对象，并打印配置信息
+ * Work Information Generator - Used to generate WorkInfo objects
+ * This class is responsible for reading parameters from the configuration file,
+ * constructing WorkInfo objects, and printing configuration information.
  */
 @Log4j2
 public class WorkInfoGenerator {
 
-    /**
-     * 定义一个DDL操作集合，用于过滤需要同步的DDL操作
-     */
-
+    // Define a set of DDL operations for filtering the necessary sync DDL operations
     private static final Set<String> ALL_DDL_SET = new HashSet<>();
 
-    /**
-     * 静态代码块，在类加载时初始化ALL_DDL_SET集合
-     */
+    // Static block to initialize ALL_DDL_SET set during class loading
     static {
         ALL_DDL_SET.add("drop");
         ALL_DDL_SET.add("create");
@@ -50,50 +46,46 @@ public class WorkInfoGenerator {
         ALL_DDL_SET.add("dropDatabase");
     }
 
-    /**
-     * 生成工作信息对象
-     *
-     * @return 生成的工作信息对象WorkInfo
-     */
+    // Generate a work information object
     public static WorkInfo generateWorkInfo() {
-        // 创建一个新的工作信息对象
+        // Create a new work information object
         WorkInfo workInfo = new WorkInfo();
 
-        // 设置工作名称（从配置文件读取，如果为空则自动生成）
+        // Set work name (read from configuration file, generate if empty)
         {
             String workName = Property.getPropertiesByKey("workName");
             if (StrUtil.isBlank(workName)) {
                 workName = "work_" + HostInfoUtil.getHostName() + "_" + HostInfoUtil.getProcessID();
-                log.warn("workName为空,系统自动生成workName为:" + workName);
+                log.warn("workName is empty, system generated workName is: " + workName);
             }
             workInfo.setWorkName(workName);
         }
 
-        // 设置源数据源URL（从配置文件读取）
+        // Set source data source URL (read from configuration file)
         {
             String sourceDsUrl = Property.getPropertiesByKey("sourceDsUrl");
             if (StrUtil.isBlank(sourceDsUrl)) {
-                log.warn("发生严重错误,sourceDsUrl为空,任务将自动退出");
+                log.warn("Serious error occurred, sourceDsUrl is empty, task will exit automatically.");
             } else {
                 workInfo.setSourceDsUrl(sourceDsUrl);
             }
         }
 
-        // 设置目标数据源URL（从配置文件读取）
+        // Set target data source URL (read from configuration file)
         {
             String targetDsUrl = Property.getPropertiesByKey("targetDsUrl");
             if (StrUtil.isBlank(targetDsUrl)) {
-                log.warn("发生严重错误,targetDsUrl为空,任务将自动退出");
+                log.warn("Serious error occurred, targetDsUrl is empty, task will exit automatically.");
             } else {
                 workInfo.setTargetDsUrl(targetDsUrl);
             }
         }
 
-        // 设置同步模式（从配置文件读取，如果为空或不合法则使用默认模式ALL）
+        // Set sync mode (read from configuration file, use default mode ALL if empty or invalid)
         {
             String syncMode = Property.getPropertiesByKey("syncMode");
             if (CharSequenceUtil.isBlank(syncMode)) {
-                log.warn("同步模式为空,采用默认同步模式ALL(全量同步)");
+                log.warn("Sync mode is empty, using default sync mode ALL (full sync).");
                 workInfo.setSyncMode(WorkInfo.SYNC_MODE_ALL);
             } else if (syncMode.equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL) ||
                     syncMode.equalsIgnoreCase(WorkInfo.SYNC_MODE_REAL_TIME) ||
@@ -101,27 +93,27 @@ public class WorkInfoGenerator {
                     syncMode.equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL_AND_INCREMENT)) {
                 workInfo.setSyncMode(syncMode);
             } else {
-                log.warn("同步模式错误,采用默认同步模式ALL(全量同步)");
+                log.warn("Invalid sync mode, using default sync mode ALL (full sync).");
                 workInfo.setSyncMode(WorkInfo.SYNC_MODE_ALL);
             }
         }
 
-        // 设置需要同步的表名（从配置文件读取，如果为空则使用默认值".+"，表示全库全表同步，除了admin、local、config库）
+        // Set tables to be synchronized (read from configuration file, use default value ".+" for full database-table sync except admin, local, config dbs)
         {
             String dbTableWhite = Property.getPropertiesByKey("dbTableWhite");
             if (CharSequenceUtil.isBlank(dbTableWhite)) {
                 workInfo.setDbTableWhite(".+");
-                log.warn("同步表名单为空,采用默认全库全表同步(除:admin,local,config库)");
+                log.warn("Synchronized table list is empty, using default full database-table sync (except: admin, local, config dbs).");
             } else {
                 workInfo.setDbTableWhite(dbTableWhite);
             }
         }
 
-        // 设置需要同步的DDL操作（从配置文件读取，如果为空则不进行任何DDL同步）
+        // Set DDL operations to be synchronized (read from configuration file, do not perform any DDL sync if empty)
         {
             String ddlFilterStr = Property.getPropertiesByKey("ddlFilterSet");
             if (CharSequenceUtil.isBlank(ddlFilterStr)) {
-                log.warn("同步DDL集合为空,则不进行任何DDL同步");
+                log.warn("DDL sync set is empty, no DDL synchronization will be performed.");
                 workInfo.setDdlFilterSet(new HashSet<>());
             } else {
                 String[] split = ddlFilterStr.split(",|，");
@@ -133,11 +125,11 @@ public class WorkInfoGenerator {
                         ddlSet.addAll(ALL_DDL_SET);
                         break;
                     } else {
-                        log.warn("无效的DDL操作名称:" + ddlName);
+                        log.warn("Invalid DDL operation name: " + ddlName);
                     }
                 }
                 if (ddlSet.isEmpty()) {
-                    log.warn("同步DDL集合为空,则不进行任何DDL同步");
+                    log.warn("DDL sync set is empty, no DDL synchronization will be performed.");
                     workInfo.setDdlFilterSet(new HashSet<>());
                 } else {
                     workInfo.setDdlFilterSet(ddlSet);
@@ -145,32 +137,33 @@ public class WorkInfoGenerator {
             }
         }
 
-        // 设置DDL操作的等待时间（从配置文件读取，如果为空或不合法则使用默认值1200秒）
+        // Set wait time for DDL operations (read from configuration file, use default value 1200 seconds if empty or invalid)
         {
             String ddlWait = Property.getPropertiesByKey("ddlWait");
             if (CharSequenceUtil.isBlank(ddlWait) || !ddlWait.matches("\\d+")) {
                 workInfo.setDdlWait(1200);
-                log.warn("ddl等待时间设置错误,使用默认值1200");
+                log.warn("DDL wait time setting is incorrect, using default value 1200.");
             } else {
                 workInfo.setDdlWait(Integer.parseInt(ddlWait));
             }
         }
 
-        // 根据同步模式配置线程数
+        // Configure thread numbers based on sync mode
         if (workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_REAL_TIME) ||
                 workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL_AND_INCREMENT) ||
                 workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL_AND_REAL_TIME)) {
+            // Configure thread numbers for real-time sync
             {
                 String nsBucketThreadNumStr = Property.getPropertiesByKey("nsBucketThreadNum");
                 if (CharSequenceUtil.isBlank(nsBucketThreadNumStr)) {
-                    log.warn("实时同步情况下分桶任务线程数为空,则使用默认值{}", workInfo.getNsBucketThreadNum());
+                    log.warn("Thread number for bucket tasks in real-time sync is empty, using default value: {}", workInfo.getNsBucketThreadNum());
                 } else if (!nsBucketThreadNumStr.matches("\\d+")) {
-                    log.warn("实时同步情况下分桶任务线程数为填写错误,则使用默认值{}", workInfo.getNsBucketThreadNum());
+                    log.warn("Thread number for bucket tasks in real-time sync is incorrectly filled, using default value: {}", workInfo.getNsBucketThreadNum());
                 } else {
                     int nsBucketThreadNum = Integer.parseInt(nsBucketThreadNumStr);
-                    // 设置范围限制，避免线程数过大或过小
+                    // Set limits to avoid excessively large or small thread numbers
                     if (nsBucketThreadNum > 100 || nsBucketThreadNum < 8) {
-                        log.warn("实时同步情况下分桶任务线程数为值错误,则使用默认值{}", workInfo.getNsBucketThreadNum());
+                        log.warn("Thread number for bucket tasks in real-time sync is incorrect, using default value: {}", workInfo.getNsBucketThreadNum());
                     } else {
                         workInfo.setNsBucketThreadNum(nsBucketThreadNum);
                     }
@@ -179,76 +172,74 @@ public class WorkInfoGenerator {
             {
                 String writeThreadNumStr = Property.getPropertiesByKey("writeThreadNum");
                 if (CharSequenceUtil.isBlank(writeThreadNumStr)) {
-                    log.warn("实时同步情况下写入数据任务线程数为空,则使用默认值{}", workInfo.getWriteThreadNum());
+                    log.warn("Thread number for writing data tasks in real-time sync is empty, using default value: {}", workInfo.getWriteThreadNum());
                 } else if (!writeThreadNumStr.matches("\\d+")) {
-                    log.warn("实时同步情况下写入数据任务线程数填写错误,则使用默认值{}", workInfo.getWriteThreadNum());
+                    log.warn("Thread number for writing data tasks in real-time sync is incorrectly filled, using default value: {}", workInfo.getWriteThreadNum());
                 } else {
                     int writeThreadNum = Integer.parseInt(writeThreadNumStr);
-                    // 设置范围限制，避免线程数过大或过小
+                    // Set limits to avoid excessively large or small thread numbers
                     if (writeThreadNum > 100 || writeThreadNum < 8) {
-                        log.warn("实时同步情况下写入数据任务线程数错误,则使用默认值{}", workInfo.getWriteThreadNum());
+                        log.warn("Thread number for writing data tasks in real-time sync is incorrect, using default value: {}", workInfo.getWriteThreadNum());
                     } else {
                         workInfo.setWriteThreadNum(writeThreadNum);
                     }
                 }
             }
-
-
         } else if (workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL) ||
                 workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL_AND_INCREMENT) ||
                 workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL_AND_REAL_TIME)) {
-            // 全量同步情况下的线程数配置
-            // 读取源端任务线程数（从配置文件读取，如果为空或不合法则使用默认值为当前主机CPU核心数的0.25倍）
+            // Configure thread numbers for full sync
+            // Read source-side task thread number (read from configuration file, use default value of 0.25 times the current host's CPU cores)
             String sourceThreadNumStr = Property.getPropertiesByKey("sourceThreadNum");
             if (CharSequenceUtil.isBlank(sourceThreadNumStr)) {
-                log.warn("全量同步情况下读取源端任务线程数为空,则使用默认值{}", Math.round(HostInfoUtil.computeTotalCpuCore() * 0.25F));
+                log.warn("Thread number for source-side tasks in full sync is empty, using default value: {}", Math.round(HostInfoUtil.computeTotalCpuCore() * 0.25F));
                 workInfo.setSourceThreadNum(Math.round(HostInfoUtil.computeTotalCpuCore() * 0.25F));
             } else if (!sourceThreadNumStr.matches("\\d+")) {
-                log.warn("全量同步情况下读取源端任务线程数错误,则使用默认值{}", Math.round(HostInfoUtil.computeTotalCpuCore() * 0.25F));
+                log.warn("Thread number for source-side tasks in full sync is incorrect, using default value: {}", Math.round(HostInfoUtil.computeTotalCpuCore() * 0.25F));
                 workInfo.setSourceThreadNum(Math.round(HostInfoUtil.computeTotalCpuCore() * 0.25F));
             } else {
                 int sourceThreadNum = Integer.parseInt(sourceThreadNumStr);
-                // 设置范围限制，避免线程数过大或过小
+                // Set limits to avoid excessively large or small thread numbers
                 if (sourceThreadNum > 100 || sourceThreadNum < 2) {
-                    log.warn("全量同步情况下读取源端任务线程数错误,则使用默认值{}", Math.round(HostInfoUtil.computeTotalCpuCore() * 0.25F));
+                    log.warn("Thread number for source-side tasks in full sync is incorrect, using default value: {}", Math.round(HostInfoUtil.computeTotalCpuCore() * 0.25F));
                     workInfo.setSourceThreadNum(Math.round(HostInfoUtil.computeTotalCpuCore() * 0.25F));
                 } else {
                     workInfo.setSourceThreadNum(sourceThreadNum);
                 }
             }
 
-            // 写入目标端任务线程数（从配置文件读取，如果为空或不合法则使用默认值为当前主机CPU核心数的0.75倍）
+            // Configure thread numbers for writing to target (read from configuration file, use default value of 0.75 times the current host's CPU cores)
             String targetThreadNumStr = Property.getPropertiesByKey("targetThreadNum");
             if (StrUtil.isBlank(targetThreadNumStr)) {
-                log.warn("全量同步情况下写入到目标端任务线程数为空,则使用默认值{}", Math.round(HostInfoUtil.computeTotalCpuCore() * 0.75F));
+                log.warn("Thread number for writing to target tasks in full sync is empty, using default value: {}", Math.round(HostInfoUtil.computeTotalCpuCore() * 0.75F));
                 workInfo.setTargetThreadNum(Math.round(HostInfoUtil.computeTotalCpuCore() * 0.75F));
             } else if (!targetThreadNumStr.matches("\\d+")) {
-                log.warn("全量同步情况下写入到目标端任务线程数填写错误,则使用默认值{}", Math.round(HostInfoUtil.computeTotalCpuCore() * 0.75F));
+                log.warn("Thread number for writing to target tasks in full sync is incorrectly filled, using default value: {}", Math.round(HostInfoUtil.computeTotalCpuCore() * 0.75F));
                 workInfo.setTargetThreadNum(Math.round(HostInfoUtil.computeTotalCpuCore() * 0.75F));
             } else {
                 int targetThreadNum = Integer.parseInt(targetThreadNumStr);
-                // 设置范围限制，避免线程数过大或过小
+                // Set limits to avoid excessively large or small thread numbers
                 if (targetThreadNum > 100 || targetThreadNum < 4) {
-                    log.warn("全量同步情况下写入到目标端任务线程数填写错误,则使用默认值{}", Math.round(HostInfoUtil.computeTotalCpuCore() * 0.75F));
+                    log.warn("Thread number for writing to target tasks in full sync is incorrect, using default value: {}", Math.round(HostInfoUtil.computeTotalCpuCore() * 0.75F));
                     workInfo.setTargetThreadNum(Math.round(HostInfoUtil.computeTotalCpuCore() * 0.75F));
                 } else {
                     workInfo.setTargetThreadNum(targetThreadNum);
                 }
             }
 
-            // 全量建立索引的参数信息（从配置文件读取，如果为空或不合法则使用默认值为当前主机CPU核心数）
+            // Configure parameters for building indexes during full sync (read from configuration file, use current host's CPU cores)
             String createIndexThreadNumStr = Property.getPropertiesByKey("createIndexThreadNum");
             if (StrUtil.isBlank(createIndexThreadNumStr)) {
-                log.warn("全量同步情况下并发建立索引任务线程数为空,则使用默认值{}", Math.round(HostInfoUtil.computeTotalCpuCore()));
+                log.warn("Concurrent index building thread number in full sync is empty, using default value: {}", Math.round(HostInfoUtil.computeTotalCpuCore()));
                 workInfo.setCreateIndexThreadNum(Math.round(HostInfoUtil.computeTotalCpuCore()));
             } else if (!createIndexThreadNumStr.matches("\\d+")) {
-                log.warn("全量同步情况下并发建立索引任务线程数填写错误,则使用默认值{}", Math.round(HostInfoUtil.computeTotalCpuCore()));
+                log.warn("Concurrent index building thread number in full sync is incorrectly filled, using default value: {}", Math.round(HostInfoUtil.computeTotalCpuCore()));
                 workInfo.setCreateIndexThreadNum(Math.round(HostInfoUtil.computeTotalCpuCore()));
             } else {
                 int createIndexThreadNum = Integer.parseInt(createIndexThreadNumStr);
-                // 设置范围限制，避免线程数过大或过小
+                // Set limits to avoid excessively large or small thread numbers
                 if (createIndexThreadNum > 100 || createIndexThreadNum < 1) {
-                    log.warn("全量同步情况下并发建立索引任务线程数填写错误,则使用默认值{}", Math.round(HostInfoUtil.computeTotalCpuCore()));
+                    log.warn("Concurrent index building thread number in full sync is incorrectly filled, using default value: {}", Math.round(HostInfoUtil.computeTotalCpuCore()));
                     workInfo.setCreateIndexThreadNum(Math.round(HostInfoUtil.computeTotalCpuCore()));
                 } else {
                     workInfo.setCreateIndexThreadNum(createIndexThreadNum);
@@ -256,14 +247,14 @@ public class WorkInfoGenerator {
             }
         }
 
-        // 设置每个缓存区缓存批次数量（从配置文件读取，如果为空或不合法则使用默认值20）
+        // Set batch count for each cache bucket (read from configuration file, use default value 20)
         {
             String cacheBucketSizeStr = Property.getPropertiesByKey("bucketSize");
             if (CharSequenceUtil.isBlank(cacheBucketSizeStr)) {
-                log.warn("每个缓存区缓存批次数量为空,则使用默认值20");
+                log.warn("Batch count for each cache bucket is empty, using default value: 20");
                 workInfo.setBucketSize(20);
             } else if (!cacheBucketSizeStr.matches("\\d+")) {
-                log.warn("每个缓存区缓存批次数量填写错误,则使用默认值20");
+                log.warn("Batch count for each cache bucket is incorrectly filled, using default value: 20");
                 workInfo.setBucketSize(20);
             } else {
                 int cacheBucketSize = Integer.parseInt(cacheBucketSizeStr);
@@ -271,14 +262,14 @@ public class WorkInfoGenerator {
             }
         }
 
-        // 设置缓存区个数（从配置文件读取，如果为空或不合法则使用默认值20）
+        // Set number of cache buckets (read from configuration file, use default value 20)
         {
             String cacheBucketNumStr = Property.getPropertiesByKey("bucketNum");
             if (CharSequenceUtil.isBlank(cacheBucketNumStr)) {
-                log.warn("缓存区个数为空,则使用默认值20");
+                log.warn("Number of cache buckets is empty, using default value: 20");
                 workInfo.setBucketNum(20);
             } else if (!cacheBucketNumStr.matches("\\d+")) {
-                log.warn("缓存区个数填写错误,则使用默认值20");
+                log.warn("Number of cache buckets is incorrectly filled, using default value: 20");
                 workInfo.setBucketNum(20);
             } else {
                 int cacheBucketNum = Integer.parseInt(cacheBucketNumStr);
@@ -286,14 +277,14 @@ public class WorkInfoGenerator {
             }
         }
 
-        // 设置每批次数据的大小（从配置文件读取，如果为空或不合法则使用默认值128）
+        // Set data batch size for each batch (read from configuration file, use default value 128)
         {
             String dataBatchSizeStr = Property.getPropertiesByKey("batchSize");
             if (StrUtil.isBlank(dataBatchSizeStr)) {
-                log.warn("每批次数据的大小为空,则使用默认值128");
+                log.warn("Data batch size for each batch is empty, using default value: 128");
                 workInfo.setBatchSize(128);
             } else if (!dataBatchSizeStr.matches("\\d+")) {
-                log.warn("每批次数据的大小填写错误,则使用默认值128");
+                log.warn("Data batch size for each batch is incorrectly filled, using default value: 128");
                 workInfo.setBatchSize(128);
             } else {
                 int dataBatchSize = Integer.parseInt(dataBatchSizeStr);
@@ -301,14 +292,14 @@ public class WorkInfoGenerator {
             }
         }
 
-        // 设置oplog的开始时间（从配置文件读取，如果为空或不合法则使用默认值为当前时间的秒数）
+        // Set start time for oplog (read from configuration file, use current time in seconds as default value)
         {
             String startOplogTimeStr = Property.getPropertiesByKey("startOplogTime");
             if (StrUtil.isBlank(startOplogTimeStr)) {
-                log.warn("oplog的开始时间为空,则使用默认值当前时间");
+                log.warn("Start time for oplog is empty, using default value: current time");
                 workInfo.setStartOplogTime((int) (System.currentTimeMillis() / 1000));
             } else if (!startOplogTimeStr.matches("\\d+") || startOplogTimeStr.length() != 10) {
-                log.warn("oplog的开始时间错误,则使用默认值当前时间");
+                log.warn("Start time for oplog is incorrect, using default value: current time");
                 workInfo.setStartOplogTime((int) (System.currentTimeMillis() / 1000));
             } else {
                 int startOplogTime = Integer.parseInt(startOplogTimeStr);
@@ -316,14 +307,14 @@ public class WorkInfoGenerator {
             }
         }
 
-        // 设置oplog的结束时间（从配置文件读取，如果为空或不合法则使用默认值0）
+        // Set end time for oplog (read from configuration file, use default value 0)
         {
             String endOplogTimeStr = Property.getPropertiesByKey("endOplogTime");
             if (StrUtil.isBlank(endOplogTimeStr)) {
-                log.warn("oplog的结束时间为空,则使用默认值0");
+                log.warn("End time for oplog is empty, using default value: 0");
                 workInfo.setEndOplogTime(0);
             } else if (!endOplogTimeStr.matches("\\d+") || endOplogTimeStr.length() != 10) {
-                log.warn("oplog的结束时间填写错误,则使用默认值0");
+                log.warn("End time for oplog is incorrectly filled, using default value: 0");
                 workInfo.setEndOplogTime(0);
             } else {
                 int endOplogTime = Integer.parseInt(endOplogTimeStr);
@@ -331,14 +322,14 @@ public class WorkInfoGenerator {
             }
         }
 
-        // 设置延迟时间（从配置文件读取，如果为空或不合法则使用默认值0）
+        // Set delay time (read from configuration file, use default value 0)
         {
             String delayTimeStr = Property.getPropertiesByKey("delayTime");
             if (StrUtil.isBlank(delayTimeStr)) {
-                log.warn("延迟时间为空,则使用默认值0");
+                log.warn("Delay time is empty, using default value: 0");
                 workInfo.setDelayTime(0);
             } else if (!delayTimeStr.matches("\\d+")) {
-                log.warn("延迟时间填写错误,则使用默认值0");
+                log.warn("Delay time is incorrectly filled, using default value: 0");
                 workInfo.setDelayTime(0);
             } else {
                 int delayTime = Integer.parseInt(delayTimeStr);
@@ -346,12 +337,12 @@ public class WorkInfoGenerator {
             }
         }
 
-        // 设置集群信息（从配置文件读取，如果为空则为空集合）
+        // Set cluster information (read from configuration file, empty set if not provided)
         {
             workInfo.setClusterInfoSet(new HashSet<>(Arrays.asList(Property.getPropertiesByKey("clusterInfoSet").split(",|，"))));
         }
 
-        // 返回生成的工作信息对象
+        // Return the generated WorkInfo object
         return workInfo;
     }
 }

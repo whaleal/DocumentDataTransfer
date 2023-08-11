@@ -17,7 +17,6 @@ package com.whaleal.ddt.sync.execute;
 
 import com.whaleal.ddt.common.Datasource;
 import com.whaleal.ddt.sync.cache.MetadataOplog;
-
 import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
 import com.whaleal.ddt.sync.execute.config.WorkInfo;
 import com.whaleal.ddt.sync.parse.ns.ParseOplogNs;
@@ -25,8 +24,8 @@ import com.whaleal.ddt.sync.parse.oplog.BucketOplog;
 import com.whaleal.ddt.sync.parse.oplog.BucketOplogForGteMongoDB5;
 import com.whaleal.ddt.sync.parse.oplog.BucketOplogForLtMongoDB5;
 import com.whaleal.ddt.sync.read.ReadOplog;
-import com.whaleal.ddt.thread.pool.ThreadPoolManager;
 import com.whaleal.ddt.sync.write.RealTimeSyncWriteData;
+import com.whaleal.ddt.thread.pool.ThreadPoolManager;
 import lombok.extern.log4j.Log4j2;
 
 import java.util.concurrent.TimeUnit;
@@ -158,10 +157,11 @@ public class RealTime {
         }
         // 解析ns线程
         ParseOplogNs parseOplogNs = new ParseOplogNs(workName, workInfo.getDbTableWhite(),
-                targetDsName, workInfo.getBatchSize() * workInfo.getBucketSize(), workInfo.getDdlFilterSet().contains("dropDatabase"));
+                targetDsName, workInfo.getBatchSize() * workInfo.getBucketSize());
+
         createTask(parseNSThreadPoolName, parseOplogNs);
         // 读取线程
-        ReadOplog readOplog = new ReadOplog(workName, sourceDsName, !workInfo.getDdlFilterSet().isEmpty(), workInfo.getDbTableWhite(), workInfo.getStartOplogTime(), workInfo.getEndOplogTime(), workInfo.getDelayTime());
+        ReadOplog readOplog = new ReadOplog(workName, sourceDsName, workInfo.getDdlFilterSet().size() > 0, workInfo.getDbTableWhite(), workInfo.getStartOplogTime(), workInfo.getEndOplogTime(), workInfo.getDelayTime());
         createTask(readOplogThreadPoolName, readOplog);
     }
 
@@ -175,9 +175,9 @@ public class RealTime {
         String version = MongoDBConnectionSync.getVersion(sourceDsName);
         // 高版本 要对update的oplog特殊处理
         if (version.startsWith("5") || version.startsWith("6") || version.startsWith("7") || version.startsWith("8")) {
-            return new BucketOplogForGteMongoDB5(workName, targetDsName, workInfo.getBucketNum(), workInfo.getClusterInfoSet(), workInfo.getDdlWait());
+            return new BucketOplogForGteMongoDB5(workName, targetDsName, workInfo.getBucketNum(), workInfo.getDdlFilterSet(), workInfo.getDdlWait());
         } else {
-            return new BucketOplogForLtMongoDB5(workName, targetDsName, workInfo.getBucketNum(), workInfo.getClusterInfoSet(), workInfo.getDdlWait());
+            return new BucketOplogForLtMongoDB5(workName, targetDsName, workInfo.getBucketNum(), workInfo.getDdlFilterSet(), workInfo.getDdlWait());
         }
     }
 

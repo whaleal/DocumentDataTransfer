@@ -15,6 +15,7 @@
         <module>execute-sync</module>
         <module>test</module>
         <module>mongodb-driver</module>
+        <module>realtime-sync-changestream</module>
     </modules>
 
     <properties>

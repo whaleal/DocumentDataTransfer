@@ -54,11 +54,11 @@ public class MongoDBConnectionSync {
     public static synchronized boolean createMonoDBClient(String dsName, Datasource datasource) {
         // 先校验url是否可用
         if (!checkMonoDBConnection(dsName, datasource.getUrl())) {
-            log.error("{}数据库不能正常连接", dsName);
+            log.error("{} the database cannot be connected properly", dsName);
             return false;
         }
         if (MONGODB_CLIENT_MAP.containsKey(dsName)) {
-            log.error("{}数据源已被创建", dsName);
+            log.error("{} the data source has been created", dsName);
             return false;
         } else {
             printAndGetURLInfo(dsName, datasource.getUrl());
@@ -66,7 +66,7 @@ public class MongoDBConnectionSync {
             MongoClient mongoClient = MongoClients.create(datasource.getUrl());
             // 再次检测url是否可达
             if (!checkMonoDBConnection(dsName, mongoClient)) {
-                log.error("{}数据库不能正常连接", dsName);
+                log.error("{} the database cannot be connected properly", dsName);
                 return false;
             }
             MONGODB_CLIENT_MAP.put(dsName, mongoClient);
@@ -120,10 +120,10 @@ public class MongoDBConnectionSync {
             // 没啥用，防止编译器优化掉代码firstNs
             String ns = new MongoNamespace(firstDbName, firstTableName).getFullName();
             if (DEFAULT_NS.getFullName().equalsIgnoreCase(ns) && !isHaveNS) {
-                log.warn("{}该数据源无任何库表,可能会影响MongoT运行", dsName);
+                log.warn("{} this data source does not have any library tables, which may affect MongoT operation", dsName);
             }
         } catch (Exception e) {
-            log.error("{}检查数据源连接性失败:{}", e.getMessage(), dsName);
+            log.error("{} failed to check data source connectivity:{}", e.getMessage(), dsName);
             return false;
         }
         return true;
@@ -152,10 +152,10 @@ public class MongoDBConnectionSync {
             // 没啥用，防止编译器优化掉代码firstNs
             String ns = new MongoNamespace(firstDbName, firstTableName).getFullName();
             if (DEFAULT_NS.getFullName().equalsIgnoreCase(ns) && !isHaveNS) {
-                log.warn("{}该数据源无任何库表,可能会影响MongoT运行", dsName);
+                log.warn("{} this data source does not have any library tables, which may affect MongoT operation", dsName);
             }
         } catch (Exception e) {
-            log.error("{}检查数据源连接性失败:{}", dsName, e.getMessage());
+            log.error("{} failed to check data source connectivity:{}", dsName, e.getMessage());
             return false;
         } finally {
             if (mongoClient != null) {
@@ -187,7 +187,7 @@ public class MongoDBConnectionSync {
         } catch (Exception e) {
             log.error("{} an exception occurred when getting the data source version information,msg:{}", dsName, e.getMessage());
         }
-        log.info("{} 数据源版本信息为:{}", dsName, version);
+        log.info("{} the data source version information is:{}", dsName, version);
         // 默认 使用4.4
         return version;
     }
@@ -201,7 +201,7 @@ public class MongoDBConnectionSync {
             urlInfo.remove("connectionString");
             urlInfo.remove("credential");
             urlInfo.remove("password");
-        }catch (Exception ignored){
+        } catch (Exception ignored) {
         }
 
         urlInfo.append("database", connectionString.getDatabase());
@@ -209,7 +209,7 @@ public class MongoDBConnectionSync {
         urlInfo.append("username", connectionString.getUsername());
 
         if (connectionString.getPassword() != null && connectionString.getPassword().length > 0) {
-            urlInfo.append("password", connectionString.getPassword()[0] + "***加密***" + connectionString.getPassword()[Math.max(0, connectionString.getPassword().length - 1)]);
+            urlInfo.append("password", connectionString.getPassword()[0] + "*** encryption ***" + connectionString.getPassword()[Math.max(0, connectionString.getPassword().length - 1)]);
         }
         log.info("dsName:{},urlInfo:{}", dsName, urlInfo.toJson());
         return urlInfo.toJson().trim();

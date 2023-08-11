@@ -22,5 +22,5 @@ total_memory=$(free -m | grep 'Mem:' | awk '{print $2}')
 # 计算最大堆内存大小为主机内存的80%
 max_heap_size=$((total_memory * 80 / 100))M
 
-nohup java -Xmx$max_heap_size -jar ../execute-1.0-SNAPSHOT.jar ../config/DDT.properties >/dev/null 2>&1 &
+nohup java -Xmx$max_heap_size -jar ../execute-sync-1.0-SNAPSHOT.jar ../config/DDT.properties >/dev/null 2>&1 &
 echo $! >DDT.pid

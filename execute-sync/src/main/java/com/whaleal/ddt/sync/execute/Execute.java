@@ -72,14 +72,14 @@ public class Execute {
      */
     public static void main(String[] args) {
         // 设置配置文件的路径
-        // Property.setFileName("/Users/liheping/Desktop/project/DocumentDataTransfer/execute/src/main/resources/mongodbT.properties");
+        Property.setFileName("/Users/liheping/Desktop/project/DocumentDataTransfer/execute-sync/src/main/resources/DDT.properties");
 
         // 检查是否传入了正确的启动参数
         if (args.length == 1) {
             // 如果只传入一个参数，则将该参数作为配置文件的路径
             if (args[0] == null || args[0].length() == 0) {
                 // 输出错误信息
-                log.error("请正确输入配置文件的路径");
+                log.error("enter the correct path to the configuration file");
                 return;
             }
             Property.setFileName(args[0]);
@@ -88,7 +88,7 @@ public class Execute {
             // (根据代码这里是空的，可能还有其他处理逻辑)
         } else {
             // 参数数量错误，输出错误信息
-            log.info("启动参数错误");
+            log.error("start parameter error");
         }
 
         // 生成工作信息
@@ -122,11 +122,12 @@ public class Execute {
             workInfo.setStartOplogTime((int) (System.currentTimeMillis() / 1000));
             workInfo.setWorkName(workName + "_full");
             startFullSync(workInfo);
-            workInfo.setStartTime(System.currentTimeMillis());
+
             // 设置新的任务的时区
             // Q: 增量任务 也可以加上进度百分比
             // A: 已在ReadOplog 增加进度百分比
             workInfo.setEndOplogTime((int) (System.currentTimeMillis() / 1000));
+            workInfo.setStartTime(System.currentTimeMillis());
             workInfo.setWorkName(workName + "_realTime");
             startRealTime(workInfo);
         } else if (workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL_AND_REAL_TIME)) {
@@ -149,7 +150,7 @@ public class Execute {
      */
     private static void startFullSync(final WorkInfo workInfo) {
         Runnable runnable = () -> {
-            log.info("开启启动任务:{},任务配置信息:" + workInfo.getWorkName(), workInfo.toString());
+            log.info("enable Start task :{}, task configuration information :{}", workInfo.getWorkName(), workInfo.toString());
             // 设置程序状态为运行中
             WorkStatus.updateWorkStatus(workInfo.getWorkName(), WorkStatus.WORK_RUN);
             // 生成缓存区数据
@@ -217,7 +218,7 @@ public class Execute {
      */
     private static void startRealTime(final WorkInfo workInfo) {
         Runnable runnable = () -> {
-            log.info("开启启动任务:{},任务配置信息:" + workInfo.getWorkName(), workInfo.toString());
+            log.info("enable Start task :{}, task configuration information :{}", workInfo.getWorkName(), workInfo.toString());
             // 设置程序状态为运行中
             WorkStatus.updateWorkStatus(workInfo.getWorkName(), WorkStatus.WORK_RUN);
             // 缓存区对线
@@ -232,7 +233,6 @@ public class Execute {
             long executeCountOld = 0L;
             while (true) {
                 try {
-
                     // 每隔10秒输出一次信息
                     TimeUnit.SECONDS.sleep(10);
                     // 输出线程运行情况
