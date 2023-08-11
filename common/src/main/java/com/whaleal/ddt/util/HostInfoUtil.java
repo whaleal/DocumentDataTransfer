@@ -177,7 +177,7 @@ public class HostInfoUtil {
                 stackList.add(stackTraceElement.toString());
             }
             threadInfoMap.put("stack", stackList);
-           // log.info("threadInfo:{}", JSON.toJSONString(threadInfoMap));
+            log.info("threadInfo:{}", JSON.toJSONString(threadInfoMap));
         }
     }
 
@@ -269,8 +269,8 @@ public class HostInfoUtil {
         try {
             printCPU();
             printMemory();
-            printThreadInfo();
-            printDiskIOInfo();
+            // printThreadInfo();
+           // printDiskIOInfo();
             printNetIOInfo();
         } catch (Exception ignored) {
 
