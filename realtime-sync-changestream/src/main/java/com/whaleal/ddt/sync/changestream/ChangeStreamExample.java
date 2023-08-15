@@ -12,21 +12,24 @@ import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
+import java.util.ArrayList;
 import java.util.List;
-
-import static java.util.Collections.singletonList;
 
 public class ChangeStreamExample {
     public static void main(String[] args) {
 
-        MongoClient mongoClient = MongoClients.create("mongodb://192.168.12.200:24578");
+        MongoClient mongoClient = MongoClients.create("mongodb://192.168.12.100:27600");
         //todo 是否可以条件筛选,fullDocument相关参数,
         //1. 操作的类型如何筛选，筛选namespace，时间问题确认一下
 
-        List<Bson> pipeline = singletonList(
-                Aggregates.match(Filters.and(new Document("clusterTime", new Document().append("$gte", new BsonTimestamp(1691997970, 0)))
-                )));
+        List<Bson> pipeline = new ArrayList<>();
 
+
+        pipeline.add(Aggregates.match(Filters.and(new Document("clusterTime", new Document().append("$gte", new BsonTimestamp((int) (System.currentTimeMillis()/1000), 0))))));
+
+//        pipeline.add(new Document("$addFields", new Document("nsToString", new Document("$toString", "$ns"))));
+
+//        pipeline.add(new Document("$match", new Document("nsToString", "doc.lhp")));
 
         ChangeStreamIterable<Document> changeStream = mongoClient.watch(pipeline);
 
@@ -39,10 +42,12 @@ public class ChangeStreamExample {
                 ChangeStreamDocument<Document> changeEvent = cursor.next();
 
                 System.out.println(changeEvent.getOperationType().getValue());
+
                 if (changeEvent.getOperationType().getValue().equals("update")) {
-                    System.out.println(JSON.toJSONString(changeEvent.getUpdateDescription()));
-//                    changeEvent.getUpdateDescription().getTruncatedArrays().
+                    System.out.println(changeEvent.getUpdateDescription());
+                    System.out.println(changeEvent.getUpdateDescription().getTruncatedArrays());
                 }
+
 
             }
         } catch (Exception e) {

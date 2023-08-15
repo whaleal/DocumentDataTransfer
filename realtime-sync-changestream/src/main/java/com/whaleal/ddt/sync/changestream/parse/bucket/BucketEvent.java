@@ -15,12 +15,11 @@ package com.whaleal.ddt.sync.changestream.parse.bucket;/*
  */
 
 
+import com.mongodb.MongoNamespace;
 import com.mongodb.client.MongoClient;
-import com.mongodb.client.model.DeleteOneModel;
-import com.mongodb.client.model.InsertOneModel;
-import com.mongodb.client.model.ReplaceOneModel;
-import com.mongodb.client.model.WriteModel;
+import com.mongodb.client.model.*;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
+import com.mongodb.client.model.changestream.UpdateDescription;
 import com.whaleal.ddt.cache.BatchDataEntity;
 import com.whaleal.ddt.status.WorkStatus;
 import com.whaleal.ddt.sync.changestream.cache.MetadataEvent;
@@ -92,7 +91,7 @@ public class BucketEvent extends CommonTask implements ParseEventInterface {
 
     @Override
     public void execute() {
-        log.info("{} the oplog bucketing thread starts running", workName);
+        log.info("{} the changeStream bucketing thread starts running", workName);
         exe();
     }
 
@@ -149,7 +148,7 @@ public class BucketEvent extends CommonTask implements ParseEventInterface {
                             // 解析后把数据放入下一层级
                             putDataToCache();
                         } catch (Exception e) {
-                            log.error("{} {} an error occurred in the bucketing thread of oplog, the error message:{}", workName, dbTableName, e.getMessage());
+                            log.error("{} {} an error occurred in the bucketing thread of changeStream, the error message:{}", workName, dbTableName, e.getMessage());
                         } finally {
                             // 释放'锁'
                             atomicBoolean.set(false);
@@ -157,7 +156,7 @@ public class BucketEvent extends CommonTask implements ParseEventInterface {
                     }
                 }
             } catch (Exception e) {
-                log.error("{} an error occurred in the bucketing thread of oplog, the error message:{}", workName, e.getMessage());
+                log.error("{} an error occurred in the bucketing thread of changeStream, the error message:{}", workName, e.getMessage());
             }
         }
     }
@@ -167,6 +166,17 @@ public class BucketEvent extends CommonTask implements ParseEventInterface {
             // 当处理DDL时候 已经把所有数据推到下一层级
             String operationType = changeStreamEvent.getOperationTypeString();
             // todo 暂时放在这里 不处理
+            switch (operationType) {
+                case DROP_TABLE:
+                    parseDropTable(changeStreamEvent);
+                    break;
+                case RENAME_COLLECTION:
+                    parseRenameTable(changeStreamEvent);
+                    break;
+                default:
+                    // Handle default case if needed
+                    break;
+            }
         } catch (Exception e) {
             log.error("{} failed to perform DDL operation:{},reason for failure:{}", workName, changeStreamEvent.toString(), e.getMessage());
         } finally {
@@ -241,27 +251,33 @@ public class BucketEvent extends CommonTask implements ParseEventInterface {
                 if (changeStreamEvent == null) {
                     break;
                 }
-                // todo
                 String op = changeStreamEvent.getOperationTypeString();
-                if ("insert".equals(op)) {
-                    parseInsert(changeStreamEvent);
-                } else if ("update".equals(op)) {
-                    parseUpdate(changeStreamEvent);
-                } else if ("replace".equals(op)) {
-                    parseReplace(changeStreamEvent);
-                } else if ("delete".equals(op)) {
-                    parseDelete(changeStreamEvent);
-                } else if ("updateIndexInfo".equals(op)) {
-                    // 更新此表的唯一索引情况
-                    updateUniqueIndexCount(currentDbTable);
-                } else {
-                    // 其他的都当做DDL处理
-                    // 设置标识位：当前正在处理的DDL oplog
-                    metadataEvent.getCurrentNsDealOplogInfo().put(currentDbTable, changeStreamEvent);
-                    parseDDL(changeStreamEvent);
-                    metadataEvent.updateBulkWriteInfo("cmd", 1);
-                    metadataEvent.getCurrentNsDealOplogInfo().remove(currentDbTable);
-                    updateUniqueIndexCount(currentDbTable);
+                switch (op) {
+                    case "insert":
+                        parseInsert(changeStreamEvent);
+                        break;
+                    case "update":
+                        parseUpdate(changeStreamEvent);
+                        break;
+                    case "replace":
+                        parseReplace(changeStreamEvent);
+                        break;
+                    case "delete":
+                        parseDelete(changeStreamEvent);
+                        break;
+                    case "updateIndexInfo":
+                        // 更新此表的唯一索引情况
+                        updateUniqueIndexCount(currentDbTable);
+                        break;
+                    default:
+                        // 其他的都当做DDL处理
+                        // 设置标识位：当前正在处理的DDL oplog
+                        metadataEvent.getCurrentNsDealOplogInfo().put(currentDbTable, changeStreamEvent);
+                        parseDDL(changeStreamEvent);
+                        metadataEvent.updateBulkWriteInfo("cmd", 1);
+                        metadataEvent.getCurrentNsDealOplogInfo().remove(currentDbTable);
+                        updateUniqueIndexCount(currentDbTable);
+                        break;
                 }
                 // 一直有数据 就一直追加 此时大表中大幅度占有的时候 会阻塞其他线程的处理
                 if (parseSize++ > 1024 * 10) {
@@ -306,7 +322,8 @@ public class BucketEvent extends CommonTask implements ParseEventInterface {
      */
     @Override
     public void parseDropTable(ChangeStreamDocument<Document> changeStreamEvent) {
-
+        MongoNamespace namespace = changeStreamEvent.getNamespace();
+        mongoClient.getDatabase(namespace.getDatabaseName()).getCollection(namespace.getCollectionName()).drop();
     }
 
     /**
@@ -329,7 +346,19 @@ public class BucketEvent extends CommonTask implements ParseEventInterface {
      */
     @Override
     public void parseRenameTable(ChangeStreamDocument<Document> changeStreamEvent) {
-
+        MongoNamespace oldNs = changeStreamEvent.getNamespace();
+        RenameCollectionOptions renameCollectionOptions = new RenameCollectionOptions();
+        renameCollectionOptions.dropTarget(false);
+        // 如果目标表已经存在,是否进行删除
+        if (this.ddlSet.contains(RENAME_COLLECTION)) {
+            //  q: 是否合理 强制进行删除和重命名
+            //  a: 当用户允许使用rename时,就强制删除目标段已经存在的表
+            renameCollectionOptions.dropTarget(true);
+        }
+        this.mongoClient.getDatabase(oldNs.getDatabaseName()).getCollection(oldNs.getCollectionName()).renameCollection(changeStreamEvent.getDestinationNamespace(), renameCollectionOptions);
+        // 更新原表和新表的索引信息
+        updateUniqueIndexCount(oldNs.getFullName());
+        updateUniqueIndexCount(changeStreamEvent.getDestinationNamespace().getFullName());
     }
 
 
@@ -382,29 +411,39 @@ public class BucketEvent extends CommonTask implements ParseEventInterface {
 
     @Override
     public void parseUpdate(ChangeStreamDocument<Document> changeStreamEvent) {
-        // todo 重新解析
-//        String _id = changeStreamEvent.getDocumentKey().get("_id").toString();
-//        int bucketNum = Math.abs(_id.hashCode() % maxBucketNum);
-//        if (metadataEvent.getUniqueIndexCollection().containsKey(currentDbTable)) {
-//            bucketNum = 1;
-//        }
-//        // 检查该桶bucketSetMap是否存在。若不存在 则添加
-//        if (!bucketSetMap.get(bucketNum).add(_id)) {
-//            putDataToCache(currentDbTable, bucketNum);
-//            bucketSetMap.get(bucketNum).add(_id);
-//        }
-//        Document o2 = ((Document) document.get("o2"));
-//        Document o = (Document) document.get("o");
-//        o.remove("$v");
-//        // 有些oplog的o没有$set和$unset的为Replace
-//        if (o.get("$set") == null && o.get("$unset") == null) {
-//            // 是否开启upsert
-//            ReplaceOptions option = new ReplaceOptions();
-//            option.upsert(true);
-//            bucketWriteModelListMap.get(bucketNum).add(new ReplaceOneModel<Document>(o2, o, option));
-//        } else {
-//            bucketWriteModelListMap.get(bucketNum).add(new UpdateOneModel<Document>(o2, o));
-//        }
+        // todo 解析不全 日志格式不丰富
+        String _id = changeStreamEvent.getDocumentKey().get("_id").toString();
+        int bucketNum = Math.abs(_id.hashCode() % maxBucketNum);
+        if (metadataEvent.getUniqueIndexCollection().containsKey(currentDbTable)) {
+            bucketNum = 1;
+        }
+        // 检查该桶bucketSetMap是否存在。若不存在 则添加
+        if (!bucketSetMap.get(bucketNum).add(_id)) {
+            putDataToCache(currentDbTable, bucketNum);
+            bucketSetMap.get(bucketNum).add(_id);
+        }
+
+        UpdateDescription updateDescription = changeStreamEvent.getUpdateDescription();
+
+        Document set = new Document();
+        set.putAll(updateDescription.getUpdatedFields());
+        Document unset = new Document();
+
+        for (String removedField : updateDescription.getRemovedFields()) {
+            unset.append(removedField, null);
+        }
+
+        Document update = new Document();
+
+        if (set.size() > 0) {
+            update.append("$set", set);
+        }
+        if (unset.size() > 0) {
+            update.append("$unset", set);
+        }
+
+        // 有些oplog的o没有$set和$unset的为Replace
+        bucketWriteModelListMap.get(bucketNum).add(new UpdateOneModel<Document>(changeStreamEvent.getDocumentKey(), update));
     }
 
     @Override

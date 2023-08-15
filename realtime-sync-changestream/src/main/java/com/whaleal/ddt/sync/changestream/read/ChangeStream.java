@@ -159,6 +159,7 @@ public class ChangeStream extends CommonTask {
                 if (changeEvent.getNamespace() == null) {
                     continue;
                 }
+
                 String ns = changeEvent.getNamespace().getFullName();
                 // 10w条输出一次 或者10s输出一次
                 if (readNum++ > 102400 || (changeEvent.getClusterTime().getTime() - lastOplogTs.getTime() > 60)) {
@@ -167,7 +168,7 @@ public class ChangeStream extends CommonTask {
                     docTime = changeEvent.getClusterTime();
                     readNum = 0;
                     log.info("{} current read changeStream time:{}", workName, lastOplogTs.getTime());
-                    log.info("{} current oplog changeStream time:{} s", workName, Math.abs(System.currentTimeMillis() / 1000F - lastOplogTs.getTime()));
+                    log.info("{} current changeStream delay time:{} s", workName, Math.abs(System.currentTimeMillis() / 1000F - lastOplogTs.getTime()));
                     // q: 如果后面一直没有数据的话，这个信息就一直不打印。确实会出现日志不全的问题
                     // a: 为避免主线程的业务侵入性，暂时取舍。若是一直无oplog那就不打印罢了
 
@@ -220,11 +221,11 @@ public class ChangeStream extends CommonTask {
             WorkStatus.updateWorkStatus(workName, WorkStatus.WORK_STOP);
             isReadScanOver = true;
         } catch (Exception e) {
-            log.info("{} current read oplog time:{}", workName, docTime.getTime());
+            log.info("{} current read changeStream time:{}", workName, docTime.getTime());
             isReadScanOver = false;
             // 重新更新查询的开始时间和结束时间
             this.startTimeOfOplog = docTime.getTime();
-            log.error("{} read oplog exception,msg:{}", workName, e.getMessage());
+            log.error("{} read changeStream exception,msg:{}", workName, e.getMessage());
         }
     }
 

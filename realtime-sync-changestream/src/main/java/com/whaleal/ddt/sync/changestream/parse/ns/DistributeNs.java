@@ -1,4 +1,4 @@
-package com.whaleal.ddt.sync.changestream.parse.ns;/*
+/*
  * Document Data Transfer - An open-source project licensed under GPL+SSPL
  *
  * Copyright (C) [2023 - present ] [Whaleal]
@@ -13,7 +13,7 @@ package com.whaleal.ddt.sync.changestream.parse.ns;/*
  *
  * For more information, visit the official website: [www.whaleal.com]
  */
-
+package com.whaleal.ddt.sync.changestream.parse.ns;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
@@ -67,7 +67,7 @@ public class DistributeNs extends CommonTask {
 
     @Override
     public void execute() {
-        log.info("{} oplog parsing ns thread starts running", workName);
+        log.info("{} changeStream parsing ns thread starts running", workName);
         // 当前解析oplog日志的个数
         exe();
     }
@@ -89,7 +89,7 @@ public class DistributeNs extends CommonTask {
                     // 要是oplog太慢,count增加,lastCleanNsTime减少,此时也及时进行清除ns。
                     count += 1000;
                     lastCleanNsTime -= 1000;
-                    // 代表oplog队列为空 暂时休眠
+                    // 代表changeStream队列为空 暂时休眠
                     TimeUnit.SECONDS.sleep(1);
                     if (WorkStatus.getWorkStatus(this.workName) == WorkStatus.WORK_STOP) {
                         break;
@@ -129,9 +129,9 @@ public class DistributeNs extends CommonTask {
                 }
             } catch (Exception e) {
                 if (changeStreamEvent != null) {
-                    log.error("{} currently parsing the oplog log:{}", workName, changeStreamEvent.toString());
+                    log.error("{} currently parsing the changeStream log:{}", workName, changeStreamEvent.toString());
                 }
-                log.error("{} an error occurred in the split table thread of the oplog,msg:{}", workName, e.getMessage());
+                log.error("{} an error occurred in the split table thread of the changeStream,msg:{}", workName, e.getMessage());
             }
         }
     }
@@ -142,7 +142,7 @@ public class DistributeNs extends CommonTask {
      * @desc 解析document的ns
      */
     public void parseNs(ChangeStreamDocument<Document> changeStreamEvent) throws InterruptedException {
-        // 可能空指针异常
+        // getFullName 已在上级进行判断了，不会出现空指针
         String fullDbTableName = changeStreamEvent.getNamespace().getFullName();
         String op = changeStreamEvent.getOperationTypeString();
         boolean isDDL = false;
@@ -157,7 +157,7 @@ public class DistributeNs extends CommonTask {
                 "shardCollection".equals(op)) {
             isDDL = true;
         }
-        String tableName =changeStreamEvent.getNamespace().getCollectionName();
+        String tableName = changeStreamEvent.getNamespace().getCollectionName();
         // todo 这一款需要修改 调研日志
         // system.buckets.
         // 5.0以后分桶表 可以存储数据 可以参考system.txt说明
