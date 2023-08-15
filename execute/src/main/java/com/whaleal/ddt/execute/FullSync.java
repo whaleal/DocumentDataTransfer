@@ -13,9 +13,11 @@
  *
  * For more information, visit the official website: [www.whaleal.com]
  */
-package com.whaleal.ddt.sync.execute;
+package com.whaleal.ddt.execute;
 
 import com.whaleal.ddt.common.Datasource;
+import com.whaleal.ddt.execute.config.WorkInfo;
+import com.whaleal.ddt.status.WorkStatus;
 import com.whaleal.ddt.sync.cache.MemoryCache;
 import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
 import com.whaleal.ddt.sync.metadata.MongoDBClusterManager;
@@ -283,6 +285,74 @@ public class FullSync {
         }
         // 返回所有匹配的命名空间中估计的文档总数
         return totalCount;
+    }
+
+    /**
+     * 启动全量同步任务
+     *
+     * @param workInfo 工作信息
+     */
+    public static void startFullSync(final WorkInfo workInfo) {
+        Runnable runnable = () -> {
+            log.info("enable Start task :{}, task configuration information :{}", workInfo.getWorkName(), workInfo.toString());
+            // 设置程序状态为运行中
+            WorkStatus.updateWorkStatus(workInfo.getWorkName(), WorkStatus.WORK_RUN);
+            // 生成缓存区数据
+            MemoryCache memoryCache = new MemoryCache(workInfo.getWorkName(), workInfo.getBucketNum(), workInfo.getBucketSize());
+            // 创建全量同步任务对象
+            FullSync fullSync = new FullSync(workInfo.getWorkName());
+            // 开启任务执行，连接源数据库和目标数据库
+            fullSync.init(workInfo.getSourceDsUrl(), workInfo.getTargetDsUrl(), workInfo.getSourceThreadNum(), workInfo.getTargetThreadNum());
+            // 应用集群结构
+            fullSync.applyClusterInfo(workInfo.getClusterInfoSet(), workInfo.getDbTableWhite(), workInfo.getCreateIndexThreadNum(), Integer.MAX_VALUE);
+            // 生成sourceTaskInfo
+            AtomicBoolean isGenerateSourceTaskInfoOver = new AtomicBoolean(false);
+            // 默认缓存中128个读取任务
+            BlockingQueue<Range> taskQueue = new LinkedBlockingQueue<>(128);
+            fullSync.generateSourceTaskInfo(workInfo.getDbTableWhite(), isGenerateSourceTaskInfoOver, taskQueue, true);
+            // 生成写入任务
+            fullSync.submitTargetTask(workInfo.getTargetThreadNum());
+            // 生成源数据库数据读取任务
+            fullSync.generateSource(workInfo.getSourceThreadNum(), taskQueue, isGenerateSourceTaskInfoOver, workInfo.getBatchSize());
+            // 计算一共要同步数据量
+            long allNsDocumentCount = fullSync.estimatedAllNsDocumentCount(workInfo.getDbTableWhite());
+            long writeCountOld = 0L;
+            while (true) {
+                try {
+                    log.info("{} this full task is expected to transfer {} bars of data", workInfo.getWorkName(), allNsDocumentCount);
+                    log.info("{} current task queue cache status:{}", workInfo.getWorkName(), taskQueue.size());
+                    // 每隔10秒输出一次信息
+                    TimeUnit.SECONDS.sleep(10);
+                    // 输出缓存区运行情况
+                    writeCountOld = memoryCache.printCacheInfo(workInfo.getStartTime(), writeCountOld);
+                    // 输出任务各线程运行情况
+                    fullSync.printThreadInfo();
+                    // 输出缓存区中的信息
+                    if (WorkStatus.getWorkStatus(workInfo.getWorkName()) == WorkStatus.WORK_STOP) {
+                        break;
+                    }
+                    // 判断任务是否结束，如果结束则等待1分钟后退出循环
+                    if (fullSync.judgeFullSyncOver(memoryCache, isGenerateSourceTaskInfoOver, taskQueue)) {
+                        TimeUnit.MINUTES.sleep(1);
+                        WorkStatus.updateWorkStatus(workInfo.getWorkName(), WorkStatus.WORK_STOP);
+                        // 等待写入线程存活个数为0
+                        fullSync.waitWriteOver();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            // 回收资源
+            fullSync.destroy(memoryCache);
+        };
+        Thread thread = new Thread(runnable);
+        thread.setName(workInfo.getWorkName() + "_execute");
+        thread.start();
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
 }

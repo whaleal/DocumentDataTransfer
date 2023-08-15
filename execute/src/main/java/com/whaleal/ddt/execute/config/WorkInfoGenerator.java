@@ -13,7 +13,7 @@
  *
  * For more information, visit the official website: [www.whaleal.com]
  */
-package com.whaleal.ddt.sync.execute.config;
+package com.whaleal.ddt.execute.config;
 
 import com.whaleal.ddt.util.HostInfoUtil;
 import com.whaleal.icefrog.core.text.CharSequenceUtil;

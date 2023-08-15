@@ -298,7 +298,7 @@ public abstract class BucketOplog extends CommonTask implements ParseOplogInterf
 
     /**
      * parseCreateIndex 解析建立索引
-     *
+     *parseUpdate
      * @param document oplog数据
      * @desc 解析建立索引  把 CommitIndexBuild转为普通方式建立索引
      */
@@ -327,6 +327,7 @@ public abstract class BucketOplog extends CommonTask implements ParseOplogInterf
      * @desc 解析建立索引
      */
     public void createIndex(Document document) {
+
         String ns = document.get("ns").toString();
         String[] nsSplit = ns.split("\\.", 2);
         String dbName = nsSplit[0];

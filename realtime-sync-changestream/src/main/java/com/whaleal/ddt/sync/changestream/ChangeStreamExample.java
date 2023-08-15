@@ -1,5 +1,6 @@
 package com.whaleal.ddt.sync.changestream;
 
+import com.alibaba.fastjson2.JSON;
 import com.mongodb.client.ChangeStreamIterable;
 import com.mongodb.client.MongoChangeStreamCursor;
 import com.mongodb.client.MongoClient;
@@ -7,7 +8,7 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
-import com.mongodb.client.model.changestream.FullDocument;
+import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
@@ -22,15 +23,26 @@ public class ChangeStreamExample {
         //todo 是否可以条件筛选,fullDocument相关参数,
         //1. 操作的类型如何筛选，筛选namespace，时间问题确认一下
 
+        List<Bson> pipeline = singletonList(
+                Aggregates.match(Filters.and(new Document("clusterTime", new Document().append("$gte", new BsonTimestamp(1691997970, 0)))
+                )));
 
 
-        ChangeStreamIterable<Document> changeStream = mongoClient.watch();
+        ChangeStreamIterable<Document> changeStream = mongoClient.watch(pipeline);
+
+
+//        changeStream.startAtOperationTime();
+
         // 创建ChangeStream
         try (MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = changeStream.cursor()) {
             while (cursor.hasNext()) {
                 ChangeStreamDocument<Document> changeEvent = cursor.next();
 
                 System.out.println(changeEvent.getOperationType().getValue());
+                if (changeEvent.getOperationType().getValue().equals("update")) {
+                    System.out.println(JSON.toJSONString(changeEvent.getUpdateDescription()));
+//                    changeEvent.getUpdateDescription().getTruncatedArrays().
+                }
 
             }
         } catch (Exception e) {

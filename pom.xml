@@ -10,12 +10,12 @@
     <version>1.0-SNAPSHOT</version>
     <modules>
         <module>common</module>
+        <module>mongodb-driver</module>
         <module>full-sync</module>
         <module>realtime-sync-oplog</module>
-        <module>execute-sync</module>
-        <module>test</module>
-        <module>mongodb-driver</module>
         <module>realtime-sync-changestream</module>
+        <module>test</module>
+        <module>execute</module>
     </modules>
 
     <properties>

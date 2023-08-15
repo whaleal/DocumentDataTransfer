@@ -13,18 +13,20 @@
  *
  * For more information, visit the official website: [www.whaleal.com]
  */
-package com.whaleal.ddt.sync.execute;
+package com.whaleal.ddt.execute;
 
 import com.whaleal.ddt.common.Datasource;
+import com.whaleal.ddt.execute.config.WorkInfo;
+import com.whaleal.ddt.status.WorkStatus;
 import com.whaleal.ddt.sync.cache.MetadataOplog;
+import com.whaleal.ddt.sync.changestream.cache.MetadataEvent;
+import com.whaleal.ddt.sync.changestream.parse.bucket.BucketEvent;
+import com.whaleal.ddt.sync.changestream.parse.ns.DistributeNs;
+import com.whaleal.ddt.sync.changestream.read.ChangeStream;
+import com.whaleal.ddt.sync.changestream.write.RealTimeSyncWriteData;
 import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
-import com.whaleal.ddt.sync.execute.config.WorkInfo;
 import com.whaleal.ddt.sync.parse.ns.ParseOplogNs;
-import com.whaleal.ddt.sync.parse.oplog.BucketOplog;
-import com.whaleal.ddt.sync.parse.oplog.BucketOplogForGteMongoDB5;
-import com.whaleal.ddt.sync.parse.oplog.BucketOplogForLtMongoDB5;
 import com.whaleal.ddt.sync.read.ReadOplog;
-import com.whaleal.ddt.sync.write.RealTimeWriteOplogData;
 import com.whaleal.ddt.thread.pool.ThreadPoolManager;
 import lombok.extern.log4j.Log4j2;
 
@@ -41,7 +43,7 @@ import java.util.concurrent.TimeUnit;
  * @time: 2021/11/15 10:46 上午
  */
 @Log4j2
-public class RealTime {
+public class RealTimeChangeStream {
     /**
      * 工作名称
      */
@@ -72,7 +74,7 @@ public class RealTime {
     private final String writeThreadPoolName;
 
 
-    public RealTime(String workName) {
+    public RealTimeChangeStream(String workName) {
         this.workName = workName;
         // 数据源名称
         this.sourceDsName = workName + "_source";
@@ -145,41 +147,25 @@ public class RealTime {
      * @param writeThreadNum    写入目标数据的线程数
      */
     public void submitTask(WorkInfo workInfo, int nsBucketThreadNum, int writeThreadNum) {
-
         //  写入线程
         for (int i = 0; i < writeThreadNum; i++) {
-            RealTimeWriteOplogData realTimeWriteOplogData = new RealTimeWriteOplogData(workName, targetDsName, workInfo.getBucketSize());
+            RealTimeSyncWriteData realTimeWriteOplogData = new RealTimeSyncWriteData(workName, targetDsName, workInfo.getBucketSize());
             createTask(writeThreadPoolName, realTimeWriteOplogData);
         }
         // 分桶线程
         for (int i = 0; i < nsBucketThreadNum; i++) {
-            createTask(nsBucketOplogThreadPoolName, generateOplogNsBucketTask(workInfo));
+            createTask(nsBucketOplogThreadPoolName, new BucketEvent(workName, targetDsName, workInfo.getBucketNum(), workInfo.getDdlFilterSet(), workInfo.getDdlWait()));
         }
         // 解析ns线程
-        ParseOplogNs parseOplogNs = new ParseOplogNs(workName, workInfo.getDbTableWhite(),
+        DistributeNs distributeNs = new DistributeNs(workName, workInfo.getDbTableWhite(),
                 targetDsName, workInfo.getBatchSize() * workInfo.getBucketSize());
 
-        createTask(parseNSThreadPoolName, parseOplogNs);
+        createTask(parseNSThreadPoolName, distributeNs);
         // 读取线程
-        ReadOplog readOplog = new ReadOplog(workName, sourceDsName, workInfo.getDdlFilterSet().size() > 0, workInfo.getDbTableWhite(), workInfo.getStartOplogTime(), workInfo.getEndOplogTime(), workInfo.getDelayTime());
-        createTask(readOplogThreadPoolName, readOplog);
+        ChangeStream changeStream = new ChangeStream(workName, sourceDsName, workInfo.getDdlFilterSet().size() > 0, workInfo.getDbTableWhite(), workInfo.getStartOplogTime(), workInfo.getEndOplogTime(), workInfo.getDelayTime());
+        createTask(readOplogThreadPoolName, changeStream);
     }
 
-    /**
-     * 生成用于分桶操作的任务。根据给定的任务信息(WorkInfo)和MongoDB版本，选择对应版本的BucketOplog实现并返回。
-     *
-     * @param workInfo 实时同步任务的信息
-     * @return 分桶操作的任务实例
-     */
-    private BucketOplog generateOplogNsBucketTask(WorkInfo workInfo) {
-        String version = MongoDBConnectionSync.getVersion(sourceDsName);
-        // 高版本 要对update的oplog特殊处理
-        if (version.startsWith("5") || version.startsWith("6") || version.startsWith("7") || version.startsWith("8")) {
-            return new BucketOplogForGteMongoDB5(workName, targetDsName, workInfo.getBucketNum(), workInfo.getDdlFilterSet(), workInfo.getDdlWait());
-        } else {
-            return new BucketOplogForLtMongoDB5(workName, targetDsName, workInfo.getBucketNum(), workInfo.getDdlFilterSet(), workInfo.getDdlWait());
-        }
-    }
 
     /**
      * 打印线程信息的方法。输出当前活动线程数量，包括读取oplog的线程、解析ns的线程、分桶操作的线程和写入的线程。
@@ -232,4 +218,54 @@ public class RealTime {
         ThreadPoolManager.destroy(writeThreadPoolName);
     }
 
+    /**
+     * 启动实时同步任务
+     *
+     * @param workInfo 工作信息
+     */
+    public static void startRealTimeChangeStream(final WorkInfo workInfo) {
+        Runnable runnable = () -> {
+            log.info("enable Start task :{}, task configuration information :{}", workInfo.getWorkName(), workInfo.toString());
+            // 设置程序状态为运行中
+            WorkStatus.updateWorkStatus(workInfo.getWorkName(), WorkStatus.WORK_RUN);
+            // 缓存区对线
+            int maxQueueSizeOfOplog = workInfo.getBucketNum() * workInfo.getBucketSize() * workInfo.getBucketSize();
+            MetadataEvent metadataOplog = new MetadataEvent(workInfo.getWorkName(), workInfo.getDdlWait(), maxQueueSizeOfOplog, workInfo.getBucketNum(), workInfo.getBucketSize());
+            // 创建实时同步任务对象
+            RealTimeChangeStream realTimeOplog = new RealTimeChangeStream(workInfo.getWorkName());
+            // 初始化任务，连接源数据库和目标数据库
+            realTimeOplog.init(workInfo.getSourceDsUrl(), workInfo.getTargetDsUrl(), workInfo.getNsBucketThreadNum(), workInfo.getWriteThreadNum());
+            // 创建写入任务
+            realTimeOplog.submitTask(workInfo, workInfo.getNsBucketThreadNum(), workInfo.getWriteThreadNum());
+            long executeCountOld = 0L;
+            while (true) {
+                try {
+                    // 每隔10秒输出一次信息
+                    TimeUnit.SECONDS.sleep(10);
+                    // 输出线程运行情况
+                    realTimeOplog.printThreadInfo();
+                    // 输出缓存区运行情况
+                    executeCountOld = metadataOplog.printCacheInfo(workInfo.getStartTime(), executeCountOld);
+                    // 判断任务是否结束，如果结束则等待1分钟后退出循环
+                    if (realTimeOplog.judgeRealTimeSyncOver()) {
+                        WorkStatus.updateWorkStatus(workInfo.getWorkName(), WorkStatus.WORK_STOP);
+                        TimeUnit.MINUTES.sleep(1);
+                        break;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            // 回收资源
+            realTimeOplog.destroy();
+        };
+        Thread thread = new Thread(runnable);
+        thread.setName(workInfo.getWorkName() + "_execute");
+        thread.start();
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 }

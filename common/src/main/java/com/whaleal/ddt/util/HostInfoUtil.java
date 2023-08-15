@@ -60,7 +60,7 @@ public class HostInfoUtil {
                 try {
                     // 30s输出一次主机信息
                     TimeUnit.SECONDS.sleep(30);
-                    printHostInfo();
+                   // printHostInfo();
                 } catch (Exception ignored) {
 
                 }

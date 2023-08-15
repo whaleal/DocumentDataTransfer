@@ -28,18 +28,16 @@ public interface ParseEventInterface {
     String CREATE_TABLE = "create";
     String CREATE_INDEX = "createIndexes";
     String DROP_INDEX = "dropIndexes";
-    String RENAME_COLLECTION = "renameCollection";
-    String COMMIT_INDEX_BUILD = "commitIndexBuild";
-    String CONVERT_TO_CAPPED = "convertToCapped";
-    String DROP_DATABASE = "dropDatabase";
-    String COLLECTION_MOD = "collMod";
+    String RENAME_COLLECTION = "rename";
+    String SHARD_COLLECTION = "shardCollection";
+
 
     /**
      * Parses a drop table event.
      *
      * @param changeStreamEvent The change stream event containing information about the event.
      * @desc This method handles the event of dropping a table in the database. It takes the
-     *       change stream event as a parameter, which provides details about the event.
+     * change stream event as a parameter, which provides details about the event.
      */
     void parseDropTable(ChangeStreamDocument<Document> changeStreamEvent);
 
@@ -48,7 +46,7 @@ public interface ParseEventInterface {
      *
      * @param changeStreamEvent The change stream event containing information about the event.
      * @desc This method handles the event of creating a new table in the database. It takes the
-     *       change stream event as a parameter, which provides details about the event.
+     * change stream event as a parameter, which provides details about the event.
      */
     void parseCreateTable(ChangeStreamDocument<Document> changeStreamEvent);
 
@@ -57,7 +55,7 @@ public interface ParseEventInterface {
      *
      * @param changeStreamEvent The change stream event containing information about the event.
      * @desc This method handles the event of renaming a table in the database. It takes the
-     *       change stream event as a parameter, which provides details about the event.
+     * change stream event as a parameter, which provides details about the event.
      */
     void parseRenameTable(ChangeStreamDocument<Document> changeStreamEvent);
 
@@ -66,7 +64,7 @@ public interface ParseEventInterface {
      *
      * @param changeStreamEvent The change stream event containing information about the event.
      * @desc This method handles the event of creating an index in the database. It takes the
-     *       change stream event as a parameter, which provides details about the event.
+     * change stream event as a parameter, which provides details about the event.
      */
     void parseCreateIndex(ChangeStreamDocument<Document> changeStreamEvent);
 
@@ -75,7 +73,7 @@ public interface ParseEventInterface {
      *
      * @param changeStreamEvent The change stream event containing information about the event.
      * @desc This method handles the event of dropping an index in the database. It takes the
-     *       change stream event as a parameter, which provides details about the event.
+     * change stream event as a parameter, which provides details about the event.
      */
     void parseDropIndex(ChangeStreamDocument<Document> changeStreamEvent);
 
@@ -84,7 +82,7 @@ public interface ParseEventInterface {
      *
      * @param changeStreamEvent The change stream event containing information about the event.
      * @desc This method handles the event of inserting data into a table in the database. It takes
-     *       the change stream event as a parameter, which provides details about the event.
+     * the change stream event as a parameter, which provides details about the event.
      */
     void parseInsert(ChangeStreamDocument<Document> changeStreamEvent);
 
@@ -93,52 +91,33 @@ public interface ParseEventInterface {
      *
      * @param changeStreamEvent The change stream event containing information about the event.
      * @desc This method handles the event of updating data in a table in the database. It takes the
-     *       change stream event as a parameter, which provides details about the event.
+     * change stream event as a parameter, which provides details about the event.
      */
     void parseUpdate(ChangeStreamDocument<Document> changeStreamEvent);
+
+    void parseReplace(ChangeStreamDocument<Document> changeStreamEvent);
 
     /**
      * Parses a delete data event.
      *
      * @param changeStreamEvent The change stream event containing information about the event.
      * @desc This method handles the event of deleting data from a table in the database. It takes
-     *       the change stream event as a parameter, which provides details about the event.
+     * the change stream event as a parameter, which provides details about the event.
      */
     void parseDelete(ChangeStreamDocument<Document> changeStreamEvent);
 
-    /**
-     * Parses a convert to capped table event.
-     *
-     * @param changeStreamEvent The change stream event containing information about the event.
-     * @desc This method handles the event of converting a table to a capped table in the database.
-     *       It takes the change stream event as a parameter, which provides details about the event.
-     */
-    void parseConvertToCapped(ChangeStreamDocument<Document> changeStreamEvent);
 
-    /**
-     * Parses a drop database event.
-     *
-     * @param changeStreamEvent The change stream event containing information about the event.
-     * @desc This method handles the event of dropping a database. It takes the change stream event
-     *       as a parameter, which provides details about the event.
-     */
-    void parseDropDatabase(ChangeStreamDocument<Document> changeStreamEvent);
+    void modifyCollection(ChangeStreamDocument<Document> changeStreamEvent);
 
-    /**
-     * Parses a table structure modification event.
-     *
-     * @param changeStreamEvent The change stream event containing information about the event.
-     * @desc This method handles the event of modifying the structure of a table in the database.
-     *       It takes the change stream event as a parameter, which provides details about the event.
-     */
-    void parseCollMod(ChangeStreamDocument<Document> changeStreamEvent);
+    void shardCollection(ChangeStreamDocument<Document> changeStreamEvent);
+
 
     /**
      * Updates the count of unique indexes in a table.
      *
      * @param ns The namespace of the table (database and collection name).
      * @desc This method updates the count of unique indexes in a table specified by the namespace.
-     *       It takes the namespace as a parameter, which represents the database and collection name.
+     * It takes the namespace as a parameter, which represents the database and collection name.
      */
     void updateUniqueIndexCount(String ns);
 }

@@ -18,6 +18,7 @@ package com.whaleal.ddt.sync.changestream.parse.bucket;/*
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.DeleteOneModel;
 import com.mongodb.client.model.InsertOneModel;
+import com.mongodb.client.model.ReplaceOneModel;
 import com.mongodb.client.model.WriteModel;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import com.whaleal.ddt.cache.BatchDataEntity;
@@ -26,6 +27,7 @@ import com.whaleal.ddt.sync.changestream.cache.MetadataEvent;
 import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
 import com.whaleal.ddt.task.CommonTask;
 import lombok.extern.log4j.Log4j2;
+import org.bson.BsonDocument;
 import org.bson.Document;
 
 import java.util.*;
@@ -164,7 +166,7 @@ public class BucketEvent extends CommonTask implements ParseEventInterface {
         try {
             // 当处理DDL时候 已经把所有数据推到下一层级
             String operationType = changeStreamEvent.getOperationTypeString();
-            // todo
+            // todo 暂时放在这里 不处理
         } catch (Exception e) {
             log.error("{} failed to perform DDL operation:{},reason for failure:{}", workName, changeStreamEvent.toString(), e.getMessage());
         } finally {
@@ -241,21 +243,24 @@ public class BucketEvent extends CommonTask implements ParseEventInterface {
                 }
                 // todo
                 String op = changeStreamEvent.getOperationTypeString();
-                if ("i".equals(op)) {
+                if ("insert".equals(op)) {
                     parseInsert(changeStreamEvent);
-                } else if ("u".equals(op)) {
+                } else if ("update".equals(op)) {
                     parseUpdate(changeStreamEvent);
-                } else if ("d".equals(op)) {
+                } else if ("replace".equals(op)) {
+                    parseReplace(changeStreamEvent);
+                } else if ("delete".equals(op)) {
                     parseDelete(changeStreamEvent);
-                } else if ("c".equals(op)) {
+                } else if ("updateIndexInfo".equals(op)) {
+                    // 更新此表的唯一索引情况
+                    updateUniqueIndexCount(currentDbTable);
+                } else {
+                    // 其他的都当做DDL处理
                     // 设置标识位：当前正在处理的DDL oplog
                     metadataEvent.getCurrentNsDealOplogInfo().put(currentDbTable, changeStreamEvent);
                     parseDDL(changeStreamEvent);
                     metadataEvent.updateBulkWriteInfo("cmd", 1);
                     metadataEvent.getCurrentNsDealOplogInfo().remove(currentDbTable);
-                    updateUniqueIndexCount(currentDbTable);
-                } else if ("updateIndexInfo".equals(op)) {
-                    // 更新此表的唯一索引情况
                     updateUniqueIndexCount(currentDbTable);
                 }
                 // 一直有数据 就一直追加 此时大表中大幅度占有的时候 会阻塞其他线程的处理
@@ -270,26 +275,17 @@ public class BucketEvent extends CommonTask implements ParseEventInterface {
         }
     }
 
-    /**
-     * parseCreateIndex 解析建立索引
-     *
-     * @param document oplog数据
-     * @desc 解析建立索引  把 CommitIndexBuild转为普通方式建立索引
-     */
-    public void parseCommitIndexBuild(ChangeStreamDocument<Document> changeStreamEvent) {
-
-    }
 
     /**
      * createIndex 解析建立索引
+     * todo 解析DDL
      *
      * @param document oplog数据
      * @desc 解析建立索引
      */
-    public void createIndex(ChangeStreamDocument<Document> changeStreamEvent) {
+    public void createIndex(Document document) {
 
     }
-
 
     /**
      * parseDropIndex 解析删除索引
@@ -379,14 +375,14 @@ public class BucketEvent extends CommonTask implements ParseEventInterface {
         }
         Document insertDocument = new Document();
         // 顺序不可写反
-        insertDocument.putAll(changeStreamEvent.getDocumentKey());
         insertDocument.putAll(changeStreamEvent.getFullDocument());
-        // todo 不知道 怎么办fromMigrate要特殊处理      shared准备
+        insertDocument.putAll(changeStreamEvent.getDocumentKey());
         this.bucketWriteModelListMap.get(bucketNum).add(new InsertOneModel<Document>(insertDocument));
     }
 
     @Override
     public void parseUpdate(ChangeStreamDocument<Document> changeStreamEvent) {
+        // todo 重新解析
 //        String _id = changeStreamEvent.getDocumentKey().get("_id").toString();
 //        int bucketNum = Math.abs(_id.hashCode() % maxBucketNum);
 //        if (metadataEvent.getUniqueIndexCollection().containsKey(currentDbTable)) {
@@ -411,6 +407,25 @@ public class BucketEvent extends CommonTask implements ParseEventInterface {
 //        }
     }
 
+    @Override
+    public void parseReplace(ChangeStreamDocument<Document> changeStreamEvent) {
+        String _id = changeStreamEvent.getDocumentKey().get("_id").toString();
+        int bucketNum = Math.abs(_id.hashCode() % this.maxBucketNum);
+        if (this.metadataEvent.getUniqueIndexCollection().containsKey(currentDbTable)) {
+            bucketNum = 1;
+        }
+        // 检查该桶bucketSetMap是否存在。若不存在 则添加
+        if (!this.bucketSetMap.get(bucketNum).add(_id)) {
+            putDataToCache(this.currentDbTable, bucketNum);
+            this.bucketSetMap.get(bucketNum).add(_id);
+        }
+
+        BsonDocument filter = changeStreamEvent.getDocumentKey();
+        Document fullDocument = changeStreamEvent.getFullDocument();
+        fullDocument.putAll(filter);
+        bucketWriteModelListMap.get(bucketNum).add(new ReplaceOneModel<>(filter, fullDocument));
+    }
+
     /**
      * parseDelete 解析删除数据
      *
@@ -432,38 +447,20 @@ public class BucketEvent extends CommonTask implements ParseEventInterface {
         Document deleteDocument = new Document();
         deleteDocument.putAll(changeStreamEvent.getDocumentKey());
         DeleteOneModel<Document> deleteOneModel = new DeleteOneModel<Document>(deleteDocument);
-        // fromMigrate要特殊处理
-
         bucketWriteModelListMap.get(bucketNum).add(deleteOneModel);
 
     }
 
     @Override
-    public void parseConvertToCapped(ChangeStreamDocument<Document> changeStreamEvent) {
-        // 暂时不处理 此命令会才分为 :建表和重命名 两条oplog日志
+    public void modifyCollection(ChangeStreamDocument<Document> changeStreamEvent) {
+
     }
 
-    /**
-     * parseDropDatabase 删库
-     *
-     * @param document oplog数据
-     * @desc 删库。
-     */
     @Override
-    public void parseDropDatabase(ChangeStreamDocument<Document> changeStreamEvent) {
-        // 暂时不处理 前序操作已经执行
-    }
-
-    /**
-     * parseCollMod 表结构修改
-     *
-     * @param document oplog数据
-     * @desc 表结构修改。
-     */
-    @Override
-    public void parseCollMod(ChangeStreamDocument<Document> changeStreamEvent) {
+    public void shardCollection(ChangeStreamDocument<Document> changeStreamEvent) {
 
     }
+
 
     @Override
     public void updateUniqueIndexCount(String ns) {

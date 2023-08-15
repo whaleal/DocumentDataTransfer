@@ -13,7 +13,7 @@
  *
  * For more information, visit the official website: [www.whaleal.com]
  */
-package com.whaleal.ddt.sync.execute.config;
+package com.whaleal.ddt.execute.config;
 
 
 import lombok.extern.log4j.Log4j2;

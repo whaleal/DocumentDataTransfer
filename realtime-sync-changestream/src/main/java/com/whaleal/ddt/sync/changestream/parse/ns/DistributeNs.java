@@ -146,12 +146,19 @@ public class DistributeNs extends CommonTask {
         String fullDbTableName = changeStreamEvent.getNamespace().getFullName();
         String op = changeStreamEvent.getOperationTypeString();
         boolean isDDL = false;
-        // DDL // 判断那些DDL名称
-        // todo 需要重做
-        if ("c".equals(op)) {
-
+        // DDL  判断那些DDL名称
+        if ("create".equals(op) ||
+                "createIndexes".equals(op) ||
+                "drop".equals(op) ||
+                "dropDatabase".equals(op) ||
+                "dropIndexes".equals(op) ||
+                "rename".equals(op) ||
+                "modify".equals(op) ||
+                "shardCollection".equals(op)) {
+            isDDL = true;
         }
-        String tableName = fullDbTableName.split("\\.", 2)[1];
+        String tableName =changeStreamEvent.getNamespace().getCollectionName();
+        // todo 这一款需要修改 调研日志
         // system.buckets.
         // 5.0以后分桶表 可以存储数据 可以参考system.txt说明
         if (tableName.startsWith("system.") && (!tableName.startsWith("system.buckets."))) {
