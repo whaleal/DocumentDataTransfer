@@ -81,7 +81,8 @@ public class RealTimeReadDataByChangeStream extends BaseRealTimeReadData<ChangeS
         }
         //   Q：读取全部数据，会造成带宽浪费
         //   A：增加正则表达式读取ns
-        // 不为全部库表 todo 暂时没有表名单过滤
+        // 不为全部库表
+        //todo 暂时没有表名单过滤
 //        if (!(".+").equals(dbTableWhite)) {
 //            condition.append("ns", new Document("$regex", dbTableWhite));
 //        }

@@ -32,9 +32,9 @@ import java.util.concurrent.atomic.LongAdder;
 
 
 /**
- * 元数据操作日志类，用于存储changeStream的元数据信息。每个source只有一个changeStreamMetadata。
- * 该类实现了单例模式，通过静态方法获取和移除元数据操作日志对象。
- * 元数据操作日志主要用于记录changeStream的相关信息，包括操作次数、队列信息等。
+ * 元数据操作日志类，用于存储event的元数据信息。每个source只有一个event。
+ * 通过静态方法获取和移除元数据操作日志对象。
+ * 元数据操作日志主要用于记录event的相关信息，包括操作次数、队列信息等。
  *
  * @author liheping
  */
@@ -51,7 +51,7 @@ public final class MetaData<T> {
      */
     private int ddlWait = 1200;
     /**
-     * 各种类型操作次数，使用Map存储不同类型操作的计数器
+     * 各种类型操作次数，使用Map存储不同类型操作的计器
      */
     private Map<String, LongAdder> bulkWriteInfo = new HashMap<>();
 
@@ -82,18 +82,18 @@ public final class MetaData<T> {
 
     /**
      * 使用静态修饰符声明一个存储元数据操作日志的映射，
-     * 使用字符串作为键，`MetadataEvent`作为值
+     * 使用字符串作为键，`MetaDataEvent`作为值
      */
-    private static Map<String, MetaData> metadataMap = new ConcurrentHashMap<>();
+    private static Map<String, MetaData> MetaDataMap = new ConcurrentHashMap<>();
 
     /**
      * 获取指定工作名称的元数据操作日志
      *
      * @param workName 工作名称
-     * @return MetadataEvent
+     * @return MetaDataEvent
      */
-    public static MetaData getMetadata(String workName) {
-        return metadataMap.get(workName);
+    public static MetaData getMetaData(String workName) {
+        return MetaDataMap.get(workName);
     }
 
     /**
@@ -101,8 +101,8 @@ public final class MetaData<T> {
      *
      * @param workName 工作名称
      */
-    public static void removeMetadata(String workName) {
-        metadataMap.remove(workName);
+    public static void removeMetaData(String workName) {
+        MetaDataMap.remove(workName);
     }
 
     /**
@@ -125,8 +125,8 @@ public final class MetaData<T> {
             // 为每个桶创建AtomicBoolean对象，默认值为false，并将其放入stateOfBucketMap中
             stateOfBucketMap.put(i, new AtomicBoolean(false));
         }
-        // 将元数据操作日志对象放入oplogMetadataMap中，以工作名称为键，该对象为值
-        metadataMap.put(workName, this);
+        // 将元数据操作日志对象放入oplogMetaDataMap中，以工作名称为键，该对象为值
+        MetaDataMap.put(workName, this);
     }
 
     /**
@@ -218,7 +218,7 @@ public final class MetaData<T> {
     public long getTotalCacheNum() {
         long sum = 0;
         // 队列缓存数
-        sum += metadataMap.size();
+        sum += MetaDataMap.size();
         // NS队列缓存数
         sum += cacheQueueOfNsDataNum();
         // 桶缓存数
@@ -358,11 +358,11 @@ public final class MetaData<T> {
      */
     public long printCacheInfo(long workStartTime, long executeCountOld) {
         try {
-            log.info("{} the total number of oplog read currently:{}", workName, readNum.sum());
+            log.info("{} the total number of event read currently:{}", workName, readNum.sum());
 
             log.info("{} the current total number of caches:{}", workName, getTotalCacheNum());
 
-            log.info("{} the current number of real-time synchronization caches:{}", workName, metadataMap.size());
+            log.info("{} the current number of real-time synchronization caches:{}", workName, MetaDataMap.size());
 
             log.info("{} current bucket batch data cache number:{}", workName, cacheBucketQueueDataNum());
 
@@ -386,7 +386,7 @@ public final class MetaData<T> {
             for (Map.Entry<String, T> documentEntry : currentNsDealOplogInfo.entrySet()) {
                 String key = documentEntry.getKey();
                 // 输出ns正在处理那个ddl oplog呢
-                log.info("{} ns:{},processing oplog:{}", workName, key, documentEntry.getValue().toString());
+                log.info("{} ns:{},processing event:{}", workName, key, documentEntry.getValue().toString());
             }
 
             // 可以1分钟输出一次

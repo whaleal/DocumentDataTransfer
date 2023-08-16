@@ -20,6 +20,10 @@ import com.whaleal.ddt.realtime.common.parse.ns.BaseParseNs;
 import lombok.extern.log4j.Log4j2;
 import org.bson.Document;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 
 /**
  * @author: lhp
@@ -40,6 +44,11 @@ public class ParseNs extends BaseParseNs<ChangeStreamDocument<Document>> {
         exe();
     }
 
+    private static final Set<String> ddlOperations = new HashSet<>(Arrays.asList(
+            "create", "createIndexes", "drop", "dropDatabase",
+            "dropIndexes", "rename", "modify", "shardCollection"
+    ));
+
     /**
      * parseNs
      *
@@ -50,18 +59,7 @@ public class ParseNs extends BaseParseNs<ChangeStreamDocument<Document>> {
         // getFullName 已在上级进行判断了，不会出现空指针
         String fullDbTableName = changeStreamEvent.getNamespace().getFullName();
         String op = changeStreamEvent.getOperationTypeString();
-        boolean isDDL = false;
-        // DDL  判断那些DDL名称
-        if ("create".equals(op) ||
-                "createIndexes".equals(op) ||
-                "drop".equals(op) ||
-                "dropDatabase".equals(op) ||
-                "dropIndexes".equals(op) ||
-                "rename".equals(op) ||
-                "modify".equals(op) ||
-                "shardCollection".equals(op)) {
-            isDDL = true;
-        }
+        boolean isDDL = ddlOperations.contains(op);
         String tableName = changeStreamEvent.getNamespace().getCollectionName();
         // todo 这一款需要修改 调研日志
         // system.buckets.

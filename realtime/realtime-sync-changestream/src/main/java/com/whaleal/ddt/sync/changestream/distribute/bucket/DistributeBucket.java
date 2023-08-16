@@ -15,6 +15,7 @@
  */
 
 package com.whaleal.ddt.sync.changestream.distribute.bucket;
+
 import com.mongodb.MongoNamespace;
 import com.mongodb.client.model.*;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
@@ -54,11 +55,26 @@ public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<
             String operationType = changeStreamEvent.getOperationTypeString();
             // todo 暂时放在这里 不处理
             switch (operationType) {
+                case CREATE_TABLE:
+                    parseCreateTable(changeStreamEvent);
+                    break;
                 case DROP_TABLE:
                     parseDropTable(changeStreamEvent);
                     break;
+                case CREATE_INDEX:
+                    parseCreateIndex(changeStreamEvent);
+                    break;
+                case DROP_INDEX:
+                    parseDropIndex(changeStreamEvent);
+                    break;
                 case RENAME:
                     parseRenameTable(changeStreamEvent);
+                    break;
+                case MODIFY_COLLECTION:
+                    modifyCollection(changeStreamEvent);
+                    break;
+                case SHARD_COLLECTION:
+                    shardCollection(changeStreamEvent);
                     break;
                 default:
                     // Handle default case if needed
@@ -132,28 +148,6 @@ public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<
 
 
     /**
-     * createIndex 解析建立索引
-     * todo 解析DDL
-     *
-     * @param document oplog数据
-     * @desc 解析建立索引
-     */
-    public void createIndex(Document document) {
-
-    }
-
-    /**
-     * parseDropIndex 解析删除索引
-     *
-     * @param document oplog数据
-     * @desc 解析删除索引
-     */
-    public void dropIndex(ChangeStreamDocument<Document> changeStreamEvent) {
-
-    }
-
-
-    /**
      * parseDropTable 解析删表
      *
      * @param document oplog数据
@@ -173,7 +167,7 @@ public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<
      */
     @Override
     public void parseCreateTable(ChangeStreamDocument<Document> changeStreamEvent) {
-
+// todo 未实现
     }
 
 
@@ -209,7 +203,7 @@ public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<
      */
     @Override
     public void parseCreateIndex(ChangeStreamDocument<Document> changeStreamEvent) {
-
+// todo 未实现
     }
 
     /**
@@ -220,7 +214,7 @@ public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<
      */
     @Override
     public void parseDropIndex(ChangeStreamDocument<Document> changeStreamEvent) {
-
+// todo 未实现
     }
 
     /**
@@ -241,16 +235,12 @@ public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<
             putDataToCache(this.currentDbTable, bucketNum);
             this.bucketSetMap.get(bucketNum).add(_id);
         }
-        Document insertDocument = new Document();
-        // 顺序不可写反
-        insertDocument.putAll(changeStreamEvent.getFullDocument());
-        insertDocument.putAll(changeStreamEvent.getDocumentKey());
+        Document insertDocument = changeStreamEvent.getFullDocument();
         this.bucketWriteModelListMap.get(bucketNum).add(new InsertOneModel<Document>(insertDocument));
     }
 
     @Override
     public void parseUpdate(ChangeStreamDocument<Document> changeStreamEvent) {
-        // todo 解析不全 日志格式不丰富
         String _id = changeStreamEvent.getDocumentKey().get("_id").toString();
         int bucketNum = Math.abs(_id.hashCode() % maxBucketNum);
         if (metadata.getUniqueIndexCollection().containsKey(currentDbTable)) {
@@ -271,17 +261,13 @@ public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<
         for (String removedField : updateDescription.getRemovedFields()) {
             unset.append(removedField, null);
         }
-
         Document update = new Document();
-
         if (set.size() > 0) {
             update.append("$set", set);
         }
         if (unset.size() > 0) {
             update.append("$unset", set);
         }
-
-        // 有些oplog的o没有$set和$unset的为Replace
         bucketWriteModelListMap.get(bucketNum).add(new UpdateOneModel<Document>(changeStreamEvent.getDocumentKey(), update));
     }
 
@@ -300,7 +286,6 @@ public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<
 
         BsonDocument filter = changeStreamEvent.getDocumentKey();
         Document fullDocument = changeStreamEvent.getFullDocument();
-        fullDocument.putAll(filter);
         bucketWriteModelListMap.get(bucketNum).add(new ReplaceOneModel<>(filter, fullDocument));
     }
 
@@ -322,8 +307,7 @@ public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<
             putDataToCache(currentDbTable, bucketNum);
             bucketSetMap.get(bucketNum).add(_id);
         }
-        Document deleteDocument = new Document();
-        deleteDocument.putAll(changeStreamEvent.getDocumentKey());
+        BsonDocument deleteDocument = changeStreamEvent.getDocumentKey();
         DeleteOneModel<Document> deleteOneModel = new DeleteOneModel<Document>(deleteDocument);
         bucketWriteModelListMap.get(bucketNum).add(deleteOneModel);
 
@@ -331,27 +315,27 @@ public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<
 
     @Override
     public void parseConvertToCapped(ChangeStreamDocument<Document> event) {
-
+        // changeStream无该方法
     }
 
     @Override
     public void parseDropDatabase(ChangeStreamDocument<Document> event) {
-
+        // 可以不适应该方法
     }
 
     @Override
     public void parseCollMod(ChangeStreamDocument<Document> event) {
-
+        // changeStream无该方法
     }
 
     @Override
     public void modifyCollection(ChangeStreamDocument<Document> changeStreamEvent) {
-
+// todo 未实现
     }
 
     @Override
     public void shardCollection(ChangeStreamDocument<Document> changeStreamEvent) {
-
+// todo 未实现
     }
 
 

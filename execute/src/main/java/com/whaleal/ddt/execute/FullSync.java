@@ -128,7 +128,7 @@ public class FullSync {
 
         LinkedBlockingQueue<String> nsQueue = new LinkedBlockingQueue<>(new MongoDBMetadata(sourceDsName).getNSList(dbTableWhite));
         // 3个线程去切分 暂时3线程切分 性能尚可
-        for (int i = 0; i < HostInfoUtil.computeTotalCpuCore()/2; i++) {
+        for (int i = 0; i < HostInfoUtil.computeTotalCpuCore() / 2; i++) {
             GenerateSourceTask generateSourceTask = new GenerateSourceTask(workName, sourceDsName,
                     isGenerateSourceTaskInfoOver, taskQueue, parallelSync,
                     nsQueue);

@@ -63,7 +63,7 @@ public  abstract class BaseRealTimeWriteData<T> extends CommonTask {
 
     protected BaseRealTimeWriteData(String workName, String dsName, int bucketSize) {
         super(workName, dsName);
-        this.metadata = MetaData.getMetadata(workName);
+        this.metadata = MetaData.getMetaData(workName);
         this.dsName = dsName;
         this.mongoClient = MongoDBConnectionSync.getMongoClient(dsName);
         this.workName = workName;
@@ -72,7 +72,7 @@ public  abstract class BaseRealTimeWriteData<T> extends CommonTask {
 
     @Override
     public void execute() {
-        log.warn("{} the oplog write data thread starts running", workName);
+        log.warn("{} the event write data thread starts running", workName);
         int idlingTime = 0;
         while (true) {
             try {
@@ -109,7 +109,7 @@ public  abstract class BaseRealTimeWriteData<T> extends CommonTask {
                             // 写入该表的数据
                             write(documentQueue, bucketNum);
                         } catch (Exception e) {
-                            log.error("bucketNum:{},an error occurred while writing the oplog,msg:{}", bucketNum, e.getMessage());
+                            log.error("bucketNum:{},an error occurred while writing the event,msg:{}", bucketNum, e.getMessage());
                         } finally {
                             atomicBoolean.set(false);
                         }
@@ -117,7 +117,7 @@ public  abstract class BaseRealTimeWriteData<T> extends CommonTask {
                 }
             } catch (Exception e) {
                 e.printStackTrace();
-                log.error("{} an error occurred while writing the oplog,msg:{}", workName, e.getMessage());
+                log.error("{} an error occurred while writing the event,msg:{}", workName, e.getMessage());
             }
         }
 

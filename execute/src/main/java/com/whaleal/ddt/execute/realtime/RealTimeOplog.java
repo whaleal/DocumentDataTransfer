@@ -13,9 +13,9 @@
  *
  * For more information, visit the official website: [www.whaleal.com]
  */
-package com.whaleal.ddt.execute;
+package com.whaleal.ddt.execute.realtime;
 
-import com.whaleal.ddt.execute.common.RealTimeWork;
+import com.whaleal.ddt.execute.realtime.common.RealTimeWork;
 import com.whaleal.ddt.execute.config.WorkInfo;
 
 import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;

@@ -14,14 +14,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+
 /**
- * @projectName: realtime-sync-oplog
- * @package: com.whaleal.ddt.realtime.common.parse
- * @className: BaseParseNs
- * @author: Eric
- * @description: TODO
- * @date: 15/08/2023 15:59
- * @version: 1.0
+ * @author liheping
  */
 @Log4j2
 public abstract class BaseParseNs<T> extends CommonTask {
@@ -47,7 +42,7 @@ public abstract class BaseParseNs<T> extends CommonTask {
         super(workName, dsName);
         this.dbTableWhite = dbTableWhite;
         this.workName = workName;
-        this.metadata = MetaData.getMetadata(workName);
+        this.metadata = MetaData.getMetaData(workName);
         this.mongoClient = MongoDBConnectionSync.getMongoClient(dsName);
         this.maxQueueSizeOfNs = maxQueueSizeOfNs;
     }

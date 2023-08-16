@@ -421,17 +421,17 @@ public abstract class DistributeBucket extends BaseDistributeBucket<Document> {
     }
     @Override
     public void modifyCollection(Document event) {
-
+// oplog无该方法用不到
     }
 
     @Override
     public void shardCollection(Document event) {
-
+// oplog无该方法用不到
     }
 
     @Override
     public void parseReplace(Document event) {
-
+// oplog无该方法用不到
     }
 
 }

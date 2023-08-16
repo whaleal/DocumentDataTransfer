@@ -13,20 +13,16 @@
  *
  * For more information, visit the official website: [www.whaleal.com]
  */
-package com.whaleal.ddt.execute;
+package com.whaleal.ddt.execute.realtime;
 
-import com.whaleal.ddt.execute.common.RealTimeWork;
+import com.whaleal.ddt.execute.realtime.common.RealTimeWork;
 import com.whaleal.ddt.execute.config.WorkInfo;
-import com.whaleal.ddt.realtime.common.cache.MetaData;
-import com.whaleal.ddt.status.WorkStatus;
 
 import com.whaleal.ddt.sync.changestream.distribute.bucket.DistributeBucket;
 import com.whaleal.ddt.sync.changestream.parse.ns.ParseNs;
 import com.whaleal.ddt.sync.changestream.read.RealTimeReadDataByChangeStream;
 import com.whaleal.ddt.sync.changestream.write.RealTimeWriteData;
 import lombok.extern.log4j.Log4j2;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * @desc: 实时同步
@@ -79,54 +75,5 @@ public class RealTimeChangeStream extends RealTimeWork {
 
 
 
-    /**
-     * 启动实时同步任务
-     *
-     * @param workInfo 工作信息
-     */
-    public static void startRealTimeChangeStream(final WorkInfo workInfo) {
-        Runnable runnable = () -> {
-            log.info("enable Start task :{}, task configuration information :{}", workInfo.getWorkName(), workInfo.toString());
-            // 设置程序状态为运行中
-            WorkStatus.updateWorkStatus(workInfo.getWorkName(), WorkStatus.WORK_RUN);
-            // 缓存区对线
-            int maxQueueSizeOfOplog = workInfo.getBucketNum() * workInfo.getBucketSize() * workInfo.getBucketSize();
-            MetaData metadataOplog = new MetaData(workInfo.getWorkName(), workInfo.getDdlWait(), maxQueueSizeOfOplog, workInfo.getBucketNum(), workInfo.getBucketSize());
-            // 创建实时同步任务对象
-            RealTimeChangeStream realTimeOplog = new RealTimeChangeStream(workInfo.getWorkName());
-            // 初始化任务，连接源数据库和目标数据库
-            realTimeOplog.init(workInfo.getSourceDsUrl(), workInfo.getTargetDsUrl(), workInfo.getNsBucketThreadNum(), workInfo.getWriteThreadNum());
-            // 创建写入任务
-            realTimeOplog.submitTask(workInfo, workInfo.getNsBucketThreadNum(), workInfo.getWriteThreadNum());
-            long executeCountOld = 0L;
-            while (true) {
-                try {
-                    // 每隔10秒输出一次信息
-                    TimeUnit.SECONDS.sleep(10);
-                    // 输出线程运行情况
-                    realTimeOplog.printThreadInfo();
-                    // 输出缓存区运行情况
-                    executeCountOld = metadataOplog.printCacheInfo(workInfo.getStartTime(), executeCountOld);
-                    // 判断任务是否结束，如果结束则等待1分钟后退出循环
-                    if (realTimeOplog.judgeRealTimeTaskFinish()) {
-                        WorkStatus.updateWorkStatus(workInfo.getWorkName(), WorkStatus.WORK_STOP);
-                        TimeUnit.MINUTES.sleep(1);
-                        break;
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-            // 回收资源
-            realTimeOplog.destroy();
-        };
-        Thread thread = new Thread(runnable);
-        thread.setName(workInfo.getWorkName() + "_execute");
-        thread.start();
-        try {
-            thread.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
+
 }

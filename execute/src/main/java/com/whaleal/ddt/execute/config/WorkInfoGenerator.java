@@ -185,6 +185,16 @@ public class WorkInfoGenerator {
                     }
                 }
             }
+
+            {
+                String realTimeTypeStr = Property.getPropertiesByKey("realTimeType");
+                if (CharSequenceUtil.isBlank(realTimeTypeStr)) {
+                    log.warn("The real-time task synchronization mode is not selected. The default mode is oplog:{}", workInfo.getRealTimeType());
+                } else {
+                    workInfo.setRealTimeType(realTimeTypeStr);
+                }
+            }
+
         } else if (workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL) ||
                 workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL_AND_INCREMENT) ||
                 workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL_AND_REAL_TIME)) {

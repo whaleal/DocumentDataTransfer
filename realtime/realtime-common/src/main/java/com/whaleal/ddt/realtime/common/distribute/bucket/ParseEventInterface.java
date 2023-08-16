@@ -17,25 +17,23 @@
 package com.whaleal.ddt.realtime.common.distribute.bucket;
 
 
-
 /**
  * Interface for parsing and handling different types of parse events related to data changes
  * in a document-oriented data transfer system.
- *
+ * <p>
  * The events include operations such as insert, delete, update, replace, and various metadata changes
  * like table creation, index creation, renaming, etc.
  *
+ * @author liheping
  * @param <T> The type of event data this interface handles (e.g., ChangeStreamDocument or other appropriate data type)
  */
 public interface ParseEventInterface<T> {
-
-    // Operation constants for data changes
     String INSERT_DATA = "insert";
     String DELETE_DATA = "delete";
     String UPDATE_DATA = "update";
-    String REPLACE_DATA = "update";
+    String REPLACE_DATA = "replace";
 
-    // Operation constants for metadata changes
+
     String INVALIDATE = "invalidate";
     String MODIFY_COLLECTION = "modify";
     String RENAME = "rename";

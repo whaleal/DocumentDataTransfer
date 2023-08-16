@@ -61,7 +61,7 @@ public abstract class BaseRealTimeReadData<T> extends CommonTask {
         this.startTimeOfOplog = startTimeOfOplog;
         this.workName = workName;
         this.delayTime = delayTime;
-        this.metadata = MetaData.getMetadata(workName);
+        this.metadata = MetaData.getMetaData(workName);
         this.mongoClient = MongoDBConnectionSync.getMongoClient(dsName);
         this.dbVersion = MongoDBConnectionSync.getVersion(dsName);
     }

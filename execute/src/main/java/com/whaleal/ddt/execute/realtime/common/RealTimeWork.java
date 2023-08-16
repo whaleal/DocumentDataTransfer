@@ -1,8 +1,11 @@
-package com.whaleal.ddt.execute.common;
+package com.whaleal.ddt.execute.realtime.common;
 
 import com.whaleal.ddt.common.Datasource;
+import com.whaleal.ddt.execute.realtime.RealTimeChangeStream;
+import com.whaleal.ddt.execute.realtime.RealTimeOplog;
 import com.whaleal.ddt.execute.config.WorkInfo;
 import com.whaleal.ddt.realtime.common.cache.MetaData;
+import com.whaleal.ddt.status.WorkStatus;
 import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
 import com.whaleal.ddt.thread.pool.ThreadPoolManager;
 import lombok.extern.log4j.Log4j2;
@@ -143,7 +146,7 @@ public abstract class RealTimeWork {
         // A：执行 MetadataOplog.getOplogMetadata(workName).waitCacheExe()
         if (ThreadPoolManager.getActiveThreadNum(readOplogThreadPoolName) == 0) {
             // 等待缓存中的数据写完
-            MetaData.getMetadata(workName).waitCacheExe();
+            MetaData.getMetaData(workName).waitCacheExe();
             // 等待缓存为空
             try {
                 TimeUnit.MINUTES.sleep(1);
@@ -172,54 +175,61 @@ public abstract class RealTimeWork {
         ThreadPoolManager.destroy(nsBucketOplogThreadPoolName);
         ThreadPoolManager.destroy(writeThreadPoolName);
     }
-//    /**
-//     * 启动实时同步任务
-//     *
-//     * @param workInfo 工作信息
-//     */
-//    public static void startRealTimeOplog(final WorkInfo workInfo,String type) {
-//        Runnable runnable = () -> {
-//            log.info("enable Start task :{}, task configuration information :{}", workInfo.getWorkName(), workInfo.toString());
-//            // 设置程序状态为运行中
-//            WorkStatus.updateWorkStatus(workInfo.getWorkName(), WorkStatus.WORK_RUN);
-//            // 缓存区对线
-//            int maxQueueSizeOfOplog = workInfo.getBucketNum() * workInfo.getBucketSize() * workInfo.getBucketSize();
-//            MetadataOplog metadataOplog = new MetadataOplog(workInfo.getWorkName(), workInfo.getDdlWait(), maxQueueSizeOfOplog, workInfo.getBucketNum(), workInfo.getBucketSize());
-//            // 创建实时同步任务对象
-//            RealTimeOplog realTimeOplog = new RealTimeOplog(workInfo.getWorkName());
-//            // 初始化任务，连接源数据库和目标数据库
-//            realTimeOplog.init(workInfo.getSourceDsUrl(), workInfo.getTargetDsUrl(), workInfo.getNsBucketThreadNum(), workInfo.getWriteThreadNum());
-//            // 创建写入任务
-//            realTimeOplog.submitTask(workInfo, workInfo.getNsBucketThreadNum(), workInfo.getWriteThreadNum());
-//            long executeCountOld = 0L;
-//            while (true) {
-//                try {
-//                    // 每隔10秒输出一次信息
-//                    TimeUnit.SECONDS.sleep(10);
-//                    // 输出线程运行情况
-//                    realTimeOplog.printThreadInfo();
-//                    // 输出缓存区运行情况
-//                    executeCountOld = metadataOplog.printCacheInfo(workInfo.getStartTime(), executeCountOld);
-//                    // 判断任务是否结束，如果结束则等待1分钟后退出循环
-//                    if (realTimeOplog.judgeRealTimeSyncOver()) {
-//                        WorkStatus.updateWorkStatus(workInfo.getWorkName(), WorkStatus.WORK_STOP);
-//                        TimeUnit.MINUTES.sleep(1);
-//                        break;
-//                    }
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//            // 回收资源
-//            realTimeOplog.destroy();
-//        };
-//        Thread thread = new Thread(runnable);
-//        thread.setName(workInfo.getWorkName() + "_execute");
-//        thread.start();
-//        try {
-//            thread.join();
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-//    }
+
+
+    /**
+     * 启动实时同步任务
+     *
+     * @param workInfo 工作信息
+     */
+    public static void startRealTime(final WorkInfo workInfo, final String realTimeType) {
+        Runnable runnable = () -> {
+            log.info("enable Start task :{}, task configuration information :{}", workInfo.getWorkName(), workInfo.toString());
+            // 设置程序状态为运行中
+            WorkStatus.updateWorkStatus(workInfo.getWorkName(), WorkStatus.WORK_RUN);
+            // 缓存区对线
+            int maxQueueSizeOfOplog = workInfo.getBucketNum() * workInfo.getBucketSize() * workInfo.getBucketSize();
+            MetaData metadataOplog = new MetaData(workInfo.getWorkName(), workInfo.getDdlWait(), maxQueueSizeOfOplog, workInfo.getBucketNum(), workInfo.getBucketSize());
+            RealTimeWork realTimeWork = null;
+            // 创建实时同步任务对象
+            if ("changestream".equals(realTimeType)) {
+                realTimeWork = new RealTimeChangeStream(workInfo.getWorkName());
+            } else {
+                realTimeWork = new RealTimeOplog(workInfo.getWorkName());
+            }
+            // 初始化任务，连接源数据库和目标数据库
+            realTimeWork.init(workInfo.getSourceDsUrl(), workInfo.getTargetDsUrl(), workInfo.getNsBucketThreadNum(), workInfo.getWriteThreadNum());
+            // 创建写入任务
+            realTimeWork.submitTask(workInfo, workInfo.getNsBucketThreadNum(), workInfo.getWriteThreadNum());
+            long executeCountOld = 0L;
+            while (true) {
+                try {
+                    // 每隔10秒输出一次信息
+                    TimeUnit.SECONDS.sleep(10);
+                    // 输出线程运行情况
+                    realTimeWork.printThreadInfo();
+                    // 输出缓存区运行情况
+                    executeCountOld = metadataOplog.printCacheInfo(workInfo.getStartTime(), executeCountOld);
+                    // 判断任务是否结束，如果结束则等待1分钟后退出循环
+                    if (realTimeWork.judgeRealTimeTaskFinish()) {
+                        WorkStatus.updateWorkStatus(workInfo.getWorkName(), WorkStatus.WORK_STOP);
+                        TimeUnit.MINUTES.sleep(1);
+                        break;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            // 回收资源
+            realTimeWork.destroy();
+        };
+        Thread thread = new Thread(runnable);
+        thread.setName(workInfo.getWorkName() + "_execute");
+        thread.start();
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 }

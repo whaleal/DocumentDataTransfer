@@ -90,6 +90,8 @@ public class WorkInfo implements Cloneable, Serializable {
     private int nsBucketThreadNum = (int) Math.ceil((double) HostInfoUtil.computeTotalCpuCore() / 4.F);
     private int writeThreadNum = (int) Math.ceil((double) HostInfoUtil.computeTotalCpuCore() / 4.F) * 3;
 
+    private String realTimeType = "oplog";
+
     /**
      * ddl处理超时参数 单位秒 默认600s
      */
@@ -124,7 +126,7 @@ public class WorkInfo implements Cloneable, Serializable {
     /**
      * 程序启动时间
      */
-    private  long startTime = System.currentTimeMillis();
+    private long startTime = System.currentTimeMillis();
     /**
      * 同步DDL信息
      */

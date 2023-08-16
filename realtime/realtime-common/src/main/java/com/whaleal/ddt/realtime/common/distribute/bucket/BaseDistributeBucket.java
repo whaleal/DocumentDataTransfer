@@ -59,7 +59,7 @@ public abstract class BaseDistributeBucket<T> extends CommonTask implements Pars
 
     protected BaseDistributeBucket(String workName, String dsName, int maxBucketNum, Set<String> ddlSet, int ddlWait) {
         super(workName, dsName);
-        this.metadata = MetaData.getMetadata(workName);
+        this.metadata = MetaData.getMetaData(workName);
         this.maxBucketNum = maxBucketNum;
         this.ddlSet = ddlSet;
         this.workName = workName;
@@ -191,7 +191,7 @@ public abstract class BaseDistributeBucket<T> extends CommonTask implements Pars
             bucketSetMap.put(bucketNum, new HashSet<>());
             bucketWriteModelListMap.put(bucketNum, new ArrayList());
         } catch (Exception e) {
-            log.error("{} an exception occurred when adding data to the oplogWrite thread, the error message:{}", workName, e.getMessage());
+            log.error("{} an exception occurred when adding data to the event thread, the error message:{}", workName, e.getMessage());
         }
     }
 
