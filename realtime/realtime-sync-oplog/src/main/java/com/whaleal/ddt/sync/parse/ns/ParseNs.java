@@ -28,7 +28,14 @@ import org.bson.Document;
 @Log4j2
 public class ParseNs extends BaseParseNs<Document> {
 
-
+    /**
+     * ParseNs 类的构造方法。
+     *
+     * @param workName         工作名称。
+     * @param dbTableWhite     数据库表名白名单的正则表达式。
+     * @param dsName           数据源名称。
+     * @param maxQueueSizeOfNs 单个 namespace 队列的最大大小。
+     */
     public ParseNs(String workName, String dbTableWhite, String dsName, int maxQueueSizeOfNs) {
         super(workName, dbTableWhite, dsName, maxQueueSizeOfNs);
     }
@@ -42,12 +49,6 @@ public class ParseNs extends BaseParseNs<Document> {
     }
 
 
-    /**
-     * parseNs
-     *
-     * @param document oplog信息
-     * @desc 解析document的ns
-     */
     @Override
     public void parseNs(Document document) throws InterruptedException {
         String fullDbTableName = document.get("ns").toString();
@@ -72,7 +73,7 @@ public class ParseNs extends BaseParseNs<Document> {
     }
 
     @Override
-    public void addUpdateIndexInfo(String ns) {
+    public void addUpdateUniqueIndexInfo(String ns) {
         // 更新此表的唯一索引情况
         Document updateIndexInfo = new Document();
         updateIndexInfo.put("op", "updateIndexInfo");
@@ -83,13 +84,13 @@ public class ParseNs extends BaseParseNs<Document> {
         }
     }
 
-    /**
-     * parseDDL
-     *
-     * @param document oplog中DDL相关日志
-     * @desc 解析DDL document的ns
-     */
 
+    /**
+     * 解析DDL相关日志的方法，根据不同的DDL操作类型进行解析。
+     *
+     * @param document oplog中的DDL相关日志。
+     * @return 表的完整名称。
+     */
     public String parseDDL(Document document) {
         Document o = (Document) document.get("o");
         String fullDbTableName = "";
@@ -123,7 +124,7 @@ public class ParseNs extends BaseParseNs<Document> {
      * @param document oplog
      * @desc 解析DropTableDocument的ns
      */
-    public String parseDropTable(Document document) {
+    private String parseDropTable(Document document) {
         String ns = document.get("ns").toString();
         String[] nsSplit = ns.split("\\.", 2);
         String dbName = nsSplit[0];
@@ -138,7 +139,7 @@ public class ParseNs extends BaseParseNs<Document> {
      * @param document oplog
      * @desc 解析删库
      */
-    public void parseDropDataBase(Document document) {
+    private void parseDropDataBase(Document document) {
         // 此方法 不会用到 删除的语句 会变成删除n个删除表语句
     }
 
@@ -148,7 +149,7 @@ public class ParseNs extends BaseParseNs<Document> {
      * @param document oplog
      * @desc 解析createTableDocument的ns
      */
-    public String parseCreateTable(Document document) {
+    private String parseCreateTable(Document document) {
         String ns = document.get("ns").toString();
         String[] nsSplit = ns.split("\\.", 2);
         String dbName = nsSplit[0];
@@ -163,7 +164,7 @@ public class ParseNs extends BaseParseNs<Document> {
      * @param document oplog
      * @desc 解析RenameTableDocument的ns
      */
-    public String parseRenameTable(Document document) {
+    private String parseRenameTable(Document document) {
         Document o = (Document) document.get("o");
         return o.get("renameCollection").toString();
     }
@@ -174,7 +175,7 @@ public class ParseNs extends BaseParseNs<Document> {
      * @param document oplog
      * @desc 解析CreateIndexDocument的ns
      */
-    public String parseCreateIndex(Document document) {
+    private String parseCreateIndex(Document document) {
         String ns = document.get("ns").toString();
         String[] nsSplit = ns.split("\\.", 2);
         String dbName = nsSplit[0];
@@ -189,7 +190,7 @@ public class ParseNs extends BaseParseNs<Document> {
      * @param document oplog
      * @desc 解析commitIndexBuild的ns
      */
-    public String parseCommitIndexBuild(Document document) {
+    private String parseCommitIndexBuild(Document document) {
         String ns = document.get("ns").toString();
         String[] nsSplit = ns.split("\\.", 2);
         String dbName = nsSplit[0];
@@ -204,7 +205,7 @@ public class ParseNs extends BaseParseNs<Document> {
      * @param document oplog
      * @desc 解析DropIndexDocument的ns
      */
-    public String parseDropIndex(Document document) {
+    private String parseDropIndex(Document document) {
         String ns = document.get("ns").toString();
         String[] nsSplit = ns.split("\\.", 2);
         String dbName = nsSplit[0];
@@ -219,7 +220,7 @@ public class ParseNs extends BaseParseNs<Document> {
      * @param document oplog
      * @desc 解析parseCollMod的ns
      */
-    public String parseCollMod(Document document) {
+    private String parseCollMod(Document document) {
         String ns = document.get("ns").toString();
         String[] nsSplit = ns.split("\\.", 2);
         String dbName = nsSplit[0];

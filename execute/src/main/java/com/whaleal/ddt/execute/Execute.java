@@ -3,24 +3,20 @@ package com.whaleal.ddt.execute;
 import com.whaleal.ddt.execute.config.Property;
 import com.whaleal.ddt.execute.config.WorkInfo;
 import com.whaleal.ddt.execute.config.WorkInfoGenerator;
-import com.whaleal.ddt.execute.realtime.common.RealTimeWork;
+import com.whaleal.ddt.execute.full.common.BaseFullWork;
+import com.whaleal.ddt.execute.realtime.common.BaseRealTimeWork;
 import com.whaleal.ddt.task.CommonTask;
 import com.whaleal.ddt.util.HostInfoUtil;
 import lombok.extern.log4j.Log4j2;
 
+
 /**
- * @projectName: DocumentDataTransfer
- * @package: com.whaleal.ddt.execute
- * @className: Execute
- * @author: Eric
- * @description: TODO
- * @date: 14/08/2023 17:42
- * @version: 1.0
+ * @author liheping
  */
 @Log4j2
 public class Execute {
     static {
-        log.info("D2T启动信息:hostName[{}],pid[{}],启动目录:[{}]", HostInfoUtil.getHostName(), HostInfoUtil.getProcessID(), HostInfoUtil.getProcessDir());
+        log.info("D2T Boot information :hostName[{}],pid[{}], boot directory :[{}]", HostInfoUtil.getHostName(), HostInfoUtil.getProcessID(), HostInfoUtil.getProcessDir());
         log.info("JVM Info:{}", HostInfoUtil.getJvmArg());
         log.info("\n" +
                 "  ____    ____    _____ \n" +
@@ -67,7 +63,7 @@ public class Execute {
         // 生成工作信息
         final WorkInfo workInfo = WorkInfoGenerator.generateWorkInfo();
         // 启动任务
-        start(workInfo,workInfo.getRealTimeType());
+        start(workInfo, workInfo.getFullType(), workInfo.getRealTimeType());
         // 退出程序
         System.exit(0);
     }
@@ -77,15 +73,14 @@ public class Execute {
      *
      * @param workInfo 工作信息
      */
-    private static void start(final WorkInfo workInfo, final String realTimeType) {
+    private static void start(final WorkInfo workInfo, final String fullType, final String realTimeType) {
         // 获取工作名称
         String workName = workInfo.getWorkName();
         // 根据同步模式选择不同的启动方式
         if (workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL)) {
             workInfo.setWorkName(workName + "_full");
             // 全量同步模式
-
-            startFullSync(workInfo);
+            startFull(workInfo, fullType);
         } else if (workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_REAL_TIME)) {
             workInfo.setWorkName(workName + "_realTime");
             // 实时同步模式
@@ -95,8 +90,7 @@ public class Execute {
             // 先执行全量同步，然后再执行增量同步
             workInfo.setStartOplogTime((int) (System.currentTimeMillis() / 1000));
             workInfo.setWorkName(workName + "_full");
-            startFullSync(workInfo);
-
+            startFull(workInfo, fullType);
             // 设置新的任务的时区
             // Q: 增量任务 也可以加上进度百分比
             // A: 已在ReadOplog 增加进度百分比
@@ -109,29 +103,20 @@ public class Execute {
             // 先执行全量同步，然后再执行实时同步
             workInfo.setStartOplogTime((int) (System.currentTimeMillis() / 1000));
             workInfo.setWorkName(workName + "_full");
-            startFullSync(workInfo);
+            startFull(workInfo, fullType);
             workInfo.setStartTime(System.currentTimeMillis());
             // 设置新的任务的时区
             workInfo.setWorkName(workName + "_realTime");
             startRealTime(workInfo, realTimeType);
         }
-
     }
 
 
-    private static void startFullSync(final WorkInfo workInfo) {
-        String workName = workInfo.getWorkName();
-        workInfo.setWorkName(workName + "_full");
-        FullSync.startFullSync(workInfo);
+    private static void startFull(final WorkInfo workInfo, final String fullType) {
+        BaseFullWork.startFullSync(workInfo, fullType);
     }
 
     private static void startRealTime(final WorkInfo workInfo, final String realTimeType) {
-        String workName = workInfo.getWorkName();
-        workInfo.setWorkName(workName + "_realTime");
-        if ("changestream".equals(realTimeType)) {
-            RealTimeWork.startRealTime(workInfo, "changestream");
-        } else {
-            RealTimeWork.startRealTime(workInfo, "oplog");
-        }
+        BaseRealTimeWork.startRealTime(workInfo, realTimeType);
     }
 }

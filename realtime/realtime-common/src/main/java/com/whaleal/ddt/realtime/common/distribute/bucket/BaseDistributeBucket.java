@@ -1,5 +1,19 @@
+/*
+ * Document Data Transfer - An open-source project licensed under GPL+SSPL
+ *
+ * Copyright (C) [2023 - present ] [Whaleal]
+ *
+ * This program is free software; you can redistribute it and/or modify it under the terms
+ * of the GNU General Public License and Server Side Public License (SSPL) as published by
+ * the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License and SSPL for more details.
+ *
+ * For more information, visit the official website: [www.whaleal.com]
+ */
 package com.whaleal.ddt.realtime.common.distribute.bucket;
-
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.WriteModel;
@@ -17,9 +31,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
+ * BaseDistributeBucket类，作为分布式桶的基类，提供了基本的桶操作，包括解析事件、更新索引计数、添加数据到缓存等。
+ * 实现了ParseEventInterface接口，需要子类实现具体的事件解析和DDL解析方法。
+ *
  * @author liheping
  */
 @Log4j2
+
 public abstract class BaseDistributeBucket<T> extends CommonTask implements ParseEventInterface<T> {
 
     /**
@@ -57,6 +75,15 @@ public abstract class BaseDistributeBucket<T> extends CommonTask implements Pars
      */
     protected final Set<String> ddlSet;
 
+    /**
+     * 构造函数，初始化基本参数和MongoClient
+     *
+     * @param workName     工作名称
+     * @param dsName       数据源名称
+     * @param maxBucketNum 最大桶数量
+     * @param ddlSet       DDL集合
+     * @param ddlWait      等待DDL的时间
+     */
     protected BaseDistributeBucket(String workName, String dsName, int maxBucketNum, Set<String> ddlSet, int ddlWait) {
         super(workName, dsName);
         this.metadata = MetaData.getMetaData(workName);
@@ -67,6 +94,9 @@ public abstract class BaseDistributeBucket<T> extends CommonTask implements Pars
         this.mongoClient = MongoDBConnectionSync.getMongoClient(dsName);
     }
 
+    /**
+     * 主执行方法，包含任务状态判断、数据表解析、数据放入缓存等
+     */
     public void exe() {
         int idlingTime = 0;
         while (true) {
@@ -120,7 +150,7 @@ public abstract class BaseDistributeBucket<T> extends CommonTask implements Pars
                             // 解析后把数据放入下一层级
                             putDataToCache();
                         } catch (Exception e) {
-                            log.error("{} {} an error occurred in the bucketing thread of changeStream, the error message:{}", workName, dbTableName, e.getMessage());
+                            log.error("{} {} an error occurred in the bucketing thread of event, the error message:{}", workName, dbTableName, e.getMessage());
                         } finally {
                             // 释放'锁'
                             atomicBoolean.set(false);
@@ -128,7 +158,7 @@ public abstract class BaseDistributeBucket<T> extends CommonTask implements Pars
                     }
                 }
             } catch (Exception e) {
-                log.error("{} an error occurred in the bucketing thread of changeStream, the error message:{}", workName, e.getMessage());
+                log.error("{} an error occurred in the bucketing thread of event, the error message:{}", workName, e.getMessage());
             }
         }
     }
@@ -145,6 +175,11 @@ public abstract class BaseDistributeBucket<T> extends CommonTask implements Pars
         }
     }
 
+    /**
+     * 抽象方法，需要子类实现具体的事件解析
+     *
+     * @param eventQueue 事件队列
+     */
     public abstract void parse(Queue<T> eventQueue);
 
     @Override
@@ -172,13 +207,13 @@ public abstract class BaseDistributeBucket<T> extends CommonTask implements Pars
     /**
      * putDataToCache
      *
-     * @param ns        库表民
+     * @param ns        库表
      * @param bucketNum 桶号
      * @desc 添加数据到下一层级
      */
     public void putDataToCache(String ns, int bucketNum) {
         try {
-            // 16个公共区
+            // 公共区
             int nsBucketNum = Math.abs((ns + bucketNum).hashCode() % maxBucketNum);
             if (metadata.getUniqueIndexCollection().containsKey(ns)) {
                 nsBucketNum = Math.abs(ns.hashCode() % maxBucketNum);
@@ -207,5 +242,10 @@ public abstract class BaseDistributeBucket<T> extends CommonTask implements Pars
         }
     }
 
+    /**
+     * 抽象方法，需要子类实现具体的DDL解析
+     *
+     * @param event 事件
+     */
     public abstract void parseDDL(T event);
 }

@@ -15,14 +15,13 @@
  */
 package com.whaleal.ddt.execute.realtime;
 
-import com.whaleal.ddt.execute.realtime.common.RealTimeWork;
 import com.whaleal.ddt.execute.config.WorkInfo;
-
+import com.whaleal.ddt.execute.realtime.common.BaseRealTimeWork;
 import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
 import com.whaleal.ddt.sync.distribute.bucket.DistributeBucket;
 import com.whaleal.ddt.sync.distribute.bucket.DistributeBucketForGteMongoDB5;
-import com.whaleal.ddt.sync.parse.ns.ParseNs;
 import com.whaleal.ddt.sync.distribute.bucket.DistributeBucketForLtMongoDB5;
+import com.whaleal.ddt.sync.parse.ns.ParseNs;
 import com.whaleal.ddt.sync.read.RealTimeReadDataByOplog;
 import com.whaleal.ddt.sync.write.RealTimeWriteData;
 import lombok.extern.log4j.Log4j2;
@@ -39,10 +38,10 @@ import lombok.extern.log4j.Log4j2;
  * @time: 2021/11/15 10:46 上午
  */
 @Log4j2
-public class RealTimeOplog extends RealTimeWork {
+public class BaseRealTimeOplog extends BaseRealTimeWork {
 
 
-    public RealTimeOplog(String workName) {
+    public BaseRealTimeOplog(String workName) {
         super(workName);
     }
 
@@ -62,7 +61,7 @@ public class RealTimeOplog extends RealTimeWork {
         }
         // 分桶线程
         for (int i = 0; i < nsBucketThreadNum; i++) {
-            createTask(nsBucketOplogThreadPoolName, generateOplogNsBucketTask(workInfo));
+            createTask(nsBucketEventThreadPoolName, generateOplogNsBucketTask(workInfo));
         }
         // 解析ns线程
         ParseNs parseNs = new ParseNs(workName, workInfo.getDbTableWhite(),
@@ -71,7 +70,7 @@ public class RealTimeOplog extends RealTimeWork {
         createTask(parseNSThreadPoolName, parseNs);
         // 读取线程
         RealTimeReadDataByOplog realTimeReadDataByOplog = new RealTimeReadDataByOplog(workName, sourceDsName, workInfo.getDdlFilterSet().size() > 0, workInfo.getDbTableWhite(), workInfo.getStartOplogTime(), workInfo.getEndOplogTime(), workInfo.getDelayTime());
-        createTask(readOplogThreadPoolName, realTimeReadDataByOplog);
+        createTask(readEventThreadPoolName, realTimeReadDataByOplog);
     }
 
     /**
@@ -89,7 +88,6 @@ public class RealTimeOplog extends RealTimeWork {
             return new DistributeBucketForLtMongoDB5(workName, targetDsName, workInfo.getBucketNum(), workInfo.getDdlFilterSet(), workInfo.getDdlWait());
         }
     }
-
 
 
 }

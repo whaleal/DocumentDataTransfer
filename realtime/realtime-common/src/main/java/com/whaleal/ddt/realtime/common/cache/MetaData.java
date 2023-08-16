@@ -30,9 +30,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.LongAdder;
 
-
 /**
- * 元数据操作日志类，用于存储event的元数据信息。每个source只有一个event。
+ * MetaData类，用于存储和管理元数据操作日志。每个source只有一个event。
  * 通过静态方法获取和移除元数据操作日志对象。
  * 元数据操作日志主要用于记录event的相关信息，包括操作次数、队列信息等。
  *
@@ -82,7 +81,7 @@ public final class MetaData<T> {
 
     /**
      * 使用静态修饰符声明一个存储元数据操作日志的映射，
-     * 使用字符串作为键，`MetaDataEvent`作为值
+     * 使用字符串作为键，`MetaData`作为值
      */
     private static Map<String, MetaData> MetaDataMap = new ConcurrentHashMap<>();
 
@@ -90,7 +89,7 @@ public final class MetaData<T> {
      * 获取指定工作名称的元数据操作日志
      *
      * @param workName 工作名称
-     * @return MetaDataEvent
+     * @return MetaData
      */
     public static MetaData getMetaData(String workName) {
         return MetaDataMap.get(workName);
@@ -110,27 +109,27 @@ public final class MetaData<T> {
      *
      * @param workName            工作名称
      * @param ddlWait             ddl处理超时参数，默认值为1200秒
-     * @param maxQueueSizeOfOplog oplog队列的最大大小
+     * @param maxQueueSizeOfEvent event队列的最大大小
      * @param bucketNum           桶的数量
      * @param bucketSize          桶的大小
      */
-    public MetaData(String workName, int ddlWait, int maxQueueSizeOfOplog, int bucketNum, int bucketSize) {
+    public MetaData(String workName, int ddlWait, int maxQueueSizeOfEvent, int bucketNum, int bucketSize) {
         this.workName = workName;
         this.ddlWait = ddlWait;
-        // 创建原始oplogDocument数据的阻塞队列
-        this.queueOfEvent = new LinkedBlockingQueue<>(maxQueueSizeOfOplog);
+        // 创建原始event数据的阻塞队列
+        this.queueOfEvent = new LinkedBlockingQueue<>(maxQueueSizeOfEvent);
         for (int i = 0; i < bucketNum; i++) {
             // 为每个桶创建阻塞队列，并将其放入queueOfBucketMap中
             queueOfBucketMap.put(i, new LinkedBlockingQueue<>(bucketSize));
             // 为每个桶创建AtomicBoolean对象，默认值为false，并将其放入stateOfBucketMap中
             stateOfBucketMap.put(i, new AtomicBoolean(false));
         }
-        // 将元数据操作日志对象放入oplogMetaDataMap中，以工作名称为键，该对象为值
+        // 将元数据操作日志对象放入MetaDataMap中，以工作名称为键，该对象为值
         MetaDataMap.put(workName, this);
     }
 
     /**
-     * readNum 读取的oplog个数的计数器，使用LongAdder实现
+     * readNum 读取的event个数的计数器，使用LongAdder实现
      */
     private LongAdder readNum = new LongAdder();
     /**
@@ -138,8 +137,8 @@ public final class MetaData<T> {
      */
     private BlockingQueue<T> queueOfEvent;
     /**
-     * 保存每个表的document的阻塞队列的映射
-     * 键为表名，值为ns解析后的Document
+     * 保存每个表的event的阻塞队列的映射
+     * 键为表名，值为ns解析后的event
      */
     private final Map<String, BlockingQueue<T>> queueOfNsMap = new ConcurrentHashMap<>();
     /**
@@ -162,10 +161,10 @@ public final class MetaData<T> {
     private final Map<Integer, AtomicBoolean> stateOfBucketMap = new ConcurrentHashMap<>();
 
     /**
-     * 保存每个ns正在处理的oplog信息的映射
-     * 键为ns名称，值为当前正在处理的oplog信息
+     * 保存每个ns正在处理的event信息的映射
+     * 键为ns名称，值为当前正在处理的event信息
      */
-    private final Map<String, T> currentNsDealOplogInfo = new ConcurrentHashMap<>();
+    private final Map<String, T> currentNsDealEventInfo = new ConcurrentHashMap<>();
     /**
      * 保存每个ns含有唯一索引个数的映射
      * 键为ns名称，值为唯一索引的个数
@@ -230,7 +229,9 @@ public final class MetaData<T> {
         return sum;
     }
 
-
+    /**
+     * 等待缓存中数据执行完毕
+     */
     public void waitCacheExe() {
         waitPushDataWriteOver();
         waitOplogNsBucketTask();
@@ -294,7 +295,7 @@ public final class MetaData<T> {
 
 
     /**
-     * t桶数据都已经写完
+     * 桶数据都已经写完
      */
     private void waitOplogNsBucketTask() {
         long startWaitTime = System.currentTimeMillis();
@@ -383,7 +384,7 @@ public final class MetaData<T> {
             log.info("{} current round (10s) execution:{} per/s", workName, Math.round((exeCount - executeCountOld) / 10.0F));
 
             // 输出ns正在处理那个ddl oplog呢
-            for (Map.Entry<String, T> documentEntry : currentNsDealOplogInfo.entrySet()) {
+            for (Map.Entry<String, T> documentEntry : currentNsDealEventInfo.entrySet()) {
                 String key = documentEntry.getKey();
                 // 输出ns正在处理那个ddl oplog呢
                 log.info("{} ns:{},processing event:{}", workName, key, documentEntry.getValue().toString());
@@ -405,7 +406,7 @@ public final class MetaData<T> {
                     if (size == 0) {
                         continue;
                     }
-                    log.info("{} bucket:{},remaining sync data:{}", workName, entry.getKey(), entry.getValue().size());
+                    log.info("{} bucket:{},remaining sync data:{}", workName, entry.getKey(), size);
                 }
             }
             return exeCount;

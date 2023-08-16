@@ -255,6 +255,16 @@ public class WorkInfoGenerator {
                     workInfo.setCreateIndexThreadNum(createIndexThreadNum);
                 }
             }
+
+
+            {
+                String fullTypeStr = Property.getPropertiesByKey("fullType");
+                if (CharSequenceUtil.isBlank(fullTypeStr)) {
+                    log.warn("The full task synchronization mode is not selected. The default mode is oplog:{}", workInfo.getRealTimeType());
+                } else {
+                    workInfo.setFullType(fullTypeStr);
+                }
+            }
         }
 
         // Set batch count for each cache bucket (read from configuration file, use default value 20)

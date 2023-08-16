@@ -33,10 +33,12 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.Collections.singletonList;
 
+
 /**
- * @author: lhp
- * @time: 2021/7/21 2:38 下午
- * @desc: 读取event中的数据
+ * 实时数据读取类，通过变更流（Change Stream）读取事件中的数据。
+ *
+ * @param <T> ChangeStreamDocument类型的泛型参数。
+ * @author liheping
  */
 @Log4j2
 public class RealTimeReadDataByChangeStream extends BaseRealTimeReadData<ChangeStreamDocument<Document>> {
@@ -51,25 +53,20 @@ public class RealTimeReadDataByChangeStream extends BaseRealTimeReadData<ChangeS
     public void execute() {
         // 当出现异常时 可以进行进行查询
         while (!isReadScanOver) {
-            log.info("{} ready to read oplog", workName);
+            log.info("{} ready to read event", workName);
             try {
                 source();
             } catch (Exception e) {
-                log.error("{} error reading oplog failed,msg:{}", workName, e.getMessage());
+                log.error("{} error reading event failed,msg:{}", workName, e.getMessage());
             }
         }
     }
 
 
-    /**
-     * source 读取oplog的中数据
-     *
-     * @desc 读取oplog的中数据
-     */
     @Override
     public void source() {
         BsonTimestamp docTime = new BsonTimestamp(startTimeOfOplog, 0);
-        log.info("{} start reading changeStream data", workName);
+        log.info("{} start reading event data", workName);
         BasicDBObject condition = new BasicDBObject();
         if (startTimeOfOplog != 0) {
             // 设置查询数据的时间范围
@@ -87,15 +84,13 @@ public class RealTimeReadDataByChangeStream extends BaseRealTimeReadData<ChangeS
 //            condition.append("ns", new Document("$regex", dbTableWhite));
 //        }
 
-        log.info("{} the conditions for reading changeStream :{}", workName, condition.toJson());
+        log.info("{} the conditions for reading event :{}", workName, condition.toJson());
 
-        //
+
         int readNum = 1024000;
         try {
-            List<Bson> pipeline = singletonList(
-                    Aggregates.match(Filters.and(
-                            condition
-                    )));
+
+            List<Bson> pipeline = singletonList(Aggregates.match(Filters.and(condition)));
             ChangeStreamIterable<Document> changeStream = mongoClient.watch(pipeline);
 
             if (String.valueOf(dbVersion.charAt(0)).compareTo("6") > 0) {
@@ -109,7 +104,6 @@ public class RealTimeReadDataByChangeStream extends BaseRealTimeReadData<ChangeS
                 if (changeEvent.getNamespace() == null) {
                     continue;
                 }
-
                 String ns = changeEvent.getNamespace().getFullName();
                 // 10w条输出一次 或者10s输出一次
                 if (readNum++ > 102400 || (changeEvent.getClusterTime().getTime() - lastOplogTs.getTime() > 60)) {
@@ -117,8 +111,8 @@ public class RealTimeReadDataByChangeStream extends BaseRealTimeReadData<ChangeS
                     lastOplogTs = changeEvent.getClusterTime();
                     docTime = changeEvent.getClusterTime();
                     readNum = 0;
-                    log.info("{} current read changeStream time:{}", workName, lastOplogTs.getTime());
-                    log.info("{} current changeStream delay time:{} s", workName, Math.abs(System.currentTimeMillis() / 1000F - lastOplogTs.getTime()));
+                    log.info("{} current read event time:{}", workName, lastOplogTs.getTime());
+                    log.info("{} current event delay time:{} s", workName, Math.abs(System.currentTimeMillis() / 1000F - lastOplogTs.getTime()));
                     // q: 如果后面一直没有数据的话，这个信息就一直不打印。确实会出现日志不全的问题
                     // a: 为避免主线程的业务侵入性，暂时取舍。若是一直无oplog那就不打印罢了
 
@@ -135,11 +129,10 @@ public class RealTimeReadDataByChangeStream extends BaseRealTimeReadData<ChangeS
                     // 读取的第一条数据，一定会进来
                     // 判断是否在窗口期范围内
                     if (lastOplogTs.getTime() < startTimeOfOplog) {
-                        log.error("{} failed to read oplog: missed sliding window time oplog is overwritten, this program is about to exit", workName);
+                        log.error("{} failed to read oplog: missed sliding window time event is overwritten, this program is about to exit", workName);
                         WorkStatus.updateWorkStatus(workName, WorkStatus.WORK_STOP);
                     }
                 }
-
 
                 {
                     // 检查任务状态
@@ -156,8 +149,8 @@ public class RealTimeReadDataByChangeStream extends BaseRealTimeReadData<ChangeS
 
                 // 过滤元数据库信息 local admin config库数据不同步
                 if (!ns.startsWith("local.") && !ns.startsWith("admin.") && !ns.startsWith("config.")) {
-                    // 保留本次oplog的ts读取时间
-                    // 当前时间减去oplog的时间减去  小于延迟时间即可
+                    // 保留本次event的ts读取时间
+                    // 当前时间减去event的时间减去  小于延迟时间即可
                     if (delayTime > 0 && (System.currentTimeMillis() / 1000) - docTime.getTime() < delayTime) {
                         // 先把超时的时间进行睡眠等待
                         TimeUnit.SECONDS.sleep((System.currentTimeMillis() / 1000) - docTime.getTime());
@@ -171,13 +164,11 @@ public class RealTimeReadDataByChangeStream extends BaseRealTimeReadData<ChangeS
             WorkStatus.updateWorkStatus(workName, WorkStatus.WORK_STOP);
             isReadScanOver = true;
         } catch (Exception e) {
-            log.info("{} current read changeStream time:{}", workName, docTime.getTime());
+            log.info("{} current read event time:{}", workName, docTime.getTime());
             isReadScanOver = false;
             // 重新更新查询的开始时间和结束时间
             this.startTimeOfOplog = docTime.getTime();
-            log.error("{} read changeStream exception,msg:{}", workName, e.getMessage());
+            log.error("{} read event exception,msg:{}", workName, e.getMessage());
         }
     }
-
-
 }

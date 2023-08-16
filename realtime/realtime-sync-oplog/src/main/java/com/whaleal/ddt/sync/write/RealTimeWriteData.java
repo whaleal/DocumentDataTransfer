@@ -28,9 +28,7 @@ import org.bson.Document;
 @Log4j2
 public class RealTimeWriteData extends BaseRealTimeWriteData<Document> {
 
-
     public RealTimeWriteData(String workName, String dsName, int bucketSize) {
         super(workName, dsName, bucketSize);
     }
-
 }

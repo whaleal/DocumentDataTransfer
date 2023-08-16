@@ -29,14 +29,22 @@ import java.util.Queue;
 import java.util.Set;
 
 /**
- * @author: lhp
- * @time: 2021/7/30 11:07 上午
- * @desc: 多个线程操作 此时要处理多个ns。每个ns，最多同时有一个线程处理。
+ * 分布式桶操作类，用于多个线程操作。每个ns（命名空间）最多同时有一个线程处理。
+ *
+ * @param <T> ChangeStreamDocument类型的泛型参数。
  */
 @Log4j2
 public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<Document>> {
 
-
+    /**
+     * 构造函数，用于初始化分布式桶操作类。
+     *
+     * @param workName     工作/任务的名称。
+     * @param dsName       数据源的名称。
+     * @param maxBucketNum 最大桶号。
+     * @param ddlSet       DDL操作集。
+     * @param ddlWait      DDL等待时间。
+     */
     public DistributeBucket(String workName, String dsName, int maxBucketNum, Set<String> ddlSet, int ddlWait) {
         super(workName, dsName, maxBucketNum, ddlSet, ddlWait);
     }
@@ -47,12 +55,12 @@ public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<
         exe();
     }
 
-
     @Override
     public void parseDDL(ChangeStreamDocument<Document> changeStreamEvent) {
         try {
             // 当处理DDL时候 已经把所有数据推到下一层级
             String operationType = changeStreamEvent.getOperationTypeString();
+            log.warn("{} {} perform DDL operations {}:{}", workName, changeStreamEvent.getNamespace().getFullName(), changeStreamEvent.getOperationTypeString(), changeStreamEvent.toString());
             // todo 暂时放在这里 不处理
             switch (operationType) {
                 case CREATE_TABLE:
@@ -89,12 +97,6 @@ public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<
     }
 
 
-    /**
-     * com.whaleal.photon.source.mongodb.com.whaleal.ddt.parse
-     *
-     * @param documentQueue 数据队列
-     * @desc 解析Document
-     */
     @Override
     public void parse(Queue<ChangeStreamDocument<Document>> documentQueue) {
         int parseSize = 0;
@@ -127,10 +129,10 @@ public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<
                     default:
                         // 其他的都当做DDL处理
                         // 设置标识位：当前正在处理的DDL oplog
-                        metadata.getCurrentNsDealOplogInfo().put(currentDbTable, changeStreamEvent);
+                        metadata.getCurrentNsDealEventInfo().put(currentDbTable, changeStreamEvent);
                         parseDDL(changeStreamEvent);
                         metadata.updateBulkWriteInfo("cmd", 1);
-                        metadata.getCurrentNsDealOplogInfo().remove(currentDbTable);
+                        metadata.getCurrentNsDealEventInfo().remove(currentDbTable);
                         updateUniqueIndexCount(currentDbTable);
                         break;
                 }
@@ -147,36 +149,19 @@ public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<
     }
 
 
-    /**
-     * parseDropTable 解析删表
-     *
-     * @param document oplog数据
-     * @desc 解析删表
-     */
     @Override
     public void parseDropTable(ChangeStreamDocument<Document> changeStreamEvent) {
         MongoNamespace namespace = changeStreamEvent.getNamespace();
         mongoClient.getDatabase(namespace.getDatabaseName()).getCollection(namespace.getCollectionName()).drop();
     }
 
-    /**
-     * parseCreateTable 解析创建表
-     *
-     * @param document oplog数据
-     * @desc 解析创建表
-     */
+
     @Override
     public void parseCreateTable(ChangeStreamDocument<Document> changeStreamEvent) {
-// todo 未实现
+        // todo 未实现
     }
 
 
-    /**
-     * parseRenameTable 解析表重命名
-     *
-     * @param document oplog数据
-     * @desc 解析表重命名
-     */
     @Override
     public void parseRenameTable(ChangeStreamDocument<Document> changeStreamEvent) {
         MongoNamespace oldNs = changeStreamEvent.getNamespace();
@@ -195,34 +180,18 @@ public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<
     }
 
 
-    /**
-     * parseCreateIndex 解析建立索引
-     *
-     * @param document oplog数据
-     * @desc 解析建立索引
-     */
     @Override
     public void parseCreateIndex(ChangeStreamDocument<Document> changeStreamEvent) {
-// todo 未实现
+        // todo 未实现
     }
 
-    /**
-     * parseDropIndex 解析删除索引
-     *
-     * @param document oplog数据
-     * @desc 解析删除索引
-     */
+
     @Override
     public void parseDropIndex(ChangeStreamDocument<Document> changeStreamEvent) {
-// todo 未实现
+        // todo 未实现
     }
 
-    /**
-     * parseInsert 解析插入数据
-     *
-     * @param document oplog数据
-     * @desc 解析插入数据
-     */
+
     @Override
     public void parseInsert(ChangeStreamDocument<Document> changeStreamEvent) {
         String _id = changeStreamEvent.getDocumentKey().get("_id").toString();
@@ -236,7 +205,7 @@ public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<
             this.bucketSetMap.get(bucketNum).add(_id);
         }
         Document insertDocument = changeStreamEvent.getFullDocument();
-        this.bucketWriteModelListMap.get(bucketNum).add(new InsertOneModel<Document>(insertDocument));
+        this.bucketWriteModelListMap.get(bucketNum).add(new InsertOneModel<>(insertDocument));
     }
 
     @Override
@@ -251,7 +220,6 @@ public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<
             putDataToCache(currentDbTable, bucketNum);
             bucketSetMap.get(bucketNum).add(_id);
         }
-
         UpdateDescription updateDescription = changeStreamEvent.getUpdateDescription();
 
         Document set = new Document();
@@ -268,6 +236,7 @@ public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<
         if (unset.size() > 0) {
             update.append("$unset", set);
         }
+        // 一定会出现$set||$unset
         bucketWriteModelListMap.get(bucketNum).add(new UpdateOneModel<Document>(changeStreamEvent.getDocumentKey(), update));
     }
 
@@ -283,18 +252,12 @@ public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<
             putDataToCache(this.currentDbTable, bucketNum);
             this.bucketSetMap.get(bucketNum).add(_id);
         }
-
         BsonDocument filter = changeStreamEvent.getDocumentKey();
         Document fullDocument = changeStreamEvent.getFullDocument();
         bucketWriteModelListMap.get(bucketNum).add(new ReplaceOneModel<>(filter, fullDocument));
     }
 
-    /**
-     * parseDelete 解析删除数据
-     *
-     * @param document oplog数据
-     * @desc 解析删除数据
-     */
+
     @Override
     public void parseDelete(ChangeStreamDocument<Document> changeStreamEvent) {
         String _id = changeStreamEvent.getDocumentKey().get("_id").toString();
@@ -308,9 +271,8 @@ public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<
             bucketSetMap.get(bucketNum).add(_id);
         }
         BsonDocument deleteDocument = changeStreamEvent.getDocumentKey();
-        DeleteOneModel<Document> deleteOneModel = new DeleteOneModel<Document>(deleteDocument);
+        DeleteOneModel<Document> deleteOneModel = new DeleteOneModel<>(deleteDocument);
         bucketWriteModelListMap.get(bucketNum).add(deleteOneModel);
-
     }
 
     @Override
@@ -320,7 +282,7 @@ public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<
 
     @Override
     public void parseDropDatabase(ChangeStreamDocument<Document> event) {
-        // 可以不适应该方法
+        // 可以不use该方法
     }
 
     @Override
@@ -330,13 +292,11 @@ public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<
 
     @Override
     public void modifyCollection(ChangeStreamDocument<Document> changeStreamEvent) {
-// todo 未实现
+        // todo 未实现
     }
 
     @Override
     public void shardCollection(ChangeStreamDocument<Document> changeStreamEvent) {
-// todo 未实现
+        // todo 未实现
     }
-
-
 }

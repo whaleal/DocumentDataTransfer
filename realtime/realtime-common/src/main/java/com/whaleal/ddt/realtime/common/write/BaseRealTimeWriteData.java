@@ -42,22 +42,26 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * @desc: 写入数据
- * @author: lhp
- * @time: 2021/7/30 11:56 上午
+ * 基础实时写入数据抽象类，用于实现数据的写入逻辑。
+ *
+ * @author liheping
+ * @param <T> 表示正在处理的数据类型的泛型参数。
  */
+
 @Log4j2
 public abstract class BaseRealTimeWriteData<T> extends CommonTask {
 
     /**
-     * oplog元数据库类
+     * event元数据库类
      */
     protected final MetaData<T> metadata;
     /**
      * mongoClient
      */
     protected final MongoClient mongoClient;
-
+    /**
+     * 桶大小
+     */
     protected final int bucketSize;
 
 
@@ -86,7 +90,7 @@ public abstract class BaseRealTimeWriteData<T> extends CommonTask {
                     }
                 }
                 if (idlingTime++ > 10) {
-                    // 10次都没有获取到oplog信息,则进行睡眠
+                    // 10次都没有获取到event信息,则进行睡眠
                     TimeUnit.SECONDS.sleep(1);
                     // 10次都没有获得锁 更有可能继续无法获得'锁'
                     idlingTime = 9;
@@ -138,7 +142,6 @@ public abstract class BaseRealTimeWriteData<T> extends CommonTask {
             if (batchDataEntity == null) {
                 break;
             }
-
             bulkExecute(batchDataEntity);
             // 有数据就一直写入
             // 一直有数据 就一直追加 此时大表中大幅度占有的时候 会阻塞其他线程的处理
@@ -174,6 +177,7 @@ public abstract class BaseRealTimeWriteData<T> extends CommonTask {
             bulkWriteInfo(bulkWriteResult);
         } catch (Exception e) {
             // 出现异常 就一条一条数据写入
+            // todo 可以更加优化处理
             singleExecute(batchDataEntity);
         }
     }

@@ -75,7 +75,7 @@ public abstract class CommonTask implements Runnable {
             execute();
         } catch (Exception e) {
             e.printStackTrace();
-            log.error("{} 线程:{}执行发生错误:{}", workName, Thread.currentThread().getName(), e.getMessage());
+            log.error("{} thread :{} execution error :{}", workName, Thread.currentThread().getName(), e.getMessage());
         }
         // 线程数-1
         ThreadPoolManager.updateActiveThreadNum(threadPoolName.toString(), -1);

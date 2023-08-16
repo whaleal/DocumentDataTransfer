@@ -81,7 +81,7 @@ public class WorkInfo implements Cloneable, Serializable {
     private int sourceThreadNum = Math.round(HostInfoUtil.computeTotalCpuCore() * 0.25F);
     private int targetThreadNum = Math.round(HostInfoUtil.computeTotalCpuCore() * 0.75F);
     private int createIndexThreadNum = Math.round(HostInfoUtil.computeTotalCpuCore());
-
+    private String fullType = "sync";
     /**
      * 实时同步时
      * 解析桶的线程数的线程数

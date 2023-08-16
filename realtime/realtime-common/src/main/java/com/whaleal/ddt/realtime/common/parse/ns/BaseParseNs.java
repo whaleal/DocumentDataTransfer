@@ -1,3 +1,18 @@
+/*
+ * Document Data Transfer - An open-source project licensed under GPL+SSPL
+ *
+ * Copyright (C) [2023 - present ] [Whaleal]
+ *
+ * This program is free software; you can redistribute it and/or modify it under the terms
+ * of the GNU General Public License and Server Side Public License (SSPL) as published by
+ * the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License and SSPL for more details.
+ *
+ * For more information, visit the official website: [www.whaleal.com]
+ */
 package com.whaleal.ddt.realtime.common.parse.ns;
 
 import com.mongodb.client.MongoClient;
@@ -13,8 +28,10 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-
 /**
+ * BaseParseNs类，作为解析命名空间的基类，提供了基本的解析操作，包括解析ns、添加更新索引信息、推送队列等。
+ * 实现了CommonTask接口，需要子类实现具体的解析ns和添加更新索引信息方法。
+ *
  * @author liheping
  */
 @Log4j2
@@ -37,6 +54,14 @@ public abstract class BaseParseNs<T> extends CommonTask {
      */
     protected final int maxQueueSizeOfNs;
 
+    /**
+     * 构造函数，初始化基本参数和MongoClient
+     *
+     * @param workName         工作名称
+     * @param dbTableWhite     数据库表白名单
+     * @param dsName           数据源名称
+     * @param maxQueueSizeOfNs 每个ns队列的最大缓存数量
+     */
     protected BaseParseNs(String workName, String dbTableWhite, String dsName, int maxQueueSizeOfNs) {
         super(workName, dsName);
         this.dbTableWhite = dbTableWhite;
@@ -46,10 +71,13 @@ public abstract class BaseParseNs<T> extends CommonTask {
         this.maxQueueSizeOfNs = maxQueueSizeOfNs;
     }
 
+    /**
+     * 主执行方法，包含任务状态判断、数据表解析、数据放入缓存等
+     */
     public void exe() {
-        int count = 0;
+        Long count = 0L;
         // 上次清除ns的时间
-        long lastCleanNsTime = System.currentTimeMillis();
+        Long lastCleanNsTime = System.currentTimeMillis();
         while (true) {
             // 要加上异常处理 以防出现解析ns的线程异常退出
             T event = null;
@@ -60,10 +88,10 @@ public abstract class BaseParseNs<T> extends CommonTask {
                     // 解析ns
                     parseNs(event);
                 } else {
-                    // 要是oplog太慢,count增加,lastCleanNsTime减少,此时也及时进行清除ns。
+                    // 要是event太慢,count增加,lastCleanNsTime减少,此时也及时进行清除ns。
                     count += 1000;
                     lastCleanNsTime -= 1000;
-                    // 代表changeStream队列为空 暂时休眠
+                    // 代表event队列为空 暂时休眠
                     TimeUnit.SECONDS.sleep(1);
                     if (WorkStatus.getWorkStatus(this.workName) == WorkStatus.WORK_STOP) {
                         break;
@@ -75,47 +103,75 @@ public abstract class BaseParseNs<T> extends CommonTask {
                         }
                     }
                 }
-                // 每100w条 && 10分钟 清除一下空闲ns表信息
-                if (count++ > 1000000) {
-                    count = 0;
-                    long currentTimeMillis = System.currentTimeMillis();
-                    // 10分钟
-                    if ((currentTimeMillis - lastCleanNsTime) > 1000 * 60 * 10) {
-                        lastCleanNsTime = currentTimeMillis;
-                        log.warn("{} start removing redundant ns buckets", workName);
-                        for (Map.Entry<String, BlockingQueue<T>> queueEntry : metadata.getQueueOfNsMap().entrySet()) {
-                            try {
-                                BlockingQueue<T> value = queueEntry.getValue();
-                                String key = queueEntry.getKey();
-                                AtomicBoolean atomicBoolean = metadata.getStateOfNsMap().get(key);
-                                boolean pre = atomicBoolean.get();
-                                // cas操作
-                                if (value.isEmpty() && !pre && atomicBoolean.compareAndSet(false, true)) {
-                                    metadata.getQueueOfNsMap().remove(key);
-                                    metadata.getStateOfNsMap().remove(key);
-                                    atomicBoolean.set(false);
-                                }
-                            } catch (Exception e) {
-                                log.error("{} error in clearing free ns queue of oplog,msg:{}", workName, e.getMessage());
-                            }
-                        }
-                    }
-                }
+                cleanIdeLNs(count, lastCleanNsTime);
             } catch (Exception e) {
                 if (event != null) {
-                    log.error("{} currently parsing the changeStream log:{}", workName, event.toString());
+                    log.error("{} currently parsing the event log:{}", workName, event.toString());
                 }
-                log.error("{} an error occurred in the split table thread of the changeStream,msg:{}", workName, e.getMessage());
+                log.error("{} an error occurred in the split table thread of the event,msg:{}", workName, e.getMessage());
             }
         }
     }
 
+    /**
+     * 清除空闲的ns队列
+     *
+     * @param count
+     * @param lastCleanNsTime
+     */
+    private void cleanIdeLNs(Long count, Long lastCleanNsTime) {
+        // 每100w条 && 10分钟 清除一下空闲ns表信息
+        if (count++ > 1000000) {
+            count = 0L;
+            long currentTimeMillis = System.currentTimeMillis();
+            // 10分钟
+            if ((currentTimeMillis - lastCleanNsTime) > 1000 * 60 * 10) {
+                lastCleanNsTime = currentTimeMillis;
+                log.warn("{} start removing redundant ns buckets", workName);
+                for (Map.Entry<String, BlockingQueue<T>> queueEntry : metadata.getQueueOfNsMap().entrySet()) {
+                    try {
+                        BlockingQueue<T> value = queueEntry.getValue();
+                        if (value.size() > 0) {
+                            continue;
+                        }
+                        String key = queueEntry.getKey();
+                        AtomicBoolean atomicBoolean = metadata.getStateOfNsMap().get(key);
+                        boolean pre = atomicBoolean.get();
+                        // cas操作
+                        if (value.isEmpty() && !pre && atomicBoolean.compareAndSet(false, true)) {
+                            metadata.getQueueOfNsMap().remove(key);
+                            metadata.getStateOfNsMap().remove(key);
+                            atomicBoolean.set(false);
+                        }
+                    } catch (Exception e) {
+                        log.error("{} error in clearing free ns queue of event,msg:{}", workName, e.getMessage());
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 抽象方法，需要子类实现具体的解析ns
+     *
+     * @param event 事件
+     */
     public abstract void parseNs(T event) throws InterruptedException;
 
+    /**
+     * 抽象方法，需要子类实现具体的添加更新唯一索引信息
+     *
+     * @param ns 库名.表名
+     */
+    public abstract void addUpdateUniqueIndexInfo(String ns);
 
-    public abstract void addUpdateIndexInfo(String ns);
-
-
+    /**
+     * 将事件推送到队列
+     *
+     * @param ns    库名.表名
+     * @param event 事件
+     * @param isDDL 是否是DDL操作
+     */
     public void pushQueue(String ns, T event, boolean isDDL) throws InterruptedException {
         // 多重DDL 保证DDL顺序性问题
         if (isDDL) {
@@ -124,7 +180,7 @@ public abstract class BaseParseNs<T> extends CommonTask {
         if (!metadata.getQueueOfNsMap().containsKey(ns)) {
             metadata.getQueueOfNsMap().put(ns, new LinkedBlockingQueue<>(maxQueueSizeOfNs));
             metadata.getStateOfNsMap().put(ns, new AtomicBoolean());
-            addUpdateIndexInfo(ns);
+            addUpdateUniqueIndexInfo(ns);
         }
         metadata.getQueueOfNsMap().get(ns).put(event);
         if (isDDL) {

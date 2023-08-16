@@ -13,23 +13,27 @@
  *
  * For more information, visit the official website: [www.whaleal.com]
  */
-package com.whaleal.ddt.sync.changestream.write;
+package com.whaleal.ddt.execute.full;
 
 
-import com.mongodb.client.model.changestream.ChangeStreamDocument;
-import com.whaleal.ddt.realtime.common.write.BaseRealTimeWriteData;
+import com.whaleal.ddt.execute.full.common.BaseFullWork;
+
 import lombok.extern.log4j.Log4j2;
-import org.bson.Document;
+
 
 
 /**
- * 实时写入数据的类。
- *
  * @author liheping
  */
 @Log4j2
-public class RealTimeWriteData extends BaseRealTimeWriteData<ChangeStreamDocument<Document>> {
-    public RealTimeWriteData(String workName, String dsName, int bucketSize) {
-        super(workName, dsName, bucketSize);
+public class FullSync  extends BaseFullWork {
+
+    /**
+     * FullSync类的构造函数。
+     *
+     * @param workName 工作名称。
+     */
+    public FullSync(String workName) {
+        super(workName);
     }
 }

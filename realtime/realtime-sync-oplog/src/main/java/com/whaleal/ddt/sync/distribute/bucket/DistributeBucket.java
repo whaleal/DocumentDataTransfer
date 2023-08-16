@@ -23,17 +23,29 @@ import com.whaleal.ddt.util.ParserMongoStructureUtil;
 import lombok.extern.log4j.Log4j2;
 import org.bson.Document;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 
 /**
- * @author: lhp
- * @time: 2021/7/30 11:07 上午
- * @desc: 多个线程操作 此时要处理多个ns。每个ns，最多同时有一个线程处理。
+ * DistributeBucket类是一个抽象类，它继承了BaseDistributeBucket类，并提供了对MongoDB数据库操作的实现。
+ * 它主要用于处理多线程操作，每个线程处理一个命名空间（ns）。
+ * 它提供了对数据库操作（如插入、更新、删除等）的解析方法，以及对DDL操作（如创建表、删除表、创建索引等）的解析方法。
  */
 @Log4j2
+
 public abstract class DistributeBucket extends BaseDistributeBucket<Document> {
 
-
+    /**
+     * 构造函数
+     *
+     * @param workName     工作名称
+     * @param dsName       数据源名称
+     * @param maxBucketNum 最大桶数
+     * @param ddlSet       数据定义语言集合
+     * @param ddlWait      数据定义语言等待时间
+     */
     protected DistributeBucket(String workName, String dsName, int maxBucketNum, Set<String> ddlSet, int ddlWait) {
         super(workName, dsName, maxBucketNum, ddlSet, ddlWait);
     }
@@ -41,7 +53,7 @@ public abstract class DistributeBucket extends BaseDistributeBucket<Document> {
 
     @Override
     public void execute() {
-        log.info("{} the oplog bucketing thread starts running", workName);
+        log.info("{} the event bucketing thread starts running", workName);
         exe();
     }
 
@@ -88,12 +100,6 @@ public abstract class DistributeBucket extends BaseDistributeBucket<Document> {
     }
 
 
-    /**
-     * com.whaleal.photon.source.mongodb.com.whaleal.ddt.parse
-     *
-     * @param documentQueue 数据队列
-     * @desc 解析Document
-     */
     @Override
     public void parse(Queue<Document> documentQueue) {
         int parseSize = 0;
@@ -114,10 +120,10 @@ public abstract class DistributeBucket extends BaseDistributeBucket<Document> {
                     parseDelete(document);
                 } else if ("c".equals(op)) {
                     // 设置标识位：当前正在处理的DDL oplog
-                    metadata.getCurrentNsDealOplogInfo().put(currentDbTable, document);
+                    metadata.getCurrentNsDealEventInfo().put(currentDbTable, document);
                     parseDDL(document);
                     metadata.updateBulkWriteInfo("cmd", 1);
-                    metadata.getCurrentNsDealOplogInfo().remove(currentDbTable);
+                    metadata.getCurrentNsDealEventInfo().remove(currentDbTable);
                     updateUniqueIndexCount(currentDbTable);
                 } else if ("updateIndexInfo".equals(op)) {
                     // 更新此表的唯一索引情况
@@ -142,7 +148,7 @@ public abstract class DistributeBucket extends BaseDistributeBucket<Document> {
      * @param document oplog数据
      * @desc 解析建立索引  把 CommitIndexBuild转为普通方式建立索引
      */
-    public void parseCommitIndexBuild(Document document) {
+    private void parseCommitIndexBuild(Document document) {
         Document o = (Document) document.get("o");
         // todo 考虑commitIndexBuild要不要进行建立索引 可能会出现撤回建立的情况
         String tableName = o.get("commitIndexBuild").toString();
@@ -166,8 +172,7 @@ public abstract class DistributeBucket extends BaseDistributeBucket<Document> {
      * @param document oplog数据
      * @desc 解析建立索引
      */
-    public void createIndex(Document document) {
-
+    private void createIndex(Document document) {
         String ns = document.get("ns").toString();
         String[] nsSplit = ns.split("\\.", 2);
         String dbName = nsSplit[0];
@@ -221,7 +226,7 @@ public abstract class DistributeBucket extends BaseDistributeBucket<Document> {
      * @param document oplog数据
      * @desc 解析删除索引
      */
-    public void dropIndex(Document document) {
+    private void dropIndex(Document document) {
         String ns = document.get("ns").toString();
         String[] nsSplit = ns.split("\\.", 2);
         String dbName = nsSplit[0];
@@ -236,12 +241,6 @@ public abstract class DistributeBucket extends BaseDistributeBucket<Document> {
     }
 
 
-    /**
-     * parseDropTable 解析删表
-     *
-     * @param document oplog数据
-     * @desc 解析删表
-     */
     @Override
     public void parseDropTable(Document document) {
         String ns = document.get("ns").toString();
@@ -252,12 +251,6 @@ public abstract class DistributeBucket extends BaseDistributeBucket<Document> {
         mongoClient.getDatabase(dbName).getCollection(tableName).drop();
     }
 
-    /**
-     * parseCreateTable 解析创建表
-     *
-     * @param document oplog数据
-     * @desc 解析创建表
-     */
     @Override
     public void parseCreateTable(Document document) {
         String ns = document.get("ns").toString();
@@ -275,12 +268,6 @@ public abstract class DistributeBucket extends BaseDistributeBucket<Document> {
     }
 
 
-    /**
-     * parseRenameTable 解析表重命名
-     *
-     * @param document oplog数据
-     * @desc 解析表重命名
-     */
     @Override
     public void parseRenameTable(Document document) {
         String ns = document.get("ns").toString();
@@ -309,34 +296,18 @@ public abstract class DistributeBucket extends BaseDistributeBucket<Document> {
     }
 
 
-    /**
-     * parseCreateIndex 解析建立索引
-     *
-     * @param document oplog数据
-     * @desc 解析建立索引
-     */
     @Override
     public void parseCreateIndex(Document document) {
         createIndex(document.append("createIndex", true));
     }
 
-    /**
-     * parseDropIndex 解析删除索引
-     *
-     * @param document oplog数据
-     * @desc 解析删除索引
-     */
+
     @Override
     public void parseDropIndex(Document document) {
         dropIndex(document.append("dropIndex", true));
     }
 
-    /**
-     * parseInsert 解析插入数据
-     *
-     * @param document oplog数据
-     * @desc 解析插入数据
-     */
+
     @Override
     public void parseInsert(Document document) {
         String _id = ((Document) document.get("o")).get("_id").toString();
@@ -362,12 +333,7 @@ public abstract class DistributeBucket extends BaseDistributeBucket<Document> {
         }
     }
 
-    /**
-     * parseDelete 解析删除数据
-     *
-     * @param document oplog数据
-     * @desc 解析删除数据
-     */
+
     @Override
     public void parseDelete(Document document) {
         String _id = ((Document) document.get("o")).get("_id").toString();
@@ -390,26 +356,16 @@ public abstract class DistributeBucket extends BaseDistributeBucket<Document> {
 
     @Override
     public void parseConvertToCapped(Document document) {
-        // 暂时不处理 此命令会才分为 :建表和重命名 两条oplog日志
+        // 暂时不处理 此命令会分为 :建表和重命名 两条oplog日志
     }
 
-    /**
-     * parseDropDatabase 删库
-     *
-     * @param document oplog数据
-     * @desc 删库。
-     */
+
     @Override
     public void parseDropDatabase(Document document) {
         // 暂时不处理 前序操作已经执行
     }
 
-    /**
-     * parseCollMod 表结构修改
-     *
-     * @param document oplog数据
-     * @desc 表结构修改。
-     */
+
     @Override
     public void parseCollMod(Document document) {
         // 表结构修改
@@ -419,19 +375,20 @@ public abstract class DistributeBucket extends BaseDistributeBucket<Document> {
         Document o = (Document) document.get("o");
         mongoClient.getDatabase(dbName).runCommand(o);
     }
+
     @Override
     public void modifyCollection(Document event) {
-// oplog无该方法用不到
+        // oplog无该方法用不到
     }
 
     @Override
     public void shardCollection(Document event) {
-// oplog无该方法用不到
+        // oplog无该方法用不到
     }
 
     @Override
     public void parseReplace(Document event) {
-// oplog无该方法用不到
+        // oplog无该方法用不到
     }
 
 }

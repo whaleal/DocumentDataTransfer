@@ -17,14 +17,10 @@ package com.whaleal.ddt.sync.read;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.CursorType;
-import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.whaleal.ddt.realtime.common.read.BaseRealTimeReadData;
-
 import com.whaleal.ddt.status.WorkStatus;
-import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
-import com.whaleal.ddt.task.CommonTask;
 import lombok.extern.log4j.Log4j2;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
@@ -54,9 +50,8 @@ public class RealTimeReadDataByOplog extends BaseRealTimeReadData<Document> {
     }
 
 
-
     public RealTimeReadDataByOplog(String workName, String dsName, boolean captureDDL, String dbTableWhite, int startTimeOfOplog, int endTimeOfOplog, int delayTime) {
-        super(workName, dsName,captureDDL,dbTableWhite,startTimeOfOplog,endTimeOfOplog,delayTime);
+        super(workName, dsName, captureDDL, dbTableWhite, startTimeOfOplog, endTimeOfOplog, delayTime);
     }
 
 
@@ -113,16 +108,13 @@ public class RealTimeReadDataByOplog extends BaseRealTimeReadData<Document> {
         return new BsonTimestamp(0);
     }
 
-
     /**
-     * source 读取oplog的中数据
+     * 生成查询条件的方法，用于根据时间戳生成oplog查询条件。
      *
-     * @desc 读取oplog的中数据
+     * @param docTime oplog的时间戳。
+     * @return 生成的查询条件。
      */
-    @Override
-    public void source() {
-        BsonTimestamp docTime = new BsonTimestamp(startTimeOfOplog, 0);
-        log.info("{} start reading oplog data", workName);
+    private BasicDBObject generateCondition(BsonTimestamp docTime) {
         BasicDBObject condition = new BasicDBObject();
         if (startTimeOfOplog != 0) {
             // 设置查询数据的时间范围
@@ -143,12 +135,18 @@ public class RealTimeReadDataByOplog extends BaseRealTimeReadData<Document> {
             condition.append("ns", new Document("$regex", regexStr));
         }
         log.info("{} the conditions for reading oplog.rs :{}", workName, condition.toJson());
+        return condition;
+    }
 
+    @Override
+    public void source() {
+        BsonTimestamp docTime = new BsonTimestamp(startTimeOfOplog, 0);
+        log.info("{} start reading oplog data", workName);
         int readNum = 1024000;
         try {
             MongoCollection oplogCollection = mongoClient.getDatabase("local").getCollection("oplog.rs");
             MongoCursor<Document> cursor =
-                    oplogCollection.find(condition).projection(PROJECT_FIELD).
+                    oplogCollection.find(generateCondition(docTime)).projection(PROJECT_FIELD).
                             sort(new Document("$natural", 1)).
                             cursorType(CursorType.TailableAwait).noCursorTimeout(true).batchSize(8192).iterator();
             while (cursor.hasNext()) {

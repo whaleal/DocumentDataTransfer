@@ -13,10 +13,11 @@
  *
  * For more information, visit the official website: [www.whaleal.com]
  */
-package com.whaleal.ddt.execute;
+package com.whaleal.ddt.execute.full.common;
 
 import com.whaleal.ddt.common.Datasource;
 import com.whaleal.ddt.execute.config.WorkInfo;
+import com.whaleal.ddt.execute.full.FullSync;
 import com.whaleal.ddt.status.WorkStatus;
 import com.whaleal.ddt.sync.cache.MemoryCache;
 import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
@@ -40,39 +41,38 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author liheping
  */
 @Log4j2
-
-public class FullSync {
+public abstract class BaseFullWork {
     /**
      * workName
      */
-    private final String workName;
+    protected final String workName;
     /**
      * 数据源名称
      */
-    private final String sourceDsName;
+    protected final String sourceDsName;
     /**
      * 目标数据源名称
      */
-    private final String targetDsName;
+    protected final String targetDsName;
     /**
      * 读取线程名称
      */
-    private final String readThreadPoolName;
+    protected final String readThreadPoolName;
     /**
      * 写入线程名称
      */
-    private final String writeThreadPoolName;
+    protected final String writeThreadPoolName;
     /**
      * 公共线程名称
      */
-    private final String commonThreadPoolName;
+    protected final String commonThreadPoolName;
 
     /**
      * FullSync类的构造函数。
      *
      * @param workName 工作名称。
      */
-    public FullSync(String workName) {
+    protected BaseFullWork(String workName) {
         this.workName = workName;
         // 数据源名称
         this.sourceDsName = workName + "_source";
@@ -137,6 +137,12 @@ public class FullSync {
         }
     }
 
+    /**
+     * 创建任务
+     *
+     * @param threadPoolName 线程名
+     * @param runnable       任务
+     */
     private void createTask(String threadPoolName, Runnable runnable) {
         // 提交任何类型的任务
         ThreadPoolManager.submit(threadPoolName, runnable);
@@ -204,6 +210,9 @@ public class FullSync {
         return false;
     }
 
+    /**
+     * 等待写入数据结束
+     */
     public void waitWriteOver() {
         long startTime = System.currentTimeMillis();
         while (ThreadPoolManager.getActiveThreadNum(writeThreadPoolName) > 0) {
@@ -291,8 +300,9 @@ public class FullSync {
      * 启动全量同步任务
      *
      * @param workInfo 工作信息
+     * @param fullType 全量类型
      */
-    public static void startFullSync(final WorkInfo workInfo) {
+    public static void startFullSync(final WorkInfo workInfo, final String fullType) {
         Runnable runnable = () -> {
             log.info("enable Start task :{}, task configuration information :{}", workInfo.getWorkName(), workInfo.toString());
             // 设置程序状态为运行中
@@ -300,7 +310,12 @@ public class FullSync {
             // 生成缓存区数据
             MemoryCache memoryCache = new MemoryCache(workInfo.getWorkName(), workInfo.getBucketNum(), workInfo.getBucketSize());
             // 创建全量同步任务对象
-            FullSync fullSync = new FullSync(workInfo.getWorkName());
+            BaseFullWork fullSync = null;
+            if ("sync".equals(fullType)) {
+                fullSync = new FullSync(workInfo.getWorkName());
+            } else {
+                fullSync = new FullSync(workInfo.getWorkName());
+            }
             // 开启任务执行，连接源数据库和目标数据库
             fullSync.init(workInfo.getSourceDsUrl(), workInfo.getTargetDsUrl(), workInfo.getSourceThreadNum(), workInfo.getTargetThreadNum());
             // 应用集群结构

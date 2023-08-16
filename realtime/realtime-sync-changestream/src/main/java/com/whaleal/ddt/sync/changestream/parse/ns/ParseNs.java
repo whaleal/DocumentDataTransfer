@@ -28,13 +28,29 @@ import java.util.Set;
 
 
 /**
- * @author: lhp
- * @time: 2021/7/21 2:38 下午
- * @desc: 解析document的ns
+ * 命名空间解析类，用于解析ChangeStreamDocument的命名空间。
+ *
+ * @param <T> ChangeStreamDocument类型的泛型参数。
+ * @author liheping
  */
 @Log4j2
 public class ParseNs extends BaseParseNs<ChangeStreamDocument<Document>> {
+    /**
+     * ChangeStreamDocument中DDL事件操作类型
+     */
+    private static final Set<String> ddlOperations = new HashSet<>(Arrays.asList(
+            "create", "createIndexes", "drop", "dropDatabase",
+            "dropIndexes", "rename", "modify", "shardCollection"
+    ));
 
+    /**
+     * 构造函数，用于初始化命名空间解析类。
+     *
+     * @param workName         工作/任务的名称。
+     * @param dbTableWhite     数据库表白名单。
+     * @param dsName           数据源的名称。
+     * @param maxQueueSizeOfNs 命名空间最大队列大小。
+     */
     public ParseNs(String workName, String dbTableWhite, String dsName, int maxQueueSizeOfNs) {
         super(workName, dbTableWhite, dsName, maxQueueSizeOfNs);
     }
@@ -46,34 +62,22 @@ public class ParseNs extends BaseParseNs<ChangeStreamDocument<Document>> {
         exe();
     }
 
-    private static final Set<String> ddlOperations = new HashSet<>(Arrays.asList(
-            "create", "createIndexes", "drop", "dropDatabase",
-            "dropIndexes", "rename", "modify", "shardCollection"
-    ));
 
-    /**
-     * parseNs
-     *
-     * @desc 解析document的ns
-     */
+
     @Override
     public void parseNs(ChangeStreamDocument<Document> changeStreamEvent) throws InterruptedException {
         // getFullName 已在上级进行判断了，不会出现空指针
         String fullDbTableName = changeStreamEvent.getNamespace().getFullName();
         String op = changeStreamEvent.getOperationTypeString();
         boolean isDDL = ddlOperations.contains(op);
-        String tableName = changeStreamEvent.getNamespace().getCollectionName();
         // todo 这一款需要修改 调研日志
         // system.buckets.
         // 5.0以后分桶表 可以存储数据 可以参考system.txt说明
-        if (tableName.startsWith("system.") && (!tableName.startsWith("system.buckets."))) {
-            return;
-        }
         pushQueue(fullDbTableName, changeStreamEvent, isDDL);
     }
 
     @Override
-    public void addUpdateIndexInfo(String ns) {
+    public void addUpdateUniqueIndexInfo(String ns) {
         // 更新此表的唯一索引情况
         ChangeStreamDocument<Document> changeStreamEvent =
                 new ChangeStreamDocument<Document>("updateIndexInfo", new BsonDocument(), new BsonDocument(),

@@ -15,9 +15,8 @@
  */
 package com.whaleal.ddt.execute.realtime;
 
-import com.whaleal.ddt.execute.realtime.common.RealTimeWork;
 import com.whaleal.ddt.execute.config.WorkInfo;
-
+import com.whaleal.ddt.execute.realtime.common.BaseRealTimeWork;
 import com.whaleal.ddt.sync.changestream.distribute.bucket.DistributeBucket;
 import com.whaleal.ddt.sync.changestream.parse.ns.ParseNs;
 import com.whaleal.ddt.sync.changestream.read.RealTimeReadDataByChangeStream;
@@ -35,10 +34,10 @@ import lombok.extern.log4j.Log4j2;
  * @time: 2021/11/15 10:46 上午
  */
 @Log4j2
-public class RealTimeChangeStream extends RealTimeWork {
+public class BaseRealTimeChangeStream extends BaseRealTimeWork {
 
 
-    public RealTimeChangeStream(String workName) {
+    public BaseRealTimeChangeStream(String workName) {
         super(workName);
     }
 
@@ -59,7 +58,7 @@ public class RealTimeChangeStream extends RealTimeWork {
         }
         // 分桶线程
         for (int i = 0; i < nsBucketThreadNum; i++) {
-            createTask(nsBucketOplogThreadPoolName, new DistributeBucket(workName, targetDsName, workInfo.getBucketNum(), workInfo.getDdlFilterSet(), workInfo.getDdlWait()));
+            createTask(nsBucketEventThreadPoolName, new DistributeBucket(workName, targetDsName, workInfo.getBucketNum(), workInfo.getDdlFilterSet(), workInfo.getDdlWait()));
         }
         // 解析ns线程
         ParseNs distributeNs = new ParseNs(workName, workInfo.getDbTableWhite(),
@@ -68,12 +67,7 @@ public class RealTimeChangeStream extends RealTimeWork {
         createTask(parseNSThreadPoolName, distributeNs);
         // 读取线程
         RealTimeReadDataByChangeStream realTimeReadDataByChangeStream = new RealTimeReadDataByChangeStream(workName, sourceDsName, workInfo.getDdlFilterSet().size() > 0, workInfo.getDbTableWhite(), workInfo.getStartOplogTime(), workInfo.getEndOplogTime(), workInfo.getDelayTime());
-        createTask(readOplogThreadPoolName, realTimeReadDataByChangeStream);
+        createTask(readEventThreadPoolName, realTimeReadDataByChangeStream);
     }
-
-
-
-
-
 
 }
