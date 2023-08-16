@@ -1,0 +1,90 @@
+实时
+realTimeOplog.printThreadInfo()
+
+        String threadInfo = "{} the current number of {} threads:{}";
+        log.info(threadInfo, workName, readOplogThreadPoolName, ThreadPoolManager.getActiveThreadNum(readOplogThreadPoolName));
+        log.info(threadInfo, workName, parseNSThreadPoolName, ThreadPoolManager.getActiveThreadNum(parseNSThreadPoolName));
+        log.info(threadInfo, workName, nsBucketOplogThreadPoolName, ThreadPoolManager.getActiveThreadNum(nsBucketOplogThreadPoolName));
+        log.info(threadInfo, workName, writeThreadPoolName, ThreadPoolManager.getActiveThreadNum(writeThreadPoolName));
+
+
+metadataOplog.printCacheInfo()
+            log.info("{} the total number of oplog read currently:{}", workName, readNum.sum());
+
+            log.info("{} the current total number of caches:{}", workName, getTotalCacheNum());
+
+            log.info("{} the current number of real-time synchronization caches:{}", workName, queueOfOplog.size());
+
+            log.info("{} current bucket batch data cache number:{}", workName, cacheBucketQueueDataNum());
+
+            log.info("{} current table data cache number:{}", workName, cacheQueueOfNsDataNum());
+
+            log.info("{} current number of synchronization tables:{}", workName, getQueueOfNsMap().size());
+
+            log.info("{} number of executions:{}", workName, JSON.toJSONString(bulkWriteInfo));
+
+            long exeCount = sumBulkWriteInfo();
+            log.info("{} total number of execution items:{},average write speed:{} per/s",
+                    workName, exeCount, exeCount / ((System.currentTimeMillis() - workStartTime) / 1000));
+
+            log.info("{} current round (10s) execution:{} per/s", workName, Math.round((exeCount - executeCountOld) / 10.0F));
+
+
+
+ReadOplog.source()
+            log.info("{} current incremental progress{}%", workName, percentage);
+            log.info("{} current read oplog time:{}", workName, lastOplogTs.getTime());
+            log.info("{} current oplog delay time:{} s", workName, Math.abs(System.currentTimeMillis() / 1000F - lastOplogTs.getTime()));
+
+
+
+
+全量
+
+   log.info("{} this full task is expected to transfer {} bars of data", workInfo.getWorkName(), allNsDocumentCount);
+   log.info("{} current task queue cache status:{}", workInfo.getWorkName(), taskQueue.size());
+
+FullSync.printThreadInfo
+       log.info("{} the current number of {} threads:{}", workName, readThreadPoolName, ThreadPoolManager.getActiveThreadNum(readThreadPoolName));
+        log.info("{} the current number of {} threads:{}", workName, writeThreadPoolName, ThreadPoolManager.getActiveThreadNum(writeThreadPoolName));
+        log.info("{} the current number of {} threads:{}", workName, commonThreadPoolName, ThreadPoolManager.getActiveThreadNum(commonThreadPoolName));
+
+
+
+memoryCache.printCacheInfo
+             log.info("{} number of batches remaining in the current buffer:{}", workName, computeBatchCount());
+            // 当前缓存区条数量
+            log.info("{} number of documents remaining in the cache:{}", workName, computeDocumentCount());
+            // 已写入的条数
+            long writeCount = writeDocCount.sum();
+            log.info("{} number of bars written:{},time cost:{}s,average write speed:{} per/s",
+                    workName, writeCount, diffTime, (writeCount / diffTime));
+            // 已读取的条数
+            long readCount = readDocCount.sum();
+            log.info("{} number of bars read:{},time cost:{}s,average write speed:{} per/s",
+                    workName, readCount, diffTime, (readCount / diffTime));
+            log.info("{} the average write speed of this round (10s):{} per/s", workName, Math.round((writeCount - writeCountOld) / 10));
+
+
+
+
+
+
+
+Other
+  Git Guide 整合：https://github.com/whaleal/guide
+  配合ak部门测试vonage短信延迟性(小脚本 sh)
+VIVO
+   总体数据正常
+   更新vivo taffice模块和vivo alert模块（密钥key升级）
+   全部统计S3数据jar升级,traffic（traffic模块定时统计发送邮箱）和自动巡检上线
+DDT
+  D2T日志解析开发 对接永智部门 (解析完成，接口开发中，页面暂未开始)
+  changeStream上线（50%进行，框架已经搭建好,细节未处理）
+exam
+  couchBase认证考试
+
+
+
+
+
