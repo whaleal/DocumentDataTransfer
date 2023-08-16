@@ -83,9 +83,9 @@ public class BaseRealTimeOplog extends BaseRealTimeWork {
         String version = MongoDBConnectionSync.getVersion(sourceDsName);
         // 高版本 要对update的oplog特殊处理
         if (version.startsWith("5") || version.startsWith("6") || version.startsWith("7") || version.startsWith("8")) {
-            return new DistributeBucketForGteMongoDB5(workName, targetDsName, workInfo.getBucketNum(), workInfo.getDdlFilterSet(), workInfo.getDdlWait());
+            return new DistributeBucketForGteMongoDB5(workName, sourceDsName, targetDsName, workInfo.getBucketNum(), workInfo.getDdlFilterSet(), workInfo.getDdlWait());
         } else {
-            return new DistributeBucketForLtMongoDB5(workName, targetDsName, workInfo.getBucketNum(), workInfo.getDdlFilterSet(), workInfo.getDdlWait());
+            return new DistributeBucketForLtMongoDB5(workName, sourceDsName, targetDsName, workInfo.getBucketNum(), workInfo.getDdlFilterSet(), workInfo.getDdlWait());
         }
     }
 

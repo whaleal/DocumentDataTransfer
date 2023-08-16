@@ -37,16 +37,17 @@ import java.util.Set;
 public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<Document>> {
 
     /**
-     * 构造函数，用于初始化分布式桶操作类。
+     * 构造函数，初始化基本参数和MongoClient
      *
-     * @param workName     工作/任务的名称。
-     * @param dsName       数据源的名称。
-     * @param maxBucketNum 最大桶号。
-     * @param ddlSet       DDL操作集。
-     * @param ddlWait      DDL等待时间。
+     * @param workName     工作名称
+     * @param sourceDsName source数据源名称
+     * @param targetDsName target数据源名称
+     * @param maxBucketNum 最大桶数量
+     * @param ddlSet       DDL集合
+     * @param ddlWait      等待DDL的时间
      */
-    public DistributeBucket(String workName, String dsName, int maxBucketNum, Set<String> ddlSet, int ddlWait) {
-        super(workName, dsName, maxBucketNum, ddlSet, ddlWait);
+    public DistributeBucket(String workName, String sourceDsName, String targetDsName, int maxBucketNum, Set<String> ddlSet, int ddlWait) {
+        super(workName, sourceDsName,targetDsName, maxBucketNum, ddlSet, ddlWait);
     }
 
     @Override
@@ -152,7 +153,7 @@ public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<
     @Override
     public void parseDropTable(ChangeStreamDocument<Document> changeStreamEvent) {
         MongoNamespace namespace = changeStreamEvent.getNamespace();
-        mongoClient.getDatabase(namespace.getDatabaseName()).getCollection(namespace.getCollectionName()).drop();
+        targetMongoClient.getDatabase(namespace.getDatabaseName()).getCollection(namespace.getCollectionName()).drop();
     }
 
 
@@ -173,7 +174,7 @@ public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<
             //  a: 当用户允许使用rename时,就强制删除目标段已经存在的表
             renameCollectionOptions.dropTarget(true);
         }
-        this.mongoClient.getDatabase(oldNs.getDatabaseName()).getCollection(oldNs.getCollectionName()).renameCollection(changeStreamEvent.getDestinationNamespace(), renameCollectionOptions);
+        this.targetMongoClient.getDatabase(oldNs.getDatabaseName()).getCollection(oldNs.getCollectionName()).renameCollection(changeStreamEvent.getDestinationNamespace(), renameCollectionOptions);
         // 更新原表和新表的索引信息
         updateUniqueIndexCount(oldNs.getFullName());
         updateUniqueIndexCount(changeStreamEvent.getDestinationNamespace().getFullName());

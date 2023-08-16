@@ -61,7 +61,11 @@ public abstract class BaseDistributeBucket<T> extends CommonTask implements Pars
     /**
      * mongoClient
      */
-    protected MongoClient mongoClient;
+    protected MongoClient targetMongoClient;
+    /**
+     * mongoClient
+     */
+    protected MongoClient sourceMongoClient;
     /**
      * 当前解析的表maxTableBatchNumOfBucket
      */
@@ -79,19 +83,22 @@ public abstract class BaseDistributeBucket<T> extends CommonTask implements Pars
      * 构造函数，初始化基本参数和MongoClient
      *
      * @param workName     工作名称
-     * @param dsName       数据源名称
+     * @param sourceDsName source数据源名称
+     * @param targetDsName target数据源名称
      * @param maxBucketNum 最大桶数量
      * @param ddlSet       DDL集合
      * @param ddlWait      等待DDL的时间
      */
-    protected BaseDistributeBucket(String workName, String dsName, int maxBucketNum, Set<String> ddlSet, int ddlWait) {
-        super(workName, dsName);
+    protected BaseDistributeBucket(String workName, String sourceDsName, String targetDsName, int maxBucketNum, Set<String> ddlSet, int ddlWait) {
+        super(workName);
         this.metadata = MetaData.getMetaData(workName);
         this.maxBucketNum = maxBucketNum;
         this.ddlSet = ddlSet;
         this.workName = workName;
         this.ddlWait = ddlWait;
-        this.mongoClient = MongoDBConnectionSync.getMongoClient(dsName);
+        this.sourceMongoClient = MongoDBConnectionSync.getMongoClient(sourceDsName);
+        this.targetMongoClient = MongoDBConnectionSync.getMongoClient(targetDsName);
+
     }
 
     /**
@@ -187,7 +194,14 @@ public abstract class BaseDistributeBucket<T> extends CommonTask implements Pars
         String[] nsSplit = ns.split("\\.", 2);
         int count = 0;
         try {
-            for (Document index : mongoClient.getDatabase(nsSplit[0]).getCollection(nsSplit[1]).listIndexes()) {
+            // 必须source和target都查看
+            for (Document index : sourceMongoClient.getDatabase(nsSplit[0]).getCollection(nsSplit[1]).listIndexes()) {
+                // 可以考虑一下unique的值为1
+                if (index.containsKey("unique") && "true".equals(index.get("unique").toString())) {
+                    count++;
+                }
+            }
+            for (Document index : targetMongoClient.getDatabase(nsSplit[0]).getCollection(nsSplit[1]).listIndexes()) {
                 // 可以考虑一下unique的值为1
                 if (index.containsKey("unique") && "true".equals(index.get("unique").toString())) {
                     count++;

@@ -20,7 +20,7 @@
             <configuration>
               <transformers>
                 <transformer>
-                  <mainClass>com.whaleal.ddt.execute.Execute_FullSync_RealTimeOplog</mainClass>
+                  <mainClass>com.whaleal.ddt.execute.Execute</mainClass>
                 </transformer>
               </transformers>
             </configuration>

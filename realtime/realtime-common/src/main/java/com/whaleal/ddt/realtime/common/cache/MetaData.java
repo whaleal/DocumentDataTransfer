@@ -217,15 +217,11 @@ public final class MetaData<T> {
     public long getTotalCacheNum() {
         long sum = 0;
         // 队列缓存数
-        sum += MetaDataMap.size();
+        sum += queueOfEvent.size();
         // NS队列缓存数
         sum += cacheQueueOfNsDataNum();
         // 桶缓存数
-        for (Map.Entry<Integer, BlockingQueue<BatchDataEntity>> entry : queueOfBucketMap.entrySet()) {
-            for (BatchDataEntity batchDataEntity : entry.getValue()) {
-                sum += batchDataEntity.getDataList().size();
-            }
-        }
+        sum += cacheBucketQueueDataNum();
         return sum;
     }
 

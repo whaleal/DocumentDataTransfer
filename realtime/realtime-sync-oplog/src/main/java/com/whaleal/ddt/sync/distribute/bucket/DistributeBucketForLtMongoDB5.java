@@ -25,13 +25,14 @@ import java.util.Set;
 
 /**
  * 多线程操作解析Oplog。对应MongoDB版本5.x和6.x，为V3版本。
+ *
  * @author liheping
  */
 @Log4j2
 public class DistributeBucketForLtMongoDB5 extends DistributeBucket {
 
-    public DistributeBucketForLtMongoDB5(String workName, String dsName, int maxBucketNum, Set<String> ddlList, int ddlWait) {
-        super(workName, dsName, maxBucketNum, ddlList, ddlWait);
+    public DistributeBucketForLtMongoDB5(String workName, String sourceDsName, String targetDsName, int maxBucketNum, Set<String> ddlSet, int ddlWait) {
+        super(workName, sourceDsName, targetDsName, maxBucketNum, ddlSet, ddlWait);
     }
 
     /**

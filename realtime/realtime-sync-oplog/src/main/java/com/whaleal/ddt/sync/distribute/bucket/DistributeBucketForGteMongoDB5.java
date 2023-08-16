@@ -30,8 +30,8 @@ import java.util.Set;
 @Log4j2
 public class DistributeBucketForGteMongoDB5 extends DistributeBucket {
 
-    public DistributeBucketForGteMongoDB5(String workName, String dsName, int maxBucketNum, Set<String> ddlList, int ddlWait) {
-        super(workName, dsName, maxBucketNum, ddlList, ddlWait);
+    public DistributeBucketForGteMongoDB5(String workName, String sourceDsName, String targetDsName, int maxBucketNum, Set<String> ddlSet, int ddlWait) {
+        super(workName, sourceDsName, targetDsName, maxBucketNum, ddlSet, ddlWait);
     }
 
     /**
@@ -92,7 +92,6 @@ public class DistributeBucketForGteMongoDB5 extends DistributeBucket {
             bucketWriteModelListMap.get(bucketNum).add(new UpdateOneModel<Document>(o2, o));
         }
     }
-
 
 
     /**

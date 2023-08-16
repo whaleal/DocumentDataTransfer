@@ -66,7 +66,7 @@
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <!--                                                                        <mainClass>com.whaleal.photon.mongodbT.execute.CheckData</mainClass>-->
-                                    <mainClass>com.whaleal.ddt.execute.Execute_FullSync_RealTimeOplog</mainClass>
+                                    <mainClass>com.whaleal.ddt.execute.Execute</mainClass>
                                     <!--                                    <mainClass>com.whaleal.photon.mongodbT.execute.test.WriteData</mainClass>-->
                                 </transformer>
                             </transformers>

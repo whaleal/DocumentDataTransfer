@@ -55,6 +55,14 @@ public abstract class BaseParseNs<T> extends CommonTask {
     protected final int maxQueueSizeOfNs;
 
     /**
+     * 当前count数 用于清除ns
+     */
+    private Long count = 0L;
+    /**
+     * 上次清除ns的时间
+     */
+    private Long lastCleanNsTime = System.currentTimeMillis();
+    /**
      * 构造函数，初始化基本参数和MongoClient
      *
      * @param workName         工作名称
@@ -71,13 +79,12 @@ public abstract class BaseParseNs<T> extends CommonTask {
         this.maxQueueSizeOfNs = maxQueueSizeOfNs;
     }
 
+
+
     /**
      * 主执行方法，包含任务状态判断、数据表解析、数据放入缓存等
      */
     public void exe() {
-        Long count = 0L;
-        // 上次清除ns的时间
-        Long lastCleanNsTime = System.currentTimeMillis();
         while (true) {
             // 要加上异常处理 以防出现解析ns的线程异常退出
             T event = null;
@@ -103,7 +110,7 @@ public abstract class BaseParseNs<T> extends CommonTask {
                         }
                     }
                 }
-                cleanIdeLNs(count, lastCleanNsTime);
+                cleanIdeLNs();
             } catch (Exception e) {
                 if (event != null) {
                     log.error("{} currently parsing the event log:{}", workName, event.toString());
@@ -115,23 +122,20 @@ public abstract class BaseParseNs<T> extends CommonTask {
 
     /**
      * 清除空闲的ns队列
-     *
-     * @param count
-     * @param lastCleanNsTime
      */
-    private void cleanIdeLNs(Long count, Long lastCleanNsTime) {
+    private void cleanIdeLNs() {
         // 每100w条 && 10分钟 清除一下空闲ns表信息
         if (count++ > 1000000) {
             count = 0L;
             long currentTimeMillis = System.currentTimeMillis();
             // 10分钟
-            if ((currentTimeMillis - lastCleanNsTime) > 1000 * 60 * 10) {
+            if ((currentTimeMillis - lastCleanNsTime) > 1000 * 60 * 10L) {
                 lastCleanNsTime = currentTimeMillis;
                 log.warn("{} start removing redundant ns buckets", workName);
                 for (Map.Entry<String, BlockingQueue<T>> queueEntry : metadata.getQueueOfNsMap().entrySet()) {
                     try {
                         BlockingQueue<T> value = queueEntry.getValue();
-                        if (value.size() > 0) {
+                        if (!value.isEmpty()) {
                             continue;
                         }
                         String key = queueEntry.getKey();

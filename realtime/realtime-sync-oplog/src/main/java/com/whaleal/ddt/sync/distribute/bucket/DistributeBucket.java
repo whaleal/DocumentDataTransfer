@@ -38,16 +38,17 @@ import java.util.Set;
 public abstract class DistributeBucket extends BaseDistributeBucket<Document> {
 
     /**
-     * 构造函数
+     * 构造函数，初始化基本参数和MongoClient
      *
      * @param workName     工作名称
-     * @param dsName       数据源名称
-     * @param maxBucketNum 最大桶数
-     * @param ddlSet       数据定义语言集合
-     * @param ddlWait      数据定义语言等待时间
+     * @param sourceDsName source数据源名称
+     * @param targetDsName target数据源名称
+     * @param maxBucketNum 最大桶数量
+     * @param ddlSet       DDL集合
+     * @param ddlWait      等待DDL的时间
      */
-    protected DistributeBucket(String workName, String dsName, int maxBucketNum, Set<String> ddlSet, int ddlWait) {
-        super(workName, dsName, maxBucketNum, ddlSet, ddlWait);
+    protected DistributeBucket(String workName, String sourceDsName, String targetDsName, int maxBucketNum, Set<String> ddlSet, int ddlWait) {
+        super(workName, sourceDsName,targetDsName, maxBucketNum, ddlSet, ddlWait);
     }
 
 
@@ -188,7 +189,7 @@ public abstract class DistributeBucket extends BaseDistributeBucket<Document> {
         {
             boolean isExist = false;
             // 先检查这个表在目标段是否真的存在
-            for (String next : mongoClient.getDatabase(dbName).listCollectionNames()) {
+            for (String next : targetMongoClient.getDatabase(dbName).listCollectionNames()) {
                 if (next.equals(tableName)) {
                     isExist = true;
                     break;
@@ -200,7 +201,7 @@ public abstract class DistributeBucket extends BaseDistributeBucket<Document> {
                     long startCreateIndexTime = System.currentTimeMillis();
                     try {
                         indexOptions.background(true);
-                        mongoClient.getDatabase(dbName).getCollection(tableName).createIndex(index, indexOptions);
+                        targetMongoClient.getDatabase(dbName).getCollection(tableName).createIndex(index, indexOptions);
                     } catch (Exception e) {
                         log.error("{} failed to build index:[{}],msg:{}", workName, document.toJson(), e.getMessage());
                     } finally {
@@ -234,7 +235,7 @@ public abstract class DistributeBucket extends BaseDistributeBucket<Document> {
         String tableName = o.get("dropIndexes").toString();
         String indexName = o.get("index").toString();
         try {
-            mongoClient.getDatabase(dbName).getCollection(tableName).dropIndex(indexName);
+            targetMongoClient.getDatabase(dbName).getCollection(tableName).dropIndex(indexName);
         } catch (Exception e) {
             log.error("{} failed to drop index:[{}],msg:{}", workName, document.toJson(), e.getMessage());
         }
@@ -248,7 +249,7 @@ public abstract class DistributeBucket extends BaseDistributeBucket<Document> {
         String dbName = nsSplit[0];
         Document o = (Document) document.get("o");
         String tableName = o.get("drop").toString();
-        mongoClient.getDatabase(dbName).getCollection(tableName).drop();
+        targetMongoClient.getDatabase(dbName).getCollection(tableName).drop();
     }
 
     @Override
@@ -261,10 +262,10 @@ public abstract class DistributeBucket extends BaseDistributeBucket<Document> {
         CreateCollectionOptions collectionOptions = ParserMongoStructureUtil.parseCreateCollectionOption(o);
         if (ddlSet.contains(DROP_TABLE)) {
             // 建表前已经删表
-            mongoClient.getDatabase(dbName).getCollection(tableName).drop();
+            targetMongoClient.getDatabase(dbName).getCollection(tableName).drop();
         }
         // 正式建表 可能会出现建标失败，但是有日志捕获
-        mongoClient.getDatabase(dbName).createCollection(tableName, collectionOptions);
+        targetMongoClient.getDatabase(dbName).createCollection(tableName, collectionOptions);
     }
 
 
@@ -289,7 +290,7 @@ public abstract class DistributeBucket extends BaseDistributeBucket<Document> {
             //  a: 当用户允许使用rename时,就强制删除目标段已经存在的表
             renameCollectionOptions.dropTarget(true);
         }
-        this.mongoClient.getDatabase(dbName).getCollection(tableName).renameCollection(mongoNamespace, renameCollectionOptions);
+        this.targetMongoClient.getDatabase(dbName).getCollection(tableName).renameCollection(mongoNamespace, renameCollectionOptions);
         // 更新原表和新表的索引信息
         updateUniqueIndexCount(dbName + "." + tableName);
         updateUniqueIndexCount(dbName + "." + newTableName);
@@ -373,7 +374,7 @@ public abstract class DistributeBucket extends BaseDistributeBucket<Document> {
         String[] nsSplit = ns.split("\\.", 2);
         String dbName = nsSplit[0];
         Document o = (Document) document.get("o");
-        mongoClient.getDatabase(dbName).runCommand(o);
+        targetMongoClient.getDatabase(dbName).runCommand(o);
     }
 
     @Override
