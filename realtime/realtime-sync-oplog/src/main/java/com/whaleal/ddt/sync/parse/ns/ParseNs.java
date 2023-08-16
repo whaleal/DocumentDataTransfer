@@ -71,6 +71,18 @@ public class ParseNs extends BaseParseNs<Document> {
         pushQueue(fullDbTableName, document, isDDL);
     }
 
+    @Override
+    public void addUpdateIndexInfo(String ns) {
+        // 更新此表的唯一索引情况
+        Document updateIndexInfo = new Document();
+        updateIndexInfo.put("op", "updateIndexInfo");
+        try {
+            metadata.getQueueOfNsMap().get(ns).put(updateIndexInfo);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
     /**
      * parseDDL
      *

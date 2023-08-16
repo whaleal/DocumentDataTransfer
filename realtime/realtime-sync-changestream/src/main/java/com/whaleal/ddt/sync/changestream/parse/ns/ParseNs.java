@@ -16,10 +16,12 @@
 package com.whaleal.ddt.sync.changestream.parse.ns;
 
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
+import com.mongodb.client.model.changestream.UpdateDescription;
 import com.whaleal.ddt.realtime.common.parse.ns.BaseParseNs;
 import lombok.extern.log4j.Log4j2;
-import org.bson.Document;
+import org.bson.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -68,6 +70,20 @@ public class ParseNs extends BaseParseNs<ChangeStreamDocument<Document>> {
             return;
         }
         pushQueue(fullDbTableName, changeStreamEvent, isDDL);
+    }
+
+    @Override
+    public void addUpdateIndexInfo(String ns) {
+        // 更新此表的唯一索引情况
+        ChangeStreamDocument<Document> changeStreamEvent =
+                new ChangeStreamDocument<Document>("updateIndexInfo", new BsonDocument(), new BsonDocument(),
+                        new BsonDocument(), new Document(), new Document(), new BsonDocument(), new BsonTimestamp(), new UpdateDescription(new ArrayList<>(), new BsonDocument()), new BsonInt64(0),
+                        new BsonDocument(), new BsonDateTime(0L), new BsonDocument());
+        try {
+            metadata.getQueueOfNsMap().get(ns).put(changeStreamEvent);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
 }

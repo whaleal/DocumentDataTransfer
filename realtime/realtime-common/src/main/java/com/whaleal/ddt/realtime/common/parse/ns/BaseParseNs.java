@@ -6,7 +6,6 @@ import com.whaleal.ddt.status.WorkStatus;
 import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
 import com.whaleal.ddt.task.CommonTask;
 import lombok.extern.log4j.Log4j2;
-import org.bson.Document;
 
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -114,6 +113,9 @@ public abstract class BaseParseNs<T> extends CommonTask {
     public abstract void parseNs(T event) throws InterruptedException;
 
 
+    public abstract void addUpdateIndexInfo(String ns);
+
+
     public void pushQueue(String ns, T event, boolean isDDL) throws InterruptedException {
         // 多重DDL 保证DDL顺序性问题
         if (isDDL) {
@@ -122,12 +124,7 @@ public abstract class BaseParseNs<T> extends CommonTask {
         if (!metadata.getQueueOfNsMap().containsKey(ns)) {
             metadata.getQueueOfNsMap().put(ns, new LinkedBlockingQueue<>(maxQueueSizeOfNs));
             metadata.getStateOfNsMap().put(ns, new AtomicBoolean());
-            // 更新此表的唯一索引情况
-            Document updateIndexInfo = new Document();
-            updateIndexInfo.put("op", "updateIndexInfo");
-            metadata.getQueueOfNsMap().get(ns).put(event);
-            // 保证DDL顺序性问题
-            metadata.waitCacheExe();
+            addUpdateIndexInfo(ns);
         }
         metadata.getQueueOfNsMap().get(ns).put(event);
         if (isDDL) {

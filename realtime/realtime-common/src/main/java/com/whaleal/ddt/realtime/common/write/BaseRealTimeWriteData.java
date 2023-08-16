@@ -47,7 +47,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @time: 2021/7/30 11:56 上午
  */
 @Log4j2
-public  abstract class BaseRealTimeWriteData<T> extends CommonTask {
+public abstract class BaseRealTimeWriteData<T> extends CommonTask {
 
     /**
      * oplog元数据库类
@@ -138,6 +138,7 @@ public  abstract class BaseRealTimeWriteData<T> extends CommonTask {
             if (batchDataEntity == null) {
                 break;
             }
+
             bulkExecute(batchDataEntity);
             // 有数据就一直写入
             // 一直有数据 就一直追加 此时大表中大幅度占有的时候 会阻塞其他线程的处理
