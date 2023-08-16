@@ -60,7 +60,7 @@ public class HostInfoUtil {
                 try {
                     // 30s输出一次主机信息
                     TimeUnit.SECONDS.sleep(30);
-                   // printHostInfo();
+                    printHostInfo();
                 } catch (Exception ignored) {
 
                 }
@@ -234,10 +234,13 @@ public class HostInfoUtil {
                     long bytesSent = networkIF.getBytesSent();
                     long oldR = Long.parseLong(networkMap.get(networkIF.getName()).get("bytesRecv").toString());
                     long oldS = Long.parseLong(networkMap.get(networkIF.getName()).get("bytesSent").toString());
-                    networkMap.get(networkIF.getName()).put("bytesRecv", bytesRecv - oldR);
-                    networkMap.get(networkIF.getName()).put("bytesSent", bytesSent - oldS);
+                    if (bytesRecv - oldR > 0 || bytesSent - oldS > 0) {
+                        networkMap.get(networkIF.getName()).put("bytesRecv", bytesRecv - oldR);
+                        networkMap.get(networkIF.getName()).put("bytesSent", bytesSent - oldS);
+                    }
                 }
                 for (Map.Entry<String, Map<String, Object>> entry : networkMap.entrySet()) {
+
                     log.info("netInfo:{}", JSON.toJSONString(entry.getValue()));
                 }
             }
@@ -270,7 +273,7 @@ public class HostInfoUtil {
             printCPU();
             printMemory();
             // printThreadInfo();
-           // printDiskIOInfo();
+            // printDiskIOInfo();
             printNetIOInfo();
         } catch (Exception ignored) {
 
