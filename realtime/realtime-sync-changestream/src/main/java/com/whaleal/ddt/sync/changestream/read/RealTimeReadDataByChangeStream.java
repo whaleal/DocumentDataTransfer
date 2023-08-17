@@ -96,8 +96,11 @@ public class RealTimeReadDataByChangeStream extends BaseRealTimeReadData<ChangeS
             if (String.valueOf(dbVersion.charAt(0)).compareTo("6") > 0) {
                 changeStream.showExpandedEvents(true);
             }
+            // 可以改变这个值 建议可以计算得出
+            changeStream.batchSize(8086);
 
             MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = changeStream.cursor();
+
             while (cursor.hasNext()) {
                 ChangeStreamDocument<Document> changeEvent = cursor.next();
 

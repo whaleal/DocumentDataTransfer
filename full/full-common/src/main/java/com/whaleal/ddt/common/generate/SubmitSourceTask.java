@@ -13,14 +13,15 @@
  *
  * For more information, visit the official website: [www.whaleal.com]
  */
-package com.whaleal.ddt.sync.task.generate;
+package com.whaleal.ddt.common.generate;
 
-import com.whaleal.ddt.sync.task.SourceTaskInfo;
-import com.whaleal.ddt.sync.task.read.FullSyncReadTask;
+
+import com.whaleal.ddt.common.read.BaseFullReadTask;
 import com.whaleal.ddt.task.CommonTask;
 import com.whaleal.ddt.thread.pool.ThreadPoolManager;
 import lombok.extern.log4j.Log4j2;
 
+import java.lang.reflect.Constructor;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -53,6 +54,7 @@ public class SubmitSourceTask extends CommonTask {
      */
     private final String readThreadPoolName;
 
+    private final Class<? extends BaseFullReadTask> fullTypeClass;
 
     /**
      * 构造函数
@@ -64,8 +66,12 @@ public class SubmitSourceTask extends CommonTask {
      * @param isGenerateSourceTaskInfoOver 数据源任务信息是否生成完毕的标志
      * @param batchSize                    源任务批处理大小
      * @param readThreadPoolName           读取线程池名称，用于提交任务到指定线程池
+     * @param fullTypeClass                任务类型class
      */
-    public SubmitSourceTask(String workName, String dsName, int maxReadThreadNum, BlockingQueue<Range> taskQueue, AtomicBoolean isGenerateSourceTaskInfoOver, int batchSize, String readThreadPoolName) {
+    public SubmitSourceTask(String workName, String dsName, int maxReadThreadNum, BlockingQueue<Range> taskQueue,
+                            AtomicBoolean isGenerateSourceTaskInfoOver,
+                            int batchSize, String readThreadPoolName,
+                            Class<? extends BaseFullReadTask> fullTypeClass) {
         // 调用父类的构造函数，初始化工作名称和数据源名称
         super(workName, dsName);
         // 初始化其他成员变量
@@ -74,6 +80,7 @@ public class SubmitSourceTask extends CommonTask {
         this.isGenerateSourceTaskInfoOver = isGenerateSourceTaskInfoOver;
         this.batchSize = batchSize;
         this.readThreadPoolName = readThreadPoolName;
+        this.fullTypeClass = fullTypeClass;
     }
 
     /**
@@ -130,6 +137,14 @@ public class SubmitSourceTask extends CommonTask {
         // 输出日志，表示提交了一个任务
         log.info("{} submit task:{}", workName, sourceTaskInfo.toString());
         // 提交读取任务到线程池中执行，使用线程池管理器进行任务提交
-        ThreadPoolManager.submit(readThreadPoolName, new FullSyncReadTask(workName, dsName, batchSize, sourceTaskInfo));
+        // 反射 有点麻烦 也可以做
+
+        try {
+            Constructor<? extends BaseFullReadTask> constructor = fullTypeClass.getConstructor(String.class, String.class, Integer.class, SourceTaskInfo.class);
+            BaseFullReadTask instance = constructor.newInstance(workName, dsName, batchSize, sourceTaskInfo);
+            ThreadPoolManager.submit(readThreadPoolName, instance);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

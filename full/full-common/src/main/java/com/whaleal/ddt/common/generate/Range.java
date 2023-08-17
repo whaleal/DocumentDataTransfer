@@ -13,53 +13,49 @@
  *
  * For more information, visit the official website: [www.whaleal.com]
  */
-package com.whaleal.ddt.sync.task;
+package com.whaleal.ddt.common.generate;
 
-import com.alibaba.fastjson2.JSON;
-import com.whaleal.ddt.sync.task.generate.Range;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+
+import lombok.*;
 import lombok.extern.log4j.Log4j2;
 
+/**
+ * @author: lhp
+ * @time: 2021/7/19 5:02 下午
+ * @desc: 数据分片范围
+ */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
+@Builder
 @Log4j2
-public class SourceTaskInfo {
+public class Range {
     /**
-     * range
+     * 切分的字段名
      */
-    private Range range;
+    private String columnName;
     /**
-     * dbTableName
+     * 最大值
+     */
+    private Object maxValue;
+    /**
+     * 最小值
+     */
+    private Object minValue;
+    /**
+     * 是否为边缘值
+     * 否[min,max)
+     * 是[min,max]
+     */
+    private boolean isMax = false;
+    /**
+     * 库表名
      */
     private String ns;
     /**
-     * 源数据源名称
+     * 查询范围条数
      */
-    private String sourceDsName;
-    /**
-     * 目标数据源名称
-     */
-    private String targetDsName;
-    /**
-     * 开始时间
-     */
-    private long startTime;
-    /**
-     * 结束时间
-     */
-    private long endTime;
+    private int rangeSize;
 
-    public SourceTaskInfo(Range range, String ns, String sourceDsName) {
-        this.range = range;
-        this.ns = ns;
-        this.sourceDsName = sourceDsName;
-    }
-
-    @Override
-    public String toString() {
-        return JSON.toJSONString(this);
-    }
 }

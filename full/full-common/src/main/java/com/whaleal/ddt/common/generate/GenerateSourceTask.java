@@ -13,7 +13,7 @@
  *
  * For more information, visit the official website: [www.whaleal.com]
  */
-package com.whaleal.ddt.sync.task.generate;
+package com.whaleal.ddt.common.generate;
 
 import com.whaleal.ddt.task.CommonTask;
 import lombok.extern.log4j.Log4j2;

@@ -13,7 +13,7 @@
  *
  * For more information, visit the official website: [www.whaleal.com]
  */
-package com.whaleal.ddt.sync.task.generate;
+package com.whaleal.ddt.common.generate;
 
 
 import com.mongodb.BasicDBObject;

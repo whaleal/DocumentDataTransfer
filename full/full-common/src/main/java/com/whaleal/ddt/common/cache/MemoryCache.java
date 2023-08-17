@@ -13,7 +13,7 @@
  *
  * For more information, visit the official website: [www.whaleal.com]
  */
-package com.whaleal.ddt.sync.cache;
+package com.whaleal.ddt.common.cache;
 
 
 import com.whaleal.ddt.cache.BatchDataEntity;

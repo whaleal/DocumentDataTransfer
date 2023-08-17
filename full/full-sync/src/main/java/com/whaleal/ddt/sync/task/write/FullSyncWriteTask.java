@@ -19,21 +19,16 @@ import com.mongodb.MongoBulkWriteException;
 import com.mongodb.MongoNamespace;
 import com.mongodb.bulk.BulkWriteError;
 import com.mongodb.bulk.BulkWriteResult;
-import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.BulkWriteOptions;
 import com.mongodb.client.model.WriteModel;
-import com.whaleal.ddt.cache.BatchDataEntity;
-import com.whaleal.ddt.sync.cache.MemoryCache;
-import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
-import com.whaleal.ddt.util.WriteModelUtil;
-import com.whaleal.ddt.status.WorkStatus;
+import com.whaleal.ddt.common.write.BaseFullWriteTask;
 import com.whaleal.ddt.task.CommonTask;
+import com.whaleal.ddt.util.WriteModelUtil;
 import lombok.extern.log4j.Log4j2;
 import org.bson.Document;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 写入数据任务类
@@ -41,11 +36,8 @@ import java.util.concurrent.TimeUnit;
  * 用于将缓存中的批量数据写入到MongoDB数据库中
  */
 @Log4j2
-public class FullSyncWriteTask extends CommonTask {
-    /**
-     * mongoClient 客户端连接对象，用于与MongoDB进行数据交互
-     */
-    private final MongoClient mongoClient;
+public class FullSyncWriteTask extends BaseFullWriteTask {
+
     /**
      * 构造函数
      *
@@ -55,42 +47,9 @@ public class FullSyncWriteTask extends CommonTask {
     public FullSyncWriteTask(String workName, String dsName) {
         // 调用父类的构造函数，初始化工作名称和数据源名称
         super(workName, dsName);
-        // 获取对应数据源的MongoDB连接客户端
-        this.mongoClient = MongoDBConnectionSync.getMongoClient(dsName);
+
     }
 
-    /**
-     * 执行方法，用于从缓存中获取数据并写入MongoDB数据库
-     */
-    @Override
-    public void execute() {
-        // 获取当前工作名称对应的内存缓存
-        MemoryCache memoryCache = MemoryCache.getMemoryCache(workName);
-        // 循环执行数据写入任务
-        while (true) {
-            try {
-                // 从缓存中获取一批数据
-                BatchDataEntity batchDataEntity = memoryCache.getData();
-                if (batchDataEntity != null) {
-                    // 当前任务拉取的dbTableName
-                    int successWriteNum = bulkExecute(batchDataEntity.getNs(), batchDataEntity.getDataList());
-                    // 更新写入条数
-                    memoryCache.getWriteDocCount().add(successWriteNum);
-                } else {
-                    // 缓存中没有数据，则可以进行睡眠一段时间，等待数据生成
-                    TimeUnit.SECONDS.sleep(1);
-                    // 写入端不用进行判断pause，直接写入
-                    if (WorkStatus.getWorkStatus(workName) == WorkStatus.WORK_STOP) {
-                        // 如果工作状态为停止，则跳出循环，结束任务执行
-                        break;
-                    }
-                }
-            } catch (Exception e) {
-                // 发生异常时，打印错误信息
-                log.error("{} an error occurred while writing data. Error message:{}", workName, e.getMessage());
-            }
-        }
-    }
 
     /**
      * 单条写入执行方法，用于处理写入失败的情况
@@ -99,6 +58,7 @@ public class FullSyncWriteTask extends CommonTask {
      * @param ns                     数据库命名空间，用于指定数据库和集合
      * @return 成功写入的数据条数
      */
+    @Override
     public int singleExecute(List<WriteModel<Document>> writeModelListOfParent, String ns) {
         int successWriteNum = 0;
         MongoNamespace mongoNamespace = new MongoNamespace(ns);
@@ -135,6 +95,7 @@ public class FullSyncWriteTask extends CommonTask {
      * @param writeModelList 待写入的数据模型列表
      * @return 成功写入的数据条数
      */
+    @Override
     public int bulkExecute(String ns, List<WriteModel<Document>> writeModelList) {
         int successWriteNum = 0;
         MongoNamespace mongoNamespace = new MongoNamespace(ns);
