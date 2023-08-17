@@ -34,6 +34,7 @@
     <orderEntry type="library" name="Maven: net.java.dev.jna:jna:4.5.2" level="project" />
     <orderEntry type="library" name="Maven: com.whaleal.icefrog:icefrog-all:1.1.7" level="project" />
     <orderEntry type="module" module-name="full-sync" />
+    <orderEntry type="module" module-name="full-common" />
     <orderEntry type="module" module-name="realtime-sync-oplog" />
     <orderEntry type="module" module-name="realtime-common" />
     <orderEntry type="module" module-name="realtime-sync-changestream" />

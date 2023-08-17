@@ -40,4 +40,8 @@
     <orderEntry type="library" name="Maven: io.projectreactor:reactor-core:3.5.0" level="project" />
     <orderEntry type="library" name="Maven: io.reactivex.rxjava3:rxjava:3.1.6" level="project" />
   </component>
+  <component name="sonarModuleSettings">
+    <option name="localAnalysisScripName" value="&lt;PROJECT&gt;" />
+    <option name="serverName" value="&lt;PROJECT&gt;" />
+  </component>
 </module>

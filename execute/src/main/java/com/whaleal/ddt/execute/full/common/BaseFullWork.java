@@ -16,10 +16,11 @@
 package com.whaleal.ddt.execute.full.common;
 
 import com.whaleal.ddt.common.Datasource;
+import com.whaleal.ddt.common.cache.MemoryCache;
 import com.whaleal.ddt.execute.config.WorkInfo;
 import com.whaleal.ddt.execute.full.FullSync;
 import com.whaleal.ddt.status.WorkStatus;
-import com.whaleal.ddt.sync.cache.MemoryCache;
+
 import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
 import com.whaleal.ddt.sync.metadata.MongoDBClusterManager;
 import com.whaleal.ddt.sync.metadata.source.MongoDBMetadata;

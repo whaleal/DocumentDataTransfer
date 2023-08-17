@@ -22,7 +22,8 @@ import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.InsertOneModel;
 import com.mongodb.client.model.WriteModel;
 import com.whaleal.ddt.cache.BatchDataEntity;
-import com.whaleal.ddt.sync.cache.MemoryCache;
+
+import com.whaleal.ddt.common.cache.MemoryCache;
 import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
 import com.whaleal.ddt.status.WorkStatus;
 import com.whaleal.ddt.sync.task.SourceTaskInfo;

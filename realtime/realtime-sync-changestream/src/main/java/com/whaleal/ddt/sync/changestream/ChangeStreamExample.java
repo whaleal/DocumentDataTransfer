@@ -19,19 +19,20 @@ public class ChangeStreamExample {
     public static void main(String[] args) {
 
         MongoClient mongoClient = MongoClients.create("mongodb://192.168.12.100:27600");
-        //todo 是否可以条件筛选,fullDocument相关参数,
-        //1. 操作的类型如何筛选，筛选namespace，时间问题确认一下
+        // todo 是否可以条件筛选,fullDocument相关参数,
+        // 1. 操作的类型如何筛选，筛选namespace，时间问题确认一下
 
         List<Bson> pipeline = new ArrayList<>();
 
 
         pipeline.add(Aggregates.match(Filters.and(new Document("clusterTime", new Document().append("$gte", new BsonTimestamp((int) (System.currentTimeMillis()/1000), 0))))));
 
-//        pipeline.add(new Document("$addFields", new Document("nsToString", new Document("$toString", "$ns"))));
+        pipeline.add(new Document("$addFields", new Document("nsToString", new Document("$toString", "$ns"))));
 
-//        pipeline.add(new Document("$match", new Document("nsToString", "doc.lhp")));
+        pipeline.add(new Document("$match", new Document("nsToString", "doc.lhp")));
 
         ChangeStreamIterable<Document> changeStream = mongoClient.watch(pipeline);
+
 
         changeStream.showExpandedEvents(true);
 //        changeStream.startAtOperationTime();
@@ -40,7 +41,8 @@ public class ChangeStreamExample {
         try (MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = changeStream.cursor()) {
             while (cursor.hasNext()) {
                 ChangeStreamDocument<Document> changeEvent = cursor.next();
-
+                System.out.println(changeEvent.getOperationType());
+                System.out.println(changeEvent.getOperationType());
                 System.out.println(changeEvent.getOperationType().getValue());
 
                 System.out.println(changeEvent.toString());
