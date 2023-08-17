@@ -17,16 +17,16 @@ package com.whaleal.ddt.execute.full.common;
 
 import com.whaleal.ddt.common.Datasource;
 import com.whaleal.ddt.common.cache.MemoryCache;
+import com.whaleal.ddt.common.generate.GenerateSourceTask;
+import com.whaleal.ddt.common.generate.Range;
+import com.whaleal.ddt.common.generate.SubmitSourceTask;
 import com.whaleal.ddt.execute.config.WorkInfo;
+import com.whaleal.ddt.execute.full.FullReactive;
 import com.whaleal.ddt.execute.full.FullSync;
 import com.whaleal.ddt.status.WorkStatus;
-
 import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
 import com.whaleal.ddt.sync.metadata.MongoDBClusterManager;
 import com.whaleal.ddt.sync.metadata.source.MongoDBMetadata;
-import com.whaleal.ddt.sync.task.generate.GenerateSourceTask;
-import com.whaleal.ddt.sync.task.generate.Range;
-import com.whaleal.ddt.sync.task.generate.SubmitSourceTask;
 import com.whaleal.ddt.sync.task.write.FullSyncWriteTask;
 import com.whaleal.ddt.thread.pool.ThreadPoolManager;
 import com.whaleal.ddt.util.HostInfoUtil;
@@ -144,7 +144,7 @@ public abstract class BaseFullWork {
      * @param threadPoolName 线程名
      * @param runnable       任务
      */
-    private void createTask(String threadPoolName, Runnable runnable) {
+    public void createTask(String threadPoolName, Runnable runnable) {
         // 提交任何类型的任务
         ThreadPoolManager.submit(threadPoolName, runnable);
     }
@@ -155,11 +155,8 @@ public abstract class BaseFullWork {
      *
      * @param writeThreadNum 用于提交目标任务的写线程数。
      */
-    public void submitTargetTask(int writeThreadNum) {
-        for (int i = 0; i < writeThreadNum; i++) {
-            createTask(writeThreadPoolName, new FullSyncWriteTask(workName, targetDsName));
-        }
-    }
+
+    public abstract void submitTargetTask(int writeThreadNum) ;
 
     /**
      * 根据提供的参数生成源任务。
@@ -169,11 +166,7 @@ public abstract class BaseFullWork {
      * @param isGenerateSourceTaskInfoOver 原子布尔标志，指示源任务信息生成是否结束。
      * @param batchSize                    源任务的批处理大小。
      */
-    public void generateSource(int readThreadNum, BlockingQueue<Range> taskQueue, AtomicBoolean isGenerateSourceTaskInfoOver, int batchSize) {
-        SubmitSourceTask submitSourceTask = new SubmitSourceTask(workName, sourceDsName,
-                readThreadNum, taskQueue, isGenerateSourceTaskInfoOver, batchSize, readThreadPoolName);
-        createTask(commonThreadPoolName, submitSourceTask);
-    }
+    public  abstract void generateSource(int readThreadNum, BlockingQueue<Range> taskQueue, AtomicBoolean isGenerateSourceTaskInfoOver, int batchSize) ;
 
     /**
      * 检查完整同步过程是否完成。
@@ -315,7 +308,8 @@ public abstract class BaseFullWork {
             if ("sync".equals(fullType)) {
                 fullSync = new FullSync(workInfo.getWorkName());
             } else {
-                fullSync = new FullSync(workInfo.getWorkName());
+                //
+                fullSync = new FullReactive(workInfo.getWorkName());
             }
             // 开启任务执行，连接源数据库和目标数据库
             fullSync.init(workInfo.getSourceDsUrl(), workInfo.getTargetDsUrl(), workInfo.getSourceThreadNum(), workInfo.getTargetThreadNum());

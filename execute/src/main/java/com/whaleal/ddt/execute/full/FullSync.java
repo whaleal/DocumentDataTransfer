@@ -16,17 +16,22 @@
 package com.whaleal.ddt.execute.full;
 
 
+import com.whaleal.ddt.common.generate.Range;
+import com.whaleal.ddt.common.generate.SubmitSourceTask;
 import com.whaleal.ddt.execute.full.common.BaseFullWork;
-
+import com.whaleal.ddt.sync.task.read.FullSyncReadTask;
+import com.whaleal.ddt.sync.task.write.FullSyncWriteTask;
 import lombok.extern.log4j.Log4j2;
 
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 /**
  * @author liheping
  */
 @Log4j2
-public class FullSync  extends BaseFullWork {
+public class FullSync extends BaseFullWork {
 
     /**
      * FullSync类的构造函数。
@@ -35,5 +40,19 @@ public class FullSync  extends BaseFullWork {
      */
     public FullSync(String workName) {
         super(workName);
+    }
+
+    @Override
+    public void submitTargetTask(int writeThreadNum) {
+        for (int i = 0; i < writeThreadNum; i++) {
+            createTask(writeThreadPoolName, new FullSyncWriteTask(workName, targetDsName));
+        }
+    }
+
+    @Override
+    public void generateSource(int readThreadNum, BlockingQueue<Range> taskQueue, AtomicBoolean isGenerateSourceTaskInfoOver, int batchSize) {
+        SubmitSourceTask submitSourceTask = new SubmitSourceTask(workName, sourceDsName,
+                readThreadNum, taskQueue, isGenerateSourceTaskInfoOver, batchSize, readThreadPoolName, FullSyncReadTask.class);
+        createTask(commonThreadPoolName, submitSourceTask);
     }
 }

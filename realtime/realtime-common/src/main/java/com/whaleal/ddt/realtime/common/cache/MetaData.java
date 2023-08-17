@@ -359,7 +359,7 @@ public final class MetaData<T> {
 
             log.info("{} the current total number of caches:{}", workName, getTotalCacheNum());
 
-            log.info("{} the current number of real-time synchronization caches:{}", workName, MetaDataMap.size());
+            log.info("{} the current number of real-time synchronization caches:{}", workName, queueOfEvent.size());
 
             log.info("{} current bucket batch data cache number:{}", workName, cacheBucketQueueDataNum());
 
