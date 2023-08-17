@@ -47,7 +47,7 @@ public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<
      * @param ddlWait      等待DDL的时间
      */
     public DistributeBucket(String workName, String sourceDsName, String targetDsName, int maxBucketNum, Set<String> ddlSet, int ddlWait) {
-        super(workName, sourceDsName,targetDsName, maxBucketNum, ddlSet, ddlWait);
+        super(workName, sourceDsName, targetDsName, maxBucketNum, ddlSet, ddlWait);
     }
 
     @Override
@@ -58,9 +58,13 @@ public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<
 
     @Override
     public void parseDDL(ChangeStreamDocument<Document> changeStreamEvent) {
+        // 当处理DDL时候 已经把所有数据推到下一层级
+        String operationType = changeStreamEvent.getOperationTypeString();
+        if (!ddlSet.contains(operationType)) {
+            return;
+        }
         try {
-            // 当处理DDL时候 已经把所有数据推到下一层级
-            String operationType = changeStreamEvent.getOperationTypeString();
+
             log.warn("{} {} perform DDL operations {}:{}", workName, changeStreamEvent.getNamespace().getFullName(), changeStreamEvent.getOperationTypeString(), changeStreamEvent.toString());
             // todo 暂时放在这里 不处理
             switch (operationType) {

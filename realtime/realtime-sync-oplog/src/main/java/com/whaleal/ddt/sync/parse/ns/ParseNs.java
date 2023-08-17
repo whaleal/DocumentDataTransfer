@@ -19,6 +19,8 @@ import com.whaleal.ddt.realtime.common.parse.ns.BaseParseNs;
 import lombok.extern.log4j.Log4j2;
 import org.bson.Document;
 
+import java.util.Set;
+
 
 /**
  * @author: lhp
@@ -36,8 +38,8 @@ public class ParseNs extends BaseParseNs<Document> {
      * @param dsName           数据源名称。
      * @param maxQueueSizeOfNs 单个 namespace 队列的最大大小。
      */
-    public ParseNs(String workName, String dbTableWhite, String dsName, int maxQueueSizeOfNs) {
-        super(workName, dbTableWhite, dsName, maxQueueSizeOfNs);
+    public ParseNs(String workName, String dbTableWhite, String dsName, int maxQueueSizeOfNs, Set<String> ddlSet) {
+        super(workName, dbTableWhite, dsName, maxQueueSizeOfNs, ddlSet);
     }
 
 
@@ -94,29 +96,41 @@ public class ParseNs extends BaseParseNs<Document> {
     public String parseDDL(Document document) {
         Document o = (Document) document.get("o");
         String fullDbTableName = "";
-        if (o.get("create") != null) {
+        String opType = "";
+
+        if (o.containsKey("create")) {
             fullDbTableName = parseCreateTable(document);
-        } else if (o.get("drop") != null) {
+            opType = "create";
+        } else if (o.containsKey("drop")) {
             fullDbTableName = parseDropTable(document);
-        } else if (o.get("createIndexes") != null) {
+            opType = "drop";
+        } else if (o.containsKey("createIndexes")) {
             fullDbTableName = parseCreateIndex(document);
-        } else if (o.get("commitIndexBuild") != null) {
+            opType = "createIndexes";
+        } else if (o.containsKey("commitIndexBuild")) {
             fullDbTableName = parseCommitIndexBuild(document);
-        } else if (o.get("dropIndexes") != null) {
+            opType = "commitIndexBuild";
+        } else if (o.containsKey("dropIndexes")) {
             fullDbTableName = parseDropIndex(document);
-        } else if (o.get("renameCollection") != null) {
+            opType = "dropIndexes";
+        } else if (o.containsKey("renameCollection")) {
             fullDbTableName = parseRenameTable(document);
-        } else if (o.get("convertToCapped") != null) {
+            opType = "renameCollection";
+        } else if (o.containsKey("convertToCapped")) {
             // Q: 可以加上此功能
             // A: convertToCapped=drop+create
-        } else if (o.get("dropDatabase") != null) {
-            //此方法 不会用到 删除的语句 会变成删除n个删除表语句
+            opType = "convertToCapped";
+        } else if (o.containsKey("dropDatabase")) {
+            // 此方法不会用到删除的语句，会变成删除 n 个删除表语句
             parseDropDataBase(document);
-        } else if (o.get("collMod") != null) {
-            return parseCollMod(document);
+            opType = "dropDatabase";
+        } else if (o.containsKey("collMod")) {
+            opType = "collMod";
+            fullDbTableName = parseCollMod(document);
         }
-        return fullDbTableName;
+        return ddlSet.contains(opType) ? fullDbTableName : "";
     }
+
 
     /**
      * parseDropTable

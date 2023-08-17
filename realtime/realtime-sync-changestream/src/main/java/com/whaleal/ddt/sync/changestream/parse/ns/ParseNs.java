@@ -51,8 +51,8 @@ public class ParseNs extends BaseParseNs<ChangeStreamDocument<Document>> {
      * @param dsName           数据源的名称。
      * @param maxQueueSizeOfNs 命名空间最大队列大小。
      */
-    public ParseNs(String workName, String dbTableWhite, String dsName, int maxQueueSizeOfNs) {
-        super(workName, dbTableWhite, dsName, maxQueueSizeOfNs);
+    public ParseNs(String workName, String dbTableWhite, String dsName, int maxQueueSizeOfNs, Set<String> ddlSet) {
+        super(workName, dbTableWhite, dsName, maxQueueSizeOfNs, ddlSet);
     }
 
     @Override
@@ -63,13 +63,12 @@ public class ParseNs extends BaseParseNs<ChangeStreamDocument<Document>> {
     }
 
 
-
     @Override
     public void parseNs(ChangeStreamDocument<Document> changeStreamEvent) throws InterruptedException {
         // getFullName 已在上级进行判断了，不会出现空指针
         String fullDbTableName = changeStreamEvent.getNamespace().getFullName();
         String op = changeStreamEvent.getOperationTypeString();
-        boolean isDDL = ddlOperations.contains(op);
+        boolean isDDL = ddlOperations.contains(op) && ddlSet.contains(op);
         // todo 这一款需要修改 调研日志
         // system.buckets.
         // 5.0以后分桶表 可以存储数据 可以参考system.txt说明

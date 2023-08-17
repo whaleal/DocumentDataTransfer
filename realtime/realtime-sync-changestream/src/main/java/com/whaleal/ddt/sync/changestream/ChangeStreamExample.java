@@ -18,7 +18,7 @@ import java.util.List;
 public class ChangeStreamExample {
     public static void main(String[] args) {
 
-        MongoClient mongoClient = MongoClients.create("mongodb://192.168.12.200:24578");
+        MongoClient mongoClient = MongoClients.create("mongodb://192.168.12.100:27600");
         //todo 是否可以条件筛选,fullDocument相关参数,
         //1. 操作的类型如何筛选，筛选namespace，时间问题确认一下
 
@@ -33,7 +33,7 @@ public class ChangeStreamExample {
 
         ChangeStreamIterable<Document> changeStream = mongoClient.watch(pipeline);
 
-
+        changeStream.showExpandedEvents(true);
 //        changeStream.startAtOperationTime();
 
         // 创建ChangeStream

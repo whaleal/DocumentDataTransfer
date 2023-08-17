@@ -62,7 +62,7 @@ public class BaseRealTimeChangeStream extends BaseRealTimeWork {
         }
         // 解析ns线程
         ParseNs distributeNs = new ParseNs(workName, workInfo.getDbTableWhite(),
-                targetDsName, workInfo.getBatchSize() * workInfo.getBucketSize());
+                targetDsName, workInfo.getBatchSize() * workInfo.getBucketSize(),workInfo.getDdlFilterSet());
 
         createTask(parseNSThreadPoolName, distributeNs);
         // 读取线程

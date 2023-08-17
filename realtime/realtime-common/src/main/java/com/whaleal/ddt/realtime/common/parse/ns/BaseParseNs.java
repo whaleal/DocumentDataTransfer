@@ -23,6 +23,7 @@ import com.whaleal.ddt.task.CommonTask;
 import lombok.extern.log4j.Log4j2;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -63,6 +64,10 @@ public abstract class BaseParseNs<T> extends CommonTask {
      */
     private Long lastCleanNsTime = System.currentTimeMillis();
     /**
+     * 要同步的DDL列表
+     */
+    protected final Set<String> ddlSet;
+    /**
      * 构造函数，初始化基本参数和MongoClient
      *
      * @param workName         工作名称
@@ -70,13 +75,14 @@ public abstract class BaseParseNs<T> extends CommonTask {
      * @param dsName           数据源名称
      * @param maxQueueSizeOfNs 每个ns队列的最大缓存数量
      */
-    protected BaseParseNs(String workName, String dbTableWhite, String dsName, int maxQueueSizeOfNs) {
+    protected BaseParseNs(String workName, String dbTableWhite, String dsName, int maxQueueSizeOfNs,Set<String> ddlSet) {
         super(workName, dsName);
         this.dbTableWhite = dbTableWhite;
         this.workName = workName;
         this.metadata = MetaData.getMetaData(workName);
         this.mongoClient = MongoDBConnectionSync.getMongoClient(dsName);
         this.maxQueueSizeOfNs = maxQueueSizeOfNs;
+        this.ddlSet=ddlSet;
     }
 
 

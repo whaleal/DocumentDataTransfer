@@ -43,7 +43,9 @@ public class WorkInfoGenerator {
         ALL_DDL_SET.add("dropIndexes");
         ALL_DDL_SET.add("renameCollection");
         ALL_DDL_SET.add("convertToCapped");
-        ALL_DDL_SET.add("dropDatabase");
+        ALL_DDL_SET.add("rename");
+        ALL_DDL_SET.add("shardCollection");
+        ALL_DDL_SET.add("modify");
     }
 
     // Generate a work information object
@@ -133,6 +135,12 @@ public class WorkInfoGenerator {
                     workInfo.setDdlFilterSet(new HashSet<>());
                 } else {
                     workInfo.setDdlFilterSet(ddlSet);
+                }
+                if (workInfo.getDdlFilterSet().contains("renameCollection")) {
+                    workInfo.getDdlFilterSet().add("rename");
+                }
+                if (workInfo.getDdlFilterSet().contains("createIndexes")) {
+                    workInfo.getDdlFilterSet().add("commitIndexBuild");
                 }
             }
         }
