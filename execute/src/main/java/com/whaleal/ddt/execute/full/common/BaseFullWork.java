@@ -62,6 +62,10 @@ public abstract class BaseFullWork {
      */
     protected final String writeThreadPoolName;
     /**
+     * bulk写入线程名称
+     */
+    protected final String writeOfBulkThreadPoolName;
+    /**
      * 公共线程名称
      */
     protected final String commonThreadPoolName;
@@ -79,6 +83,7 @@ public abstract class BaseFullWork {
         // 各种任务数据源名称
         this.readThreadPoolName = workName + "_readThreadPoolName";
         this.writeThreadPoolName = workName + "_writeThreadPoolName";
+        this.writeOfBulkThreadPoolName = workName + "_writeOfBulkThreadPoolName";
         this.commonThreadPoolName = workName + "_commonThreadPoolName";
     }
 
@@ -97,6 +102,7 @@ public abstract class BaseFullWork {
         // 初始化线程次
         intiThreadPool(readThreadPoolName, readThreadNum);
         intiThreadPool(writeThreadPoolName, writeThreadNum);
+        intiThreadPool(writeOfBulkThreadPoolName, writeThreadNum);
         // 这个为系统自动生成的线程信息
         intiThreadPool(commonThreadPoolName, HostInfoUtil.computeTotalCpuCore() * 2);
     }
@@ -117,10 +123,10 @@ public abstract class BaseFullWork {
     /**
      * 根据提供的参数生成源任务信息。
      *
-     * @param dbTableWhite                 白名单数据库表，用于生成源任务信息。
+     * @param dbTableWhite                    白名单数据库表，用于生成源任务信息。
      * @param isGenerateSourceTaskInfoOverNum 指示源任务信息生成是否结束。
-     * @param taskQueue                    用于存储生成的任务的阻塞队列。
-     * @param parallelSync                 一个布尔值，指示是否启用并行同步。
+     * @param taskQueue                       用于存储生成的任务的阻塞队列。
+     * @param parallelSync                    一个布尔值，指示是否启用并行同步。
      */
     public void generateSourceTaskInfo(String dbTableWhite, AtomicInteger isGenerateSourceTaskInfoOverNum,
                                        BlockingQueue<Range> taskQueue, boolean parallelSync) {
@@ -159,19 +165,19 @@ public abstract class BaseFullWork {
     /**
      * 根据提供的参数生成源任务。
      *
-     * @param readThreadNum                要使用的读线程数。
-     * @param taskQueue                    用于存储生成的任务的阻塞队列。
+     * @param readThreadNum                   要使用的读线程数。
+     * @param taskQueue                       用于存储生成的任务的阻塞队列。
      * @param isGenerateSourceTaskInfoOverNum 指示源任务信息生成是否结束。
-     * @param batchSize                    源任务的批处理大小。
+     * @param batchSize                       源任务的批处理大小。
      */
     public abstract void generateSource(int readThreadNum, BlockingQueue<Range> taskQueue, AtomicInteger isGenerateSourceTaskInfoOverNum, int batchSize);
 
     /**
      * 检查完整同步过程是否完成。
      *
-     * @param fullMetaData                  要检查的内存缓存。
+     * @param fullMetaData                    要检查的内存缓存。
      * @param isGenerateSourceTaskInfoOverNum 指示源任务信息生成是否结束。
-     * @param taskQueue                    用于存储生成的任务的阻塞队列。
+     * @param taskQueue                       用于存储生成的任务的阻塞队列。
      * @return 如果完整同步完成，则返回true，否则返回false。
      */
     public boolean judgeFullSyncOver(FullMetaData fullMetaData, AtomicInteger isGenerateSourceTaskInfoOverNum, BlockingQueue<Range> taskQueue) {
@@ -185,11 +191,12 @@ public abstract class BaseFullWork {
         if (
                 fullMetaData.computeDocumentCount() == 0 &&
                         fullMetaData.computeBatchCount() == 0 &&
-                        isGenerateSourceTaskInfoOverNum.get()==0 &&
+                        isGenerateSourceTaskInfoOverNum.get() == 0 &&
                         // 这个要提前处理
                         taskQueue.isEmpty() &&
                         ThreadPoolManager.getActiveThreadNum(readThreadPoolName) == 0 &&
-                        ThreadPoolManager.getActiveThreadNum(commonThreadPoolName) == 0
+                        ThreadPoolManager.getActiveThreadNum(commonThreadPoolName) == 0 &&
+                        ThreadPoolManager.getActiveThreadNum(writeOfBulkThreadPoolName) == 0
         ) {
             try {
                 TimeUnit.MINUTES.sleep(1);
@@ -246,6 +253,7 @@ public abstract class BaseFullWork {
     public void printThreadInfo() {
         log.info("{} the current number of {} threads:{}", workName, readThreadPoolName, ThreadPoolManager.getActiveThreadNum(readThreadPoolName));
         log.info("{} the current number of {} threads:{}", workName, writeThreadPoolName, ThreadPoolManager.getActiveThreadNum(writeThreadPoolName));
+        log.info("{} the current number of {} threads:{}", workName, writeOfBulkThreadPoolName, ThreadPoolManager.getActiveThreadNum(writeOfBulkThreadPoolName));
         log.info("{} the current number of {} threads:{}", workName, commonThreadPoolName, ThreadPoolManager.getActiveThreadNum(commonThreadPoolName));
     }
 
@@ -266,6 +274,7 @@ public abstract class BaseFullWork {
         // 关闭线程池
         ThreadPoolManager.destroy(readThreadPoolName);
         ThreadPoolManager.destroy(writeThreadPoolName);
+        ThreadPoolManager.destroy(writeOfBulkThreadPoolName);
         ThreadPoolManager.destroy(commonThreadPoolName);
     }
 

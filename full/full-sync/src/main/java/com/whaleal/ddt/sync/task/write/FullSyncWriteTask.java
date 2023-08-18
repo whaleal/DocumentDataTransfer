@@ -85,7 +85,7 @@ public class FullSyncWriteTask extends BaseFullWriteTask {
                 for (BulkWriteError error : e.getWriteErrors()) {
                     log.error("ns:{},data write failure:{}", ns, error.getMessage());
                 }
-                log.error("ns:{},Ddata write failure:{}", ns, WriteModelUtil.writeModelToString(writeModel));
+                log.error("ns:{},data write failure:{}", ns, WriteModelUtil.writeModelToString(writeModel));
             } catch (Exception e) {
                 // 如果写入出现其他异常，打印错误信息
                 log.error("ns:{},data write failure:{}", ns, e.getMessage());

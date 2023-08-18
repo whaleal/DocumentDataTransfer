@@ -52,13 +52,19 @@ public final class ThreadPoolManager extends AbstractThreadPoolManager {
      * @param threadPoolName 程序名称
      * @param num            线程数
      */
-    public static int updateActiveThreadNum(String threadPoolName, int num) {
+    public static int updateActiveThreadNum(String threadPoolName, int num, boolean isPrint) {
         if (!THREAD_POOL_MANAGER.containsKey(threadPoolName)) {
             log.warn("threadPoolName:{},更新线程数失败:线程池不存在", threadPoolName);
             return -1;
         }
-        log.info("threadPoolName:{},updateActiveThreadNum:{}", threadPoolName, num);
+        if (isPrint) {
+            log.info("threadPoolName:{},updateActiveThreadNum:{}", threadPoolName, num);
+        }
         return THREAD_POOL_MANAGER.get(threadPoolName).getActiveThreadNum().addAndGet(num);
+    }
+
+    public static int updateActiveThreadNum(String threadPoolName, int num) {
+        return updateActiveThreadNum(threadPoolName, num, false);
     }
 
     public static void setActiveThreadNum(String threadPoolName, int num) {
@@ -67,6 +73,9 @@ public final class ThreadPoolManager extends AbstractThreadPoolManager {
     }
 
     public static int getActiveThreadNum(String threadPoolName) {
+        if (!THREAD_POOL_MANAGER.containsKey(threadPoolName)) {
+            return 0;
+        }
         return THREAD_POOL_MANAGER.get(threadPoolName).getActiveThreadNum().get();
     }
 

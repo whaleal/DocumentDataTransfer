@@ -17,14 +17,17 @@ package com.whaleal.ddt.reactive.write;
 
 
 import com.mongodb.MongoNamespace;
+import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.model.WriteModel;
 import com.mongodb.reactivestreams.client.MongoCollection;
 import com.whaleal.ddt.common.cache.FullMetaData;
 import com.whaleal.ddt.common.write.BaseFullWriteTask;
 import com.whaleal.ddt.conection.reactive.MongoDBConnectionReactive;
 import com.whaleal.ddt.task.CommonTask;
+import com.whaleal.ddt.thread.pool.ThreadPoolManager;
 import lombok.extern.log4j.Log4j2;
 import org.bson.Document;
+import org.reactivestreams.Publisher;
 
 import java.util.List;
 
@@ -58,15 +61,34 @@ public class FullReactiveWriteTask extends BaseFullWriteTask {
 
     @Override
     public int bulkExecute(String ns, List<WriteModel<Document>> writeModelList) {
-        if (writeModelList.size() == 0) {
+        if (writeModelList.isEmpty()) {
             return 0;
         }
-        BulkWriteSubscriber subscriber = new BulkWriteSubscriber(FullMetaData.getFullMetaData(workName), writeModelList, ns, workName);
+        // 没加上队列限制
+        // 此处放入另一个另外一个线程池
+        // 注意区分 多线程的异步情况
         MongoNamespace mongoNamespace = new MongoNamespace(ns);
         MongoCollection<Document> collection = mongoClient.getDatabase(mongoNamespace.getDatabaseName()).getCollection(mongoNamespace.getCollectionName());
-        collection.bulkWrite(writeModelList, BULK_WRITE_OPTIONS).subscribe(subscriber);
+        Publisher<BulkWriteResult> publisher = collection.bulkWrite(writeModelList, BULK_WRITE_OPTIONS);
+        BulkWriteSubscriber subscriber = new BulkWriteSubscriber(FullMetaData.getFullMetaData(workName), writeModelList, ns, workName);
+        publisher.subscribe(subscriber);
+//        createTask(new CommonTask(workName) {
+//            @Override
+//            public void execute() {
+//                MongoNamespace mongoNamespace = new MongoNamespace(ns);
+//                MongoCollection<Document> collection = mongoClient.getDatabase(mongoNamespace.getDatabaseName()).getCollection(mongoNamespace.getCollectionName());
+//                Publisher<BulkWriteResult> publisher = collection.bulkWrite(writeModelList, BULK_WRITE_OPTIONS);
+//                BulkWriteSubscriber subscriber = new BulkWriteSubscriber(FullMetaData.getFullMetaData(workName), writeModelList, ns, workName);
+//                publisher.subscribe(subscriber);
+//            }
+//        });
         return 0;
     }
 
+
+    public void createTask(Runnable runnable) {
+        // 提交任何类型的任务
+        ThreadPoolManager.submit(workName + "_writeOfBulkThreadPoolName", runnable);
+    }
 
 }
