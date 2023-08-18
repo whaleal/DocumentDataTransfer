@@ -113,7 +113,7 @@ public class Execute {
 
 
     private static void startFull(final WorkInfo workInfo, final String fullType) {
-        BaseFullWork.startFullSync(workInfo, fullType);
+        BaseFullWork.startFull(workInfo, fullType);
     }
 
     private static void startRealTime(final WorkInfo workInfo, final String realTimeType) {

@@ -51,7 +51,7 @@ FullSync.printThreadInfo
 
 
 
-memoryCache.printCacheInfo
+fullMetaData.printCacheInfo
              log.info("{} number of batches remaining in the current buffer:{}", workName, computeBatchCount());
             // 当前缓存区条数量
             log.info("{} number of documents remaining in the cache:{}", workName, computeDocumentCount());

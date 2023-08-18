@@ -17,7 +17,7 @@ package com.whaleal.ddt.execute.realtime;
 
 import com.whaleal.ddt.execute.config.WorkInfo;
 import com.whaleal.ddt.execute.realtime.common.BaseRealTimeWork;
-import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
+import com.whaleal.ddt.conection.sync.MongoDBConnectionSync;
 import com.whaleal.ddt.sync.distribute.bucket.DistributeBucket;
 import com.whaleal.ddt.sync.distribute.bucket.DistributeBucketForGteMongoDB5;
 import com.whaleal.ddt.sync.distribute.bucket.DistributeBucketForLtMongoDB5;

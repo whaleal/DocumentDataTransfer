@@ -24,7 +24,7 @@ import com.mongodb.client.model.CreateViewOptions;
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.UpdateOptions;
 
-import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
+import com.whaleal.ddt.conection.sync.MongoDBConnectionSync;
 import com.whaleal.ddt.util.ParserMongoStructureUtil;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;

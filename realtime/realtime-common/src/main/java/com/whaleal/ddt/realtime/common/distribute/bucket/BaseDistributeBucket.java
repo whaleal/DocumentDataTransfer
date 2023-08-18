@@ -18,9 +18,9 @@ package com.whaleal.ddt.realtime.common.distribute.bucket;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.WriteModel;
 import com.whaleal.ddt.cache.BatchDataEntity;
-import com.whaleal.ddt.realtime.common.cache.MetaData;
+import com.whaleal.ddt.realtime.common.cache.RealTimeMetaData;
 import com.whaleal.ddt.status.WorkStatus;
-import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
+import com.whaleal.ddt.conection.sync.MongoDBConnectionSync;
 import com.whaleal.ddt.task.CommonTask;
 import lombok.extern.log4j.Log4j2;
 import org.bson.Document;
@@ -47,7 +47,7 @@ public abstract class BaseDistributeBucket<T> extends CommonTask implements Pars
     /**
      * oplog元数据库
      */
-    protected final MetaData<T> metadata;
+    protected final RealTimeMetaData<T> metadata;
     /**
      * k桶号 默认[0-16)
      * v为Set<id>
@@ -91,7 +91,7 @@ public abstract class BaseDistributeBucket<T> extends CommonTask implements Pars
      */
     protected BaseDistributeBucket(String workName, String sourceDsName, String targetDsName, int maxBucketNum, Set<String> ddlSet, int ddlWait) {
         super(workName);
-        this.metadata = MetaData.getMetaData(workName);
+        this.metadata = RealTimeMetaData.getRealTimeMetaData(workName);
         this.maxBucketNum = maxBucketNum;
         this.ddlSet = ddlSet;
         this.workName = workName;

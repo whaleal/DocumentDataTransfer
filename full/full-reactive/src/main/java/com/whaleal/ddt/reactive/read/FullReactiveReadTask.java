@@ -1,4 +1,4 @@
-/*
+package com.whaleal.ddt.reactive.read;/*
  * Document Data Transfer - An open-source project licensed under GPL+SSPL
  *
  * Copyright (C) [2023 - present ] [Whaleal]
@@ -13,7 +13,7 @@
  *
  * For more information, visit the official website: [www.whaleal.com]
  */
-package com.whaleal.ddt.sync.task.read;
+
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.MongoNamespace;
@@ -36,11 +36,12 @@ import java.util.concurrent.TimeUnit;
  * 读取数据任务类
  * 继承自通用任务类{@link CommonTask}
  * 用于从MongoDB数据库中读取数据并放入缓存中
+ * ******本质还是同步读取 不是异步读取******
  *
  * @author liheping
  */
 @Log4j2
-public class FullSyncReadTask extends BaseFullReadTask {
+public class FullReactiveReadTask extends BaseFullReadTask {
 
     /**
      * mongoClient 客户端连接对象，用于与MongoDB进行数据交互
@@ -55,7 +56,7 @@ public class FullSyncReadTask extends BaseFullReadTask {
      * @param dataBatchSize 每个批次数据的大小，默认为128
      * @param taskMetadata  任务配置信息，包含数据源命名空间、开始和结束范围等信息
      */
-    public FullSyncReadTask(String workName, String dsName, int dataBatchSize, SourceTaskInfo taskMetadata) {
+    public FullReactiveReadTask(String workName, String dsName, int dataBatchSize, SourceTaskInfo taskMetadata) {
         // 调用父类的构造函数，初始化工作名称和数据源名称
         super(workName, dsName, dataBatchSize, taskMetadata);
         // 获取对应数据源的MongoDB连接客户端

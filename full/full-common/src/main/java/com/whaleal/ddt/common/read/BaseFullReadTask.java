@@ -15,13 +15,11 @@ package com.whaleal.ddt.common.read;/*
  */
 
 
-import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.WriteModel;
 import com.whaleal.ddt.cache.BatchDataEntity;
-import com.whaleal.ddt.common.cache.MemoryCache;
+import com.whaleal.ddt.common.cache.FullMetaData;
 import com.whaleal.ddt.common.generate.SourceTaskInfo;
 import com.whaleal.ddt.status.WorkStatus;
-import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
 import com.whaleal.ddt.task.CommonTask;
 import lombok.extern.log4j.Log4j2;
 import org.bson.Document;
@@ -38,10 +36,7 @@ import java.util.List;
  */
 @Log4j2
 public abstract class BaseFullReadTask extends CommonTask {
-    /**
-     * mongoClient 客户端连接对象，用于与MongoDB进行数据交互
-     */
-    protected final MongoClient mongoClient;
+
     /**
      * 缓存数据集合
      */
@@ -67,7 +62,7 @@ public abstract class BaseFullReadTask extends CommonTask {
      */
     protected int cacheTemp = 0;
 
-    protected final MemoryCache memoryCache;
+    protected final FullMetaData fullMetaData;
 
     /**
      * 构造函数
@@ -80,12 +75,10 @@ public abstract class BaseFullReadTask extends CommonTask {
     protected BaseFullReadTask(String workName, String dsName, int dataBatchSize, SourceTaskInfo taskMetadata) {
         // 调用父类的构造函数，初始化工作名称和数据源名称
         super(workName, dsName);
-        // 获取对应数据源的MongoDB连接客户端
-        this.mongoClient = MongoDBConnectionSync.getMongoClient(dsName);
         // 初始化其他成员变量
         this.taskMetadata = taskMetadata;
         this.dataBatchSize = dataBatchSize;
-        this.memoryCache = MemoryCache.getMemoryCache(this.workName);
+        this.fullMetaData = FullMetaData.getFullMetaData(this.workName);
     }
 
     /**
@@ -139,15 +132,15 @@ public abstract class BaseFullReadTask extends CommonTask {
         if (this.cacheTemp == 0) {
             return;
         }
-        BatchDataEntity batchDataEntity = new BatchDataEntity();
+        BatchDataEntity<WriteModel<Document>> batchDataEntity = new BatchDataEntity();
         batchDataEntity.setDataList(this.dataList);
         batchDataEntity.setNs(this.taskMetadata.getNs());
         batchDataEntity.setSourceDsName(this.taskMetadata.getSourceDsName());
         batchDataEntity.setBatchNo(System.currentTimeMillis());
         // 推送数据到缓存区中
-        this.memoryCache.putData(batchDataEntity);
+        this.fullMetaData.putData(batchDataEntity);
         // 设置读取条数
-        this.memoryCache.getReadDocCount().add(this.dataList.size());
+        this.fullMetaData.getReadDocCount().add(this.dataList.size());
         this.dataList = new ArrayList<>();
         this.cacheTemp = 0;
     }

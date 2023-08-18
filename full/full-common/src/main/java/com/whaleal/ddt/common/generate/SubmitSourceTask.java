@@ -25,6 +25,7 @@ import java.lang.reflect.Constructor;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 提交数据源任务类
@@ -44,7 +45,7 @@ public class SubmitSourceTask extends CommonTask {
     /**
      * 数据源任务信息是否生成完毕的标志
      */
-    private final AtomicBoolean isGenerateSourceTaskInfoOver;
+    private final AtomicInteger isGenerateSourceTaskInfoOverNum;
     /**
      * 源任务批处理大小
      */
@@ -63,13 +64,13 @@ public class SubmitSourceTask extends CommonTask {
      * @param dsName                       数据源名称，用于任务执行的数据来源
      * @param maxReadThreadNum             最大读取线程数，用于控制并发执行的读取任务数量
      * @param taskQueue                    任务队列，用于存放数据源切分后的任务范围
-     * @param isGenerateSourceTaskInfoOver 数据源任务信息是否生成完毕的标志
+     * @param isGenerateSourceTaskInfoOverNum 数据源任务信息是否生成完毕的标志
      * @param batchSize                    源任务批处理大小
      * @param readThreadPoolName           读取线程池名称，用于提交任务到指定线程池
      * @param fullTypeClass                任务类型class
      */
     public SubmitSourceTask(String workName, String dsName, int maxReadThreadNum, BlockingQueue<Range> taskQueue,
-                            AtomicBoolean isGenerateSourceTaskInfoOver,
+                            AtomicInteger isGenerateSourceTaskInfoOverNum,
                             int batchSize, String readThreadPoolName,
                             Class<? extends BaseFullReadTask> fullTypeClass) {
         // 调用父类的构造函数，初始化工作名称和数据源名称
@@ -77,7 +78,7 @@ public class SubmitSourceTask extends CommonTask {
         // 初始化其他成员变量
         this.maxReadThreadNum = maxReadThreadNum;
         this.taskQueue = taskQueue;
-        this.isGenerateSourceTaskInfoOver = isGenerateSourceTaskInfoOver;
+        this.isGenerateSourceTaskInfoOverNum = isGenerateSourceTaskInfoOverNum;
         this.batchSize = batchSize;
         this.readThreadPoolName = readThreadPoolName;
         this.fullTypeClass = fullTypeClass;
@@ -99,7 +100,7 @@ public class SubmitSourceTask extends CommonTask {
                     TimeUnit.SECONDS.sleep(1);
                     continue;
                 }
-                if (taskQueue.isEmpty() && isGenerateSourceTaskInfoOver.get()) {
+                if (isGenerateSourceTaskInfoOverNum.get()==0 && taskQueue.isEmpty()) {
                     // 如果任务队列为空且数据源任务信息已经生成完毕，则跳出循环，结束任务提交
                     break;
                 }
@@ -113,7 +114,8 @@ public class SubmitSourceTask extends CommonTask {
                 // 提交源任务到线程池中执行
                 submitSourceTask(poll, batchSize);
                 log.info("{} total number of submitted read tasks:{}", workName, ++submitTaskNum);
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                e.printStackTrace();
                 // 忽略异常
             }
         }
@@ -138,13 +140,13 @@ public class SubmitSourceTask extends CommonTask {
         log.info("{} submit task:{}", workName, sourceTaskInfo.toString());
         // 提交读取任务到线程池中执行，使用线程池管理器进行任务提交
         // 反射 有点麻烦 也可以做
-
         try {
-            Constructor<? extends BaseFullReadTask> constructor = fullTypeClass.getConstructor(String.class, String.class, Integer.class, SourceTaskInfo.class);
+            Constructor<? extends BaseFullReadTask> constructor = fullTypeClass.getConstructor(String.class, String.class, int.class, SourceTaskInfo.class);
             BaseFullReadTask instance = constructor.newInstance(workName, dsName, batchSize, sourceTaskInfo);
             ThreadPoolManager.submit(readThreadPoolName, instance);
         } catch (Exception e) {
             e.printStackTrace();
+            log.error("{} failed to submit task {} : {}", workName, sourceTaskInfo.toString(), e.getMessage());
         }
     }
 }

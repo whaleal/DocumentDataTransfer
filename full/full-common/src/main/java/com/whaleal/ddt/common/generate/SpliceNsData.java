@@ -21,7 +21,7 @@ import com.mongodb.MongoNamespace;
 import com.mongodb.client.MongoClient;
 import com.whaleal.ddt.common.BsonTypeMap;
 import com.whaleal.ddt.common.Datasource;
-import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
+import com.whaleal.ddt.conection.sync.MongoDBConnectionSync;
 import lombok.extern.log4j.Log4j2;
 import org.bson.Document;
 

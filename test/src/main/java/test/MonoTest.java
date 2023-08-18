@@ -120,7 +120,7 @@ class MonoTest {
     }
 
 
-    void back(){
+    static void back(){
 
         MongoClient client= MongoClients.create("mongodb://192.168.12.200:24578");
         MongoCollection<Document> collection = client.getDatabase("target").getCollection("target");
@@ -128,7 +128,7 @@ class MonoTest {
         // 创建WriteModel集合
         List<WriteModel<Document>> writes = new ArrayList<>();
 
-        for (int i = 0; i < 1000000; i++) {
+        for (int i = 0; i < 100; i++) {
             Document document = new Document();
             document.append("age",18);
             document.append("name","张"+i);
@@ -153,7 +153,13 @@ class MonoTest {
     }
 
     public static void main(String[] args) {
-        find();
+       // back();
+        block();
+        try {
+            Thread.sleep(100000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
 }

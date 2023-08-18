@@ -20,7 +20,7 @@ import lombok.extern.log4j.Log4j2;
 
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 生成数据源任务类
@@ -32,7 +32,7 @@ public class GenerateSourceTask extends CommonTask {
     /**
      * 是否生成数据源任务信息结束的标志，用于任务状态跟踪
      */
-    private final AtomicBoolean isGenerateSourceTaskInfoOver;
+    private final AtomicInteger isGenerateSourceTaskInfoOverNum;
     /**
      * 任务队列，用于存放数据源切分后的任务范围
      */
@@ -52,20 +52,20 @@ public class GenerateSourceTask extends CommonTask {
      *
      * @param workName                     工作名称，用于任务标识
      * @param dsName                       数据源名称，用于任务执行的数据来源
-     * @param isGenerateSourceTaskInfoOver 数据源任务信息是否生成完毕的标志
+     * @param isGenerateSourceTaskInfoOverNum 数据源任务信息是否生成完毕的标志
      * @param taskQueue                    任务队列，用于存放数据源切分后的任务范围
      * @param parallelSync                 是否并行同步的标志，用于任务处理策略
      * @param nsQueue                      数据源队列，用于存放待切分的数据ns
      */
     public GenerateSourceTask(String workName, String dsName,
-                              AtomicBoolean isGenerateSourceTaskInfoOver,
+                              AtomicInteger isGenerateSourceTaskInfoOverNum,
                               BlockingQueue<Range> taskQueue,
                               boolean parallelSync,
                               BlockingQueue<String> nsQueue) {
         // 调用父类的构造函数，初始化工作名称和数据源名称
         super(workName, dsName);
         // 初始化其他成员变量
-        this.isGenerateSourceTaskInfoOver = isGenerateSourceTaskInfoOver;
+        this.isGenerateSourceTaskInfoOverNum = isGenerateSourceTaskInfoOverNum;
         this.taskQueue = taskQueue;
         this.parallelSync = parallelSync;
         this.nsQueue = nsQueue;
@@ -76,6 +76,7 @@ public class GenerateSourceTask extends CommonTask {
      */
     @Override
     public void execute() {
+        isGenerateSourceTaskInfoOverNum.addAndGet(1);
         // 循环处理待切分的数据源
         while (!nsQueue.isEmpty()) {
             // 从数据源队列中取出一个数据源
@@ -111,6 +112,6 @@ public class GenerateSourceTask extends CommonTask {
             }
         }
         // 数据源任务信息生成完毕，设置标志为true
-        isGenerateSourceTaskInfoOver.set(true);
+        isGenerateSourceTaskInfoOverNum.addAndGet(-1);
     }
 }

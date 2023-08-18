@@ -16,9 +16,9 @@
 package com.whaleal.ddt.realtime.common.parse.ns;
 
 import com.mongodb.client.MongoClient;
-import com.whaleal.ddt.realtime.common.cache.MetaData;
+import com.whaleal.ddt.realtime.common.cache.RealTimeMetaData;
 import com.whaleal.ddt.status.WorkStatus;
-import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
+import com.whaleal.ddt.conection.sync.MongoDBConnectionSync;
 import com.whaleal.ddt.task.CommonTask;
 import lombok.extern.log4j.Log4j2;
 
@@ -41,7 +41,7 @@ public abstract class BaseParseNs<T> extends CommonTask {
     /**
      * Event元数据库类
      */
-    protected final MetaData<T> metadata;
+    protected final RealTimeMetaData<T> metadata;
     /**
      * 表过滤策略 正则表达式处理,着重处理ddl操作表
      */
@@ -79,7 +79,7 @@ public abstract class BaseParseNs<T> extends CommonTask {
         super(workName, dsName);
         this.dbTableWhite = dbTableWhite;
         this.workName = workName;
-        this.metadata = MetaData.getMetaData(workName);
+        this.metadata = RealTimeMetaData.getRealTimeMetaData(workName);
         this.mongoClient = MongoDBConnectionSync.getMongoClient(dsName);
         this.maxQueueSizeOfNs = maxQueueSizeOfNs;
         this.ddlSet=ddlSet;

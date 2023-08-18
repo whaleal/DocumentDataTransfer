@@ -24,10 +24,10 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.BulkWriteOptions;
 import com.mongodb.client.model.WriteModel;
 import com.whaleal.ddt.cache.BatchDataEntity;
-import com.whaleal.ddt.realtime.common.cache.MetaData;
+import com.whaleal.ddt.realtime.common.cache.RealTimeMetaData;
 import com.whaleal.ddt.status.WorkStatus;
 
-import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
+import com.whaleal.ddt.conection.sync.MongoDBConnectionSync;
 import com.whaleal.ddt.task.CommonTask;
 import com.whaleal.ddt.util.WriteModelUtil;
 import lombok.extern.log4j.Log4j2;
@@ -54,7 +54,7 @@ public abstract class BaseRealTimeWriteData<T> extends CommonTask {
     /**
      * event元数据库类
      */
-    protected final MetaData<T> metadata;
+    protected final RealTimeMetaData<T> metadata;
     /**
      * mongoClient
      */
@@ -67,7 +67,7 @@ public abstract class BaseRealTimeWriteData<T> extends CommonTask {
 
     protected BaseRealTimeWriteData(String workName, String dsName, int bucketSize) {
         super(workName, dsName);
-        this.metadata = MetaData.getMetaData(workName);
+        this.metadata = RealTimeMetaData.getRealTimeMetaData(workName);
         this.dsName = dsName;
         this.mongoClient = MongoDBConnectionSync.getMongoClient(dsName);
         this.workName = workName;
@@ -95,7 +95,7 @@ public abstract class BaseRealTimeWriteData<T> extends CommonTask {
                     // 10次都没有获得锁 更有可能继续无法获得'锁'
                     idlingTime = 9;
                 }
-                for (Map.Entry<Integer, BlockingQueue<BatchDataEntity>> next : metadata.getQueueOfBucketMap().entrySet()) {
+                for (Map.Entry<Integer, BlockingQueue<BatchDataEntity<WriteModel<Document>>>> next : metadata.getQueueOfBucketMap().entrySet()) {
                     // 桶号
                     Integer bucketNum = next.getKey();
                     // 为空就不用进来处理了  也不用进行加锁信息
@@ -108,7 +108,7 @@ public abstract class BaseRealTimeWriteData<T> extends CommonTask {
                     if (!pre && atomicBoolean.compareAndSet(false, true)) {
                         try {
                             // 解析后的WriteModel队列
-                            Queue<BatchDataEntity> documentQueue = next.getValue();
+                            Queue<BatchDataEntity<WriteModel<Document>>> documentQueue = next.getValue();
                             idlingTime = 0;
                             // 写入该表的数据
                             write(documentQueue, bucketNum);
@@ -134,7 +134,7 @@ public abstract class BaseRealTimeWriteData<T> extends CommonTask {
      * @param bucketNum     桶号
      * @desc 执行写入
      */
-    public void write(Queue<BatchDataEntity> documentQueue, int bucketNum) {
+    public void write(Queue<BatchDataEntity<WriteModel<Document>>> documentQueue, int bucketNum) {
         int parseSize = 0;
         while (true) {
             BatchDataEntity batchDataEntity = documentQueue.poll();

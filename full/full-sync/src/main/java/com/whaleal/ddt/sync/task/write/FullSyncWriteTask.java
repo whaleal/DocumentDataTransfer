@@ -19,9 +19,10 @@ import com.mongodb.MongoBulkWriteException;
 import com.mongodb.MongoNamespace;
 import com.mongodb.bulk.BulkWriteError;
 import com.mongodb.bulk.BulkWriteResult;
-import com.mongodb.client.model.BulkWriteOptions;
+import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.WriteModel;
 import com.whaleal.ddt.common.write.BaseFullWriteTask;
+import com.whaleal.ddt.conection.sync.MongoDBConnectionSync;
 import com.whaleal.ddt.task.CommonTask;
 import com.whaleal.ddt.util.WriteModelUtil;
 import lombok.extern.log4j.Log4j2;
@@ -39,6 +40,11 @@ import java.util.List;
 public class FullSyncWriteTask extends BaseFullWriteTask {
 
     /**
+     * mongoClient 客户端连接对象，用于与MongoDB进行数据交互
+     */
+    protected final MongoClient mongoClient;
+
+    /**
      * 构造函数
      *
      * @param workName 工作名称，用于任务标识
@@ -47,7 +53,8 @@ public class FullSyncWriteTask extends BaseFullWriteTask {
     public FullSyncWriteTask(String workName, String dsName) {
         // 调用父类的构造函数，初始化工作名称和数据源名称
         super(workName, dsName);
-
+        // 获取对应数据源的MongoDB连接客户端
+        this.mongoClient = MongoDBConnectionSync.getMongoClient(dsName);
     }
 
 
@@ -58,7 +65,7 @@ public class FullSyncWriteTask extends BaseFullWriteTask {
      * @param ns                     数据库命名空间，用于指定数据库和集合
      * @return 成功写入的数据条数
      */
-    @Override
+
     public int singleExecute(List<WriteModel<Document>> writeModelListOfParent, String ns) {
         int successWriteNum = 0;
         MongoNamespace mongoNamespace = new MongoNamespace(ns);
@@ -70,7 +77,7 @@ public class FullSyncWriteTask extends BaseFullWriteTask {
                 // 使用有序执行的BulkWriteOptions来尝试写入单条数据
                 BulkWriteResult bulkWriteResult = this.mongoClient.getDatabase(mongoNamespace.getDatabaseName()).
                         getCollection(mongoNamespace.getCollectionName()).
-                        bulkWrite(writeModelList, new BulkWriteOptions().ordered(true));
+                        bulkWrite(writeModelList, BULK_WRITE_OPTIONS);
 
                 successWriteNum += bulkWriteResult.getInsertedCount();
             } catch (MongoBulkWriteException e) {
@@ -95,6 +102,7 @@ public class FullSyncWriteTask extends BaseFullWriteTask {
      * @param writeModelList 待写入的数据模型列表
      * @return 成功写入的数据条数
      */
+
     @Override
     public int bulkExecute(String ns, List<WriteModel<Document>> writeModelList) {
         int successWriteNum = 0;
@@ -106,7 +114,7 @@ public class FullSyncWriteTask extends BaseFullWriteTask {
             }
             // 使用无序执行的BulkWriteOptions来尝试批量写入数据
             BulkWriteResult bulkWriteResult = this.mongoClient.getDatabase(mongoNamespace.getDatabaseName()).
-                    getCollection(mongoNamespace.getCollectionName()).bulkWrite(writeModelList, new BulkWriteOptions().ordered(false));
+                    getCollection(mongoNamespace.getCollectionName()).bulkWrite(writeModelList, BULK_WRITE_OPTIONS);
             successWriteNum += bulkWriteResult.getInsertedCount();
         } catch (Exception e) {
             // 如果批量写入出现异常，打印异常信息，并尝试单条写入

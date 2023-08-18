@@ -16,12 +16,19 @@
 package com.whaleal.ddt.execute.full;
 
 
+import com.whaleal.ddt.common.Datasource;
 import com.whaleal.ddt.common.generate.Range;
+import com.whaleal.ddt.common.generate.SubmitSourceTask;
+import com.whaleal.ddt.conection.reactive.MongoDBConnectionReactive;
+import com.whaleal.ddt.conection.sync.MongoDBConnectionSync;
 import com.whaleal.ddt.execute.full.common.BaseFullWork;
+import com.whaleal.ddt.reactive.read.FullReactiveReadTask;
+import com.whaleal.ddt.reactive.write.FullReactiveWriteTask;
 import lombok.extern.log4j.Log4j2;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 /**
@@ -41,11 +48,22 @@ public class FullReactive extends BaseFullWork {
 
     @Override
     public void submitTargetTask(int writeThreadNum) {
-
+        for (int i = 0; i < writeThreadNum; i++) {
+            createTask(writeThreadPoolName, new FullReactiveWriteTask(workName, targetDsName));
+        }
     }
 
     @Override
-    public void generateSource(int readThreadNum, BlockingQueue<Range> taskQueue, AtomicBoolean isGenerateSourceTaskInfoOver, int batchSize) {
-
+    public void generateSource(int readThreadNum, BlockingQueue<Range> taskQueue, AtomicInteger isGenerateSourceTaskInfoOverNum, int batchSize) {
+        SubmitSourceTask submitSourceTask = new SubmitSourceTask(workName, sourceDsName,
+                readThreadNum, taskQueue, isGenerateSourceTaskInfoOverNum, batchSize, readThreadPoolName, FullReactiveReadTask.class);
+        createTask(commonThreadPoolName, submitSourceTask);
     }
+
+    @Override
+    public void initConnection(String dsName, String url) {
+        MongoDBConnectionSync.createMonoDBClient(dsName, new Datasource(url));
+        MongoDBConnectionReactive.createMonoDBClient(dsName, new Datasource(url));
+    }
+
 }

@@ -4,9 +4,9 @@ import com.whaleal.ddt.common.Datasource;
 import com.whaleal.ddt.execute.config.WorkInfo;
 import com.whaleal.ddt.execute.realtime.BaseRealTimeChangeStream;
 import com.whaleal.ddt.execute.realtime.BaseRealTimeOplog;
-import com.whaleal.ddt.realtime.common.cache.MetaData;
+import com.whaleal.ddt.realtime.common.cache.RealTimeMetaData;
 import com.whaleal.ddt.status.WorkStatus;
-import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
+import com.whaleal.ddt.conection.sync.MongoDBConnectionSync;
 import com.whaleal.ddt.thread.pool.ThreadPoolManager;
 import lombok.extern.log4j.Log4j2;
 
@@ -145,7 +145,7 @@ public abstract class BaseRealTimeWork {
         // A：执行 MetadataOplog.getOplogMetadata(workName).waitCacheExe()
         if (ThreadPoolManager.getActiveThreadNum(readEventThreadPoolName) == 0) {
             // 等待缓存中的数据写完
-            MetaData.getMetaData(workName).waitCacheExe();
+            RealTimeMetaData.getRealTimeMetaData(workName).waitCacheExe();
             // 等待缓存为空
             try {
                 TimeUnit.MINUTES.sleep(1);
@@ -188,7 +188,7 @@ public abstract class BaseRealTimeWork {
             WorkStatus.updateWorkStatus(workInfo.getWorkName(), WorkStatus.WORK_RUN);
             // 缓存区对线
             int maxQueueSizeOfOplog = workInfo.getBucketNum() * workInfo.getBucketSize() * workInfo.getBucketSize();
-            MetaData metadataOplog = new MetaData(workInfo.getWorkName(), workInfo.getDdlWait(), maxQueueSizeOfOplog, workInfo.getBucketNum(), workInfo.getBucketSize());
+            RealTimeMetaData metadataOplog = new RealTimeMetaData(workInfo.getWorkName(), workInfo.getDdlWait(), maxQueueSizeOfOplog, workInfo.getBucketNum(), workInfo.getBucketSize());
             BaseRealTimeWork baseRealTimeWork = null;
             // 创建实时同步任务对象
             if ("changestream".equals(realTimeType)) {

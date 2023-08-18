@@ -15,13 +15,13 @@
  */
 package com.whaleal.ddt.cache;
 
-import com.mongodb.client.model.WriteModel;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.extern.log4j.Log4j2;
-import org.bson.Document;
+
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -37,7 +37,7 @@ import java.util.List;
 @AllArgsConstructor
 @ToString
 @Log4j2
-public class BatchDataEntity implements Serializable {
+public class BatchDataEntity<T> implements Serializable {
 
     private static final long serialVersionUID = 1L;
     /**
@@ -67,7 +67,7 @@ public class BatchDataEntity implements Serializable {
     /**
      * 数据集合
      */
-    private List<WriteModel<Document>> dataList = new ArrayList();
+    private List<T> dataList = new ArrayList();
 
     public BatchDataEntity(String workName, String targetDsName, int initialCapacity) {
         this.workName = workName;

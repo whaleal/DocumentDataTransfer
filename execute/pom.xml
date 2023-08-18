@@ -31,6 +31,12 @@
         </dependency>
         <dependency>
             <groupId>com.whaleal.ddt</groupId>
+            <artifactId>full-reactive</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.whaleal.ddt</groupId>
             <artifactId>realtime-sync-oplog</artifactId>
             <version>1.0-SNAPSHOT</version>
             <scope>compile</scope>

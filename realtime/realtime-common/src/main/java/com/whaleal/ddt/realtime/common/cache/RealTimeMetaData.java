@@ -16,6 +16,8 @@
  */
 package com.whaleal.ddt.realtime.common.cache;
 
+
+import com.mongodb.client.model.WriteModel;
 import com.whaleal.ddt.cache.BatchDataEntity;
 import lombok.Data;
 import lombok.ToString;
@@ -40,7 +42,7 @@ import java.util.concurrent.atomic.LongAdder;
 @ToString
 @Log4j2
 @Data
-public final class MetaData<T> {
+public final class RealTimeMetaData<T> {
     /**
      * workName 工作名称，用于标识元数据操作日志对象
      */
@@ -81,17 +83,17 @@ public final class MetaData<T> {
 
     /**
      * 使用静态修饰符声明一个存储元数据操作日志的映射，
-     * 使用字符串作为键，`MetaData`作为值
+     * 使用字符串作为键，`RealTimeMetaData`作为值
      */
-    private static Map<String, MetaData> MetaDataMap = new ConcurrentHashMap<>();
+    private static Map<String, RealTimeMetaData> MetaDataMap = new ConcurrentHashMap<>();
 
     /**
      * 获取指定工作名称的元数据操作日志
      *
      * @param workName 工作名称
-     * @return MetaData
+     * @return RealTimeMetaData
      */
-    public static MetaData getMetaData(String workName) {
+    public static RealTimeMetaData getRealTimeMetaData(String workName) {
         return MetaDataMap.get(workName);
     }
 
@@ -100,7 +102,7 @@ public final class MetaData<T> {
      *
      * @param workName 工作名称
      */
-    public static void removeMetaData(String workName) {
+    public static void removeRealTimeMetaData(String workName) {
         MetaDataMap.remove(workName);
     }
 
@@ -113,7 +115,7 @@ public final class MetaData<T> {
      * @param bucketNum           桶的数量
      * @param bucketSize          桶的大小
      */
-    public MetaData(String workName, int ddlWait, int maxQueueSizeOfEvent, int bucketNum, int bucketSize) {
+    public RealTimeMetaData(String workName, int ddlWait, int maxQueueSizeOfEvent, int bucketNum, int bucketSize) {
         this.workName = workName;
         this.ddlWait = ddlWait;
         // 创建原始event数据的阻塞队列
@@ -152,7 +154,7 @@ public final class MetaData<T> {
      * 保存每个桶的批数据的阻塞队列的映射
      * 键为桶号，值为批数据的阻塞队列
      */
-    private final Map<Integer, BlockingQueue<BatchDataEntity>> queueOfBucketMap = new ConcurrentHashMap<>();
+    private final Map<Integer, BlockingQueue<BatchDataEntity<WriteModel<Document>>>> queueOfBucketMap = new ConcurrentHashMap<>();
     /**
      * 保存每个桶的状态的映射
      * 键为桶号，值为原子类AtomicBoolean
@@ -203,7 +205,7 @@ public final class MetaData<T> {
      */
     public int cacheBucketQueueDataNum() {
         int sum = 0;
-        for (Map.Entry<Integer, BlockingQueue<BatchDataEntity>> integerBlockingQueueEntry : queueOfBucketMap.entrySet()) {
+        for (Map.Entry<Integer, BlockingQueue<BatchDataEntity<WriteModel<Document>>>> integerBlockingQueueEntry : queueOfBucketMap.entrySet()) {
             sum = +integerBlockingQueueEntry.getValue().size();
         }
         return sum;
@@ -243,10 +245,10 @@ public final class MetaData<T> {
         // 已经获取到的ns的csa锁的Set集合
         Set<Integer> bucketSet = new HashSet<>();
         while (true) {
-            for (Map.Entry<Integer, BlockingQueue<BatchDataEntity>> next : queueOfBucketMap.entrySet()) {
+            for (Map.Entry<Integer, BlockingQueue<BatchDataEntity<WriteModel<Document>>>> next : queueOfBucketMap.entrySet()) {
                 // 桶号
                 Integer bucketNum = next.getKey();
-                final BlockingQueue<BatchDataEntity> queue = next.getValue();
+                final BlockingQueue<BatchDataEntity<WriteModel<Document>>> queue = next.getValue();
                 AtomicBoolean atomicBoolean = stateOfBucketMap.get(bucketNum);
                 boolean pre = atomicBoolean.get();
                 // CAS操作
@@ -397,7 +399,7 @@ public final class MetaData<T> {
                     log.info("{} ns:{},remaining sync data:{}", workName, entry.getKey(), size);
                 }
                 // 输出桶的缓存数据
-                for (Map.Entry<Integer, BlockingQueue<BatchDataEntity>> entry : queueOfBucketMap.entrySet()) {
+                for (Map.Entry<Integer, BlockingQueue<BatchDataEntity<WriteModel<Document>>>> entry : queueOfBucketMap.entrySet()) {
                     int size = entry.getValue().size();
                     if (size == 0) {
                         continue;

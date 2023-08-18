@@ -17,8 +17,8 @@ package com.whaleal.ddt.realtime.common.read;
 
 
 import com.mongodb.client.MongoClient;
-import com.whaleal.ddt.realtime.common.cache.MetaData;
-import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
+import com.whaleal.ddt.realtime.common.cache.RealTimeMetaData;
+import com.whaleal.ddt.conection.sync.MongoDBConnectionSync;
 import com.whaleal.ddt.task.CommonTask;
 import org.bson.BsonTimestamp;
 
@@ -57,7 +57,7 @@ public abstract class BaseRealTimeReadData<T> extends CommonTask {
     /**
      * event元数据库类保存数据信息的地方
      */
-    protected final MetaData<T> metadata;
+    protected final RealTimeMetaData<T> metadata;
     /**
      * 是否读取完成
      */
@@ -91,7 +91,7 @@ public abstract class BaseRealTimeReadData<T> extends CommonTask {
         this.startTimeOfOplog = startTimeOfOplog;
         this.workName = workName;
         this.delayTime = delayTime;
-        this.metadata = MetaData.getMetaData(workName);
+        this.metadata = RealTimeMetaData.getRealTimeMetaData(workName);
         this.mongoClient = MongoDBConnectionSync.getMongoClient(dsName);
         this.dbVersion = MongoDBConnectionSync.getVersion(dsName);
     }

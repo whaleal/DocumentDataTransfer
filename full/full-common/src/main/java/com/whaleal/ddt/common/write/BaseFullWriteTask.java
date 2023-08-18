@@ -15,12 +15,11 @@
  */
 package com.whaleal.ddt.common.write;
 
-import com.mongodb.client.MongoClient;
+import com.mongodb.client.model.BulkWriteOptions;
 import com.mongodb.client.model.WriteModel;
 import com.whaleal.ddt.cache.BatchDataEntity;
-import com.whaleal.ddt.common.cache.MemoryCache;
+import com.whaleal.ddt.common.cache.FullMetaData;
 import com.whaleal.ddt.status.WorkStatus;
-import com.whaleal.ddt.sync.connection.MongoDBConnectionSync;
 import com.whaleal.ddt.task.CommonTask;
 import lombok.extern.log4j.Log4j2;
 import org.bson.Document;
@@ -36,11 +35,8 @@ import java.util.concurrent.TimeUnit;
  */
 @Log4j2
 public abstract class BaseFullWriteTask extends CommonTask {
-    /**
-     * mongoClient 客户端连接对象，用于与MongoDB进行数据交互
-     */
-    protected final MongoClient mongoClient;
 
+    protected static final BulkWriteOptions BULK_WRITE_OPTIONS = new BulkWriteOptions().ordered(true);
     /**
      * 构造函数
      *
@@ -50,8 +46,7 @@ public abstract class BaseFullWriteTask extends CommonTask {
     protected BaseFullWriteTask(String workName, String dsName) {
         // 调用父类的构造函数，初始化工作名称和数据源名称
         super(workName, dsName);
-        // 获取对应数据源的MongoDB连接客户端
-        this.mongoClient = MongoDBConnectionSync.getMongoClient(dsName);
+
     }
 
     /**
@@ -60,17 +55,17 @@ public abstract class BaseFullWriteTask extends CommonTask {
     @Override
     public void execute() {
         // 获取当前工作名称对应的内存缓存
-        MemoryCache memoryCache = MemoryCache.getMemoryCache(workName);
+        FullMetaData fullMetaData = FullMetaData.getFullMetaData(workName);
         // 循环执行数据写入任务
         while (true) {
             try {
                 // 从缓存中获取一批数据
-                BatchDataEntity batchDataEntity = memoryCache.getData();
+                BatchDataEntity<WriteModel<Document>> batchDataEntity = fullMetaData.getData();
                 if (batchDataEntity != null) {
                     // 当前任务拉取的dbTableName
                     int successWriteNum = bulkExecute(batchDataEntity.getNs(), batchDataEntity.getDataList());
                     // 更新写入条数
-                    memoryCache.getWriteDocCount().add(successWriteNum);
+                    fullMetaData.getWriteDocCount().add(successWriteNum);
                 } else {
                     // 缓存中没有数据，则可以进行睡眠一段时间，等待数据生成
                     TimeUnit.SECONDS.sleep(1);
@@ -87,15 +82,7 @@ public abstract class BaseFullWriteTask extends CommonTask {
         }
     }
 
-    /**
-     * 单条写入执行方法，用于处理写入失败的情况
-     *
-     * @param writeModelListOfParent 待写入的单条数据列表
-     * @param ns                     数据库命名空间，用于指定数据库和集合
-     * @return 成功写入的数据条数
-     */
 
-    public abstract int singleExecute(List<WriteModel<Document>> writeModelListOfParent, String ns);
 
     /**
      * 批量写入执行方法，用于处理批量写入的情况

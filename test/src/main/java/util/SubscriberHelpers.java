@@ -14,7 +14,7 @@ import java.util.function.Consumer;
 
 import static java.lang.String.format;
 
-public final class SubscriberHelpers {
+public final class SubscriberHelpers  {
 
     public abstract static class ObservableSubscriber<T> implements Subscriber<T>{
 

@@ -33,6 +33,6 @@
     <modules>
         <module>full-common</module>
         <module>full-sync</module>
-        <module>full-Reactive</module>
+        <module>full-reactive</module>
     </modules>
 </project>

@@ -16,9 +16,11 @@
 package com.whaleal.ddt.common.cache;
 
 
+import com.mongodb.client.model.WriteModel;
 import com.whaleal.ddt.cache.BatchDataEntity;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
+import org.bson.Document;
 
 import java.util.Date;
 import java.util.Map;
@@ -36,7 +38,7 @@ import java.util.concurrent.atomic.LongAdder;
  */
 @Log4j2
 @Data
-public class MemoryCache {
+public class FullMetaData {
     /**
      * 任务名
      */
@@ -82,7 +84,7 @@ public class MemoryCache {
     /**
      * 存储每个工作名称对应的内存缓存的映射。
      */
-    private static Map<String, MemoryCache> memoryCacheMap = new ConcurrentHashMap<>();
+    private static Map<String, FullMetaData> memoryCacheMap = new ConcurrentHashMap<>();
 
     /**
      * 获取指定工作名称对应的内存缓存。
@@ -90,7 +92,7 @@ public class MemoryCache {
      * @param workName 工作名称。
      * @return 内存缓存对象。
      */
-    public static MemoryCache getMemoryCache(String workName) {
+    public static FullMetaData getFullMetaData(String workName) {
         return memoryCacheMap.get(workName);
     }
 
@@ -100,9 +102,9 @@ public class MemoryCache {
      *
      * @param workName 工作名称。
      */
-    public static void removeMemoryCache(String workName) {
-        MemoryCache memoryCache = memoryCacheMap.get(workName);
-        if (memoryCache == null) {
+    public static void removeMetaData(String workName) {
+        FullMetaData fullMetaData = memoryCacheMap.get(workName);
+        if (fullMetaData == null) {
             return;
         }
         memoryCacheMap.get(workName).gcMemoryCache();
@@ -114,7 +116,7 @@ public class MemoryCache {
      *
      * @desc 初始化缓存区类
      */
-    public MemoryCache(String workName, int partitionNum, int partitionSize) {
+    public FullMetaData(String workName, int partitionNum, int partitionSize) {
         this.workName = workName;
         this.partitionSize = partitionSize;
         this.partitionNum = partitionNum;
@@ -134,9 +136,9 @@ public class MemoryCache {
      * @return BatchDataEntity
      * @desc 塞入数据
      */
-    public BatchDataEntity getData() {
+    public BatchDataEntity<WriteModel<Document>> getData() {
         // 返回的数据
-        BatchDataEntity returnValue = null;
+        BatchDataEntity<WriteModel<Document>> returnValue = null;
         // 没有获取对缓存区的次数。即空跑次数
         // todo 空跑次数 可以来用做动态平衡读写
         int idlingTime = 0;
