@@ -15,6 +15,7 @@
  */
 package com.whaleal.ddt.thread.pool;
 
+import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 
 import java.util.concurrent.*;
@@ -42,6 +43,7 @@ public class AbstractThreadPoolManager {
     /**
      * 线程池
      */
+    @Getter
     protected ExecutorService executorService;
 
     public AtomicInteger getActiveThreadNum() {

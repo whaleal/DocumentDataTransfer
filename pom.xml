@@ -15,6 +15,7 @@
         <module>realtime</module>
         <module>execute</module>
         <module>test</module>
+        <module>monitor-controller</module>
 
 
     </modules>

@@ -46,6 +46,10 @@ public final class ThreadPoolManager extends AbstractThreadPoolManager {
         log.info("{} thread pool is closed", threadPoolName);
     }
 
+    public static ThreadPoolManager getPool(String threadPoolName) {
+        return THREAD_POOL_MANAGER.get(threadPoolName);
+    }
+
     /**
      * 操作某线程池使用数的个数
      *
