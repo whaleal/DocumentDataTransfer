@@ -363,6 +363,7 @@ public abstract class BaseFullWork {
             }
             // 回收资源
             fullSync.destroy(fullMetaData);
+            log.info("end execute task :{}, task configuration information :{}", workInfo.getWorkName(), workInfo.toString());
         };
         Thread thread = new Thread(runnable);
         thread.setName(workInfo.getWorkName() + "_execute");

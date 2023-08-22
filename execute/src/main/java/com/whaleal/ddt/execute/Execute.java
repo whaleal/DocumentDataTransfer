@@ -16,7 +16,7 @@ import lombok.extern.log4j.Log4j2;
 @Log4j2
 public class Execute {
     static {
-        log.info("D2T Boot information :hostName[{}],pid[{}], boot directory :[{}]", HostInfoUtil.getHostName(), HostInfoUtil.getProcessID(), HostInfoUtil.getProcessDir());
+        log.info("D2T Boot information :{hostName:{},pid:{},bootDirectory:{}}", HostInfoUtil.getHostName(), HostInfoUtil.getProcessID(), HostInfoUtil.getProcessDir());
         log.info("JVM Info:{}", HostInfoUtil.getJvmArg());
         log.info("\n" +
                 "  ____    ____    _____ \n" +
@@ -81,16 +81,19 @@ public class Execute {
             workInfo.setWorkName(workName + "_full");
             // 全量同步模式
             startFull(workInfo, fullType);
+            workInfo.setEndTime(System.currentTimeMillis());
         } else if (workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_REAL_TIME)) {
             workInfo.setWorkName(workName + "_realTime");
             // 实时同步模式
             startRealTime(workInfo, realTimeType);
+            workInfo.setEndTime(System.currentTimeMillis());
         } else if (workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL_AND_INCREMENT)) {
             // 全量+增量同步模式
             // 先执行全量同步，然后再执行增量同步
             workInfo.setStartOplogTime((int) (System.currentTimeMillis() / 1000));
             workInfo.setWorkName(workName + "_full");
             startFull(workInfo, fullType);
+            workInfo.setEndTime(System.currentTimeMillis());
             // 设置新的任务的时区
             // Q: 增量任务 也可以加上进度百分比
             // A: 已在ReadOplog 增加进度百分比
@@ -98,16 +101,19 @@ public class Execute {
             workInfo.setStartTime(System.currentTimeMillis());
             workInfo.setWorkName(workName + "_realTime");
             startRealTime(workInfo, realTimeType);
+            workInfo.setEndTime(System.currentTimeMillis());
         } else if (workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL_AND_REAL_TIME)) {
             // 全量+实时同步模式
             // 先执行全量同步，然后再执行实时同步
             workInfo.setStartOplogTime((int) (System.currentTimeMillis() / 1000));
             workInfo.setWorkName(workName + "_full");
             startFull(workInfo, fullType);
+            workInfo.setEndTime(System.currentTimeMillis());
             workInfo.setStartTime(System.currentTimeMillis());
             // 设置新的任务的时区
             workInfo.setWorkName(workName + "_realTime");
             startRealTime(workInfo, realTimeType);
+            workInfo.setEndTime(System.currentTimeMillis());
         }
     }
 

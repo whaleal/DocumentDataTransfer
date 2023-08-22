@@ -127,6 +127,7 @@ public class WorkInfo implements Cloneable, Serializable {
      * 程序启动时间
      */
     private long startTime = System.currentTimeMillis();
+    private long endTime = Long.MAX_VALUE;
     /**
      * 同步DDL信息
      */
