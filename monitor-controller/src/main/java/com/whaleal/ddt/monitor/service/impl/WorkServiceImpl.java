@@ -2,8 +2,11 @@ package com.whaleal.ddt.monitor.service.impl;
 
 
 import com.whaleal.ddt.monitor.service.WorkService;
+import com.whaleal.icefrog.core.util.StrUtil;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -35,9 +38,16 @@ public class WorkServiceImpl implements WorkService {
         return WORK_INFO_MAP.get(workName);
     }
 
-
-
-
+    @Override
+    public List<Map<Object, Object>> getWorkInfoList(String workName) {
+        List<Map<Object, Object>> result = new ArrayList<>();
+        for (Map.Entry<String, Map<Object, Object>> entry : WORK_INFO_MAP.entrySet()) {
+            if (StrUtil.isNotBlank(workName) && entry.getKey().contains(workName)) {
+                result.add(entry.getValue());
+            }
+        }
+        return result;
+    }
 
 
 }

@@ -1,36 +1,34 @@
-package com.whaleal.ddt.monitor.task;
+package com.whaleal.ddt.monitor.service.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.whaleal.ddt.monitor.model.LogEntity;
+import com.whaleal.ddt.monitor.service.MonitorDataService;
+import com.whaleal.ddt.monitor.service.ParseFileLogService;
+import com.whaleal.ddt.monitor.service.WorkService;
 import com.whaleal.ddt.monitor.util.DateTimeUtils;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.io.IOException;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * @projectName: full-common
- * @package: com.whaleal.ddt.monitor.task
- * @className: ReadFIle
- * @author: Eric
- * @description: TODO
- * @date: 21/08/2023 16:18
- * @version: 1.0
- */
-public class ReadFIle {
+@Service
+@Log4j2
+public class ParseFileLogServiceImpl implements ParseFileLogService {
+    @Autowired
+    private WorkService workService;
+    @Autowired
+    private MonitorDataService monitorDataService;
 
-    private static final Map<String, Map<Object, Object>> WORK_INFO_MAP = new ConcurrentHashMap<>();
-
-    private static final Map<String, Object> fullMap = new TreeMap<>();
-    private static final Map<String, Object> realTimeMap = new TreeMap<>();
-    private static final Map<String, Object> hostInfoMap = new TreeMap<>();
-
+    private static final Map<Object, Object> fullMap = new TreeMap<>();
+    private static final Map<Object, Object> realTimeMap = new TreeMap<>();
+    private static final Map<Object, Object> hostInfoMap = new TreeMap<>();
 
     private static String hostName = "";
     private static String pid = "";
@@ -38,77 +36,91 @@ public class ReadFIle {
     private static String JVMInfo = "";
     private static String workName = "";
 
-    public static void main(String[] args) {
-        readFile();
-    }
+    private static double eventTime = 0D;
+    private static double delayTime = 0D;
+    private static double incProgress = 0D;
 
-    public static void readFile() {
 
-        File file = new File("/Users/liheping/Desktop/log.log");
+//
+//    public static void main(String[] args) {
+//        readFile("/Users/liheping/Desktop/log.log", 0);
+//    }
+
+    public void readFile(String filePath, long position) {
+
+        File file = new File(filePath);
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = br.readLine()) != null) {
-                String[] split = line.split(" +", 8);
-                LogEntity logEntity = new LogEntity();
-                if (split.length < 8) {
-                    continue;
-                }
+                // 过滤条件 符合日志输出规范的数据
                 String regex = "^(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}) \\[(\\w+)\\] (.*)";
-
                 if (!line.matches(regex)) {
                     continue;
                 }
-
+                String[] split = line.split(" +", 8);
+                LogEntity logEntity = new LogEntity();
                 logEntity.setTime(DateTimeUtils.stringToStamp(split[0] + " " + split[1]));
                 logEntity.setProcessId(split[2]);
                 logEntity.setType(split[5]);
                 logEntity.setInfo(split[7]);
-                // 表示一个新的任务出现了
-                String info = logEntity.getInfo();
-                if (info.startsWith("enable Start task ")) {
-                    Map map = JSON.parseObject(info.split(":", 3)[2], Map.class);
-                    WORK_INFO_MAP.put(map.get("workName").toString(), map);
-                    workName = map.get("workName").toString();
-                }
-
-
-                if (logEntity.getProcessId().endsWith("_full_execute]")) {
-                    // 判断是否第一条一条数据
-                    if(logEntity.getInfo().contains(" this full task is expected to transfer")){
-                        // todo
-                        // 保存数据
-                    }
-                    fullMap.put("workName",workName);
-                    parseFullTask(logEntity, fullMap);
-                }
-                if (logEntity.getProcessId().endsWith("_realtime_execute]")) {
-                    if(logEntity.getInfo().contains("the total number of event read currently")){
-                        // todo
-                        // 保存数据
-                    }
-                    fullMap.put("workName",workName);
-                    parseRealTask(logEntity, realTimeMap);
-                }
-                if (logEntity.getProcessId().endsWith("hostInfo_print]")) {
-                    if(logEntity.getInfo().contains("tcpu:current system CPU usage:")){
-                        // todo
-                        // 保存数据
-                    }
-                    fullMap.put("workName",workName);
-                    parseHost(logEntity, hostInfoMap);
-                }
+                parse(logEntity);
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
+            log.error("解析文件{},失败:{}", filePath, e.getMessage());
         }
     }
 
-    public static void parse() {
+    public void judgeSave(LogEntity logEntity) {
+        // 表示一个新的任务出现了
+        String info = logEntity.getInfo();
+        if (info.startsWith("enable Start task ")) {
+            Map<Object, Object> map = JSON.parseObject(info.split(":", 3)[2], Map.class);
+            workName = map.get("workName").toString();
+            workService.upsertWorkInfo(map.get("workName").toString(), map);
+        }
 
+        if (logEntity.getProcessId().endsWith("_full_execute]")) {
+            // 判断是否第一条一条数据
+            if (logEntity.getInfo().contains(" this full task is expected to transfer")) {
+                monitorDataService.saveRealTimeWorkData(workName, fullMap);
+            }
+        }
+        if (logEntity.getProcessId().endsWith("_realtime_execute]")) {
+            if (logEntity.getInfo().contains("the total number of event read currently")) {
+                realTimeMap.put("eventTime", eventTime);
+                realTimeMap.put("delayTime", delayTime);
+                realTimeMap.put("incProgress", incProgress);
+                monitorDataService.saveRealTimeWorkData(workName, realTimeMap);
+            }
+        }
+
+        if (logEntity.getProcessId().endsWith("hostInfo_print]")) {
+            if (logEntity.getInfo().contains("cpu:current system CPU usage:")) {
+                monitorDataService.saveHostData(hostInfoMap);
+            }
+
+        }
     }
 
-    public static void parseFullTask(LogEntity logEntity, Map<String, Object> parse) {
-        //定制化处理message
+    public void parse(LogEntity logEntity) {
+        judgeSave(logEntity);
+        if (logEntity.getProcessId().endsWith("_full_execute]")) {
+            fullMap.put("workName", workName);
+            parseFullTask(logEntity, fullMap);
+        }
+        if (logEntity.getProcessId().endsWith("_realtime_execute]")) {
+            fullMap.put("workName", workName);
+            parseRealTask(logEntity, realTimeMap);
+        }
+        if (logEntity.getProcessId().endsWith("hostInfo_print]")) {
+            fullMap.put("workName", workName);
+            parseHost(logEntity, hostInfoMap);
+        }
+    }
+
+    public static void parseFullTask(LogEntity logEntity, Map<Object, Object> parse) {
+        // 定制化处理message
         String message = logEntity.getInfo();
         if (message.contains("this full task is expected to transfer")) {
             parse.put("estimatedTotalNum", formStrGetNum(message));
@@ -141,7 +153,7 @@ public class ReadFIle {
     }
 
 
-    public static void parseHost(LogEntity logEntity, Map<String, Object> parse) {
+    public static void parseHost(LogEntity logEntity, Map<Object, Object> parse) {
         String message = logEntity.getInfo();
         // message 中memory 类型的日志处理
         if (message.startsWith("memory")) {
@@ -176,7 +188,7 @@ public class ReadFIle {
         }
     }
 
-    public static void parseRealTask(LogEntity logEntity, Map<String, Object> parse) {
+    public static void parseRealTask(LogEntity logEntity, Map<Object, Object> parse) {
         // 定制化处理message
         String message = logEntity.getInfo();
         if (message.contains("the current number of ")) {
@@ -220,12 +232,14 @@ public class ReadFIle {
                 parse.put("realTimeWriteSpeed", formStrGetNum(extracted));
             }
         } else if (message.contains("current read event time")) {
-            // todo 不一定有数据
             parse.put("eventTime", formStrGetNum(message));
+            eventTime = formStrGetNum(message);
         } else if (message.contains("current event delay time")) {
             parse.put("delayTime", formStrGetNum(message));
+            delayTime = formStrGetNum(message);
         } else if (message.contains("current incremental progress")) {
             parse.put("incProgress", formStrGetNum(message));
+            incProgress = formStrGetNum(message);
         }
     }
 
@@ -244,7 +258,6 @@ public class ReadFIle {
         if (matcher.find()) {
             String sizeInMB = matcher.group();
             parseDouble = Double.parseDouble(sizeInMB);
-            ;
         } else {
             parseDouble = -1;
         }

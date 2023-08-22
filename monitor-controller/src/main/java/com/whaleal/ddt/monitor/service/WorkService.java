@@ -10,4 +10,6 @@ public interface WorkService {
     void upsertWorkInfo(String workName, Map<Object, Object> workInfo);
 
     Map<Object, Object>  getWorkInfo(String workName);
+
+    List<Map<Object, Object>> getWorkInfoList(String workName);
 }
