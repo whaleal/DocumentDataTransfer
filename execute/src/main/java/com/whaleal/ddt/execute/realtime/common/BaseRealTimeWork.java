@@ -205,10 +205,10 @@ public abstract class BaseRealTimeWork {
                 try {
                     // 每隔10秒输出一次信息
                     TimeUnit.SECONDS.sleep(10);
-                    // 输出线程运行情况
-                    baseRealTimeWork.printThreadInfo();
                     // 输出缓存区运行情况
                     executeCountOld = metadataOplog.printCacheInfo(workInfo.getStartTime(), executeCountOld);
+                    // 输出线程运行情况
+                    baseRealTimeWork.printThreadInfo();
                     // 判断任务是否结束，如果结束则等待1分钟后退出循环
                     if (baseRealTimeWork.judgeRealTimeTaskFinish()) {
                         WorkStatus.updateWorkStatus(workInfo.getWorkName(), WorkStatus.WORK_STOP);

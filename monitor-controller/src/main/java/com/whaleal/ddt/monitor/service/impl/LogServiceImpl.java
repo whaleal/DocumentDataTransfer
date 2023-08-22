@@ -17,6 +17,7 @@ public class LogServiceImpl implements LogService {
 
     @Override
     public List<LogEntity> findLog(String processId, String type, long startTime, long endTime, String info, Integer pageIndex, Integer pageSize) {
+        // 直接从具体源日志读取
         return new ArrayList<>();
     }
 

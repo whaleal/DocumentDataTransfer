@@ -1,4 +1,4 @@
-package com.whaleal.ddt.monitor.task;
+package com.whaleal.ddt.monitor.service.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.whaleal.ddt.monitor.model.LogEntity;
@@ -23,14 +23,13 @@ import java.util.regex.Pattern;
  * @date: 21/08/2023 16:18
  * @version: 1.0
  */
-public class ReadFIle {
+public class ParseLog {
 
     private static final Map<String, Map<Object, Object>> WORK_INFO_MAP = new ConcurrentHashMap<>();
 
     private static final Map<String, Object> fullMap = new TreeMap<>();
     private static final Map<String, Object> realTimeMap = new TreeMap<>();
     private static final Map<String, Object> hostInfoMap = new TreeMap<>();
-
 
     private static String hostName = "";
     private static String pid = "";
@@ -39,12 +38,11 @@ public class ReadFIle {
     private static String workName = "";
 
     public static void main(String[] args) {
-        readFile();
+        readFile("/Users/liheping/Desktop/log.log");
     }
 
-    public static void readFile() {
-
-        File file = new File("/Users/liheping/Desktop/log.log");
+    public static void readFile(String filePath) {
+        File file = new File(filePath);
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = br.readLine()) != null) {
@@ -71,30 +69,29 @@ public class ReadFIle {
                     workName = map.get("workName").toString();
                 }
 
-
                 if (logEntity.getProcessId().endsWith("_full_execute]")) {
                     // 判断是否第一条一条数据
-                    if(logEntity.getInfo().contains(" this full task is expected to transfer")){
+                    if (logEntity.getInfo().contains(" this full task is expected to transfer")) {
                         // todo
                         // 保存数据
                     }
-                    fullMap.put("workName",workName);
+                    fullMap.put("workName", workName);
                     parseFullTask(logEntity, fullMap);
                 }
                 if (logEntity.getProcessId().endsWith("_realtime_execute]")) {
-                    if(logEntity.getInfo().contains("the total number of event read currently")){
+                    if (logEntity.getInfo().contains("the total number of event read currently")) {
                         // todo
                         // 保存数据
                     }
-                    fullMap.put("workName",workName);
+                    fullMap.put("workName", workName);
                     parseRealTask(logEntity, realTimeMap);
                 }
                 if (logEntity.getProcessId().endsWith("hostInfo_print]")) {
-                    if(logEntity.getInfo().contains("tcpu:current system CPU usage:")){
+                    if (logEntity.getInfo().contains("tcpu:current system CPU usage:")) {
                         // todo
                         // 保存数据
                     }
-                    fullMap.put("workName",workName);
+                    fullMap.put("workName", workName);
                     parseHost(logEntity, hostInfoMap);
                 }
             }

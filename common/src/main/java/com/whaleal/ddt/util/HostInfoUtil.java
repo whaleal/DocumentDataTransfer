@@ -135,10 +135,9 @@ public class HostInfoUtil {
             OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
             // 获取当前系统CPU使用率
             double systemCpuUsage = osBean.getSystemCpuLoad() * 100;
+            log.info("cpu:current system CPU usage:" + systemCpuUsage + "%");
             if (systemCpuUsage > WARNING_THRESHOLD) {
                 log.warn("cpu:current system CPU usage:" + systemCpuUsage + "%");
-            } else {
-                log.info("cpu:current system CPU usage:" + systemCpuUsage + "%");
             }
             // 获取当前系统CPU空闲率
             double systemCpuIdle = 100 - systemCpuUsage;

@@ -333,14 +333,14 @@ public abstract class BaseFullWork {
             fullSync.submitTargetTask(workInfo.getTargetThreadNum());
             // 生成源数据库数据读取任务
             fullSync.generateSource(workInfo.getSourceThreadNum(), taskQueue, isGenerateSourceTaskInfoOverNum, workInfo.getBatchSize());
-            // 计算一共要同步数据量
-            long allNsDocumentCount = fullSync.estimatedAllNsDocumentCount(workInfo.getDbTableWhite());
+
             long writeCountOld = 0L;
             while (true) {
                 try {
-                    log.info("{} this full task is expected to transfer {} bars of data", workInfo.getWorkName(), allNsDocumentCount);
+                    // 计算一共要同步数据量
+                    log.info("{} this full task is expected to transfer {} bars of data", workInfo.getWorkName(), fullSync.estimatedAllNsDocumentCount(workInfo.getDbTableWhite()));
                     log.info("{} current task queue cache status:{}", workInfo.getWorkName(), taskQueue.size());
-                    // 每隔10秒输出一次信息
+                    // 每隔10秒输出一次信息 todo
                     TimeUnit.SECONDS.sleep(10);
                     // 输出缓存区运行情况
                     writeCountOld = fullMetaData.printCacheInfo(workInfo.getStartTime(), writeCountOld);
