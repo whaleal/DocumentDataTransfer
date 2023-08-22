@@ -1,8 +1,10 @@
 package com.whaleal.ddt.monitor.service.impl;
 
 
+import com.alibaba.fastjson.JSON;
 import com.whaleal.ddt.monitor.service.WorkService;
 import com.whaleal.icefrog.core.util.StrUtil;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -14,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author liheping
  */
 @Service
+@Log4j2
 public class WorkServiceImpl implements WorkService {
 
 
@@ -26,6 +29,7 @@ public class WorkServiceImpl implements WorkService {
 
     @Override
     public void upsertWorkInfo(String workName, Map<Object, Object> workInfo) {
+        log.info("upsertWorkInfo:{}", JSON.toJSONString(workInfo));
         if (WORK_INFO_MAP.containsKey(workName)) {
             WORK_INFO_MAP.get(workName).putAll(workInfo);
         } else {

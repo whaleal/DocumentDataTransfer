@@ -30,40 +30,43 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
     private static final Map<Object, Object> realTimeMap = new TreeMap<>();
     private static final Map<Object, Object> hostInfoMap = new TreeMap<>();
 
-    private static String hostName = "";
-    private static String pid = "";
-    private static String bootDirectory = "";
-    private static String JVMInfo = "";
-    private static String workName = "";
+    private static volatile String hostName = "";
+    private static volatile String pid = "";
+    private static volatile String bootDirectory = "";
+    private static volatile String JVMInfo = "";
+    private static volatile String workName = "";
 
-    private static double eventTime = 0D;
-    private static double delayTime = 0D;
-    private static double incProgress = 0D;
+    private static volatile double eventTime = 0D;
+    private static volatile double delayTime = 0D;
+    private static volatile double incProgress = 0D;
+
+    private static volatile long logTime = 0;
 
 
-//
-//    public static void main(String[] args) {
-//        readFile("/Users/liheping/Desktop/log.log", 0);
-//    }
-
+    @Override
     public void readFile(String filePath, long position) {
-
         File file = new File(filePath);
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = br.readLine()) != null) {
-                // 过滤条件 符合日志输出规范的数据
-                String regex = "^(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}) \\[(\\w+)\\] (.*)";
-                if (!line.matches(regex)) {
-                    continue;
+                try {
+                    // 过滤条件 符合日志输出规范的数据
+                    String regex = "^(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}) \\[(\\w+)\\] (.*)";
+                    if (!line.matches(regex)) {
+                        continue;
+                    }
+                    String[] split = line.split(" +", 8);
+                    LogEntity logEntity = new LogEntity();
+                    logEntity.setTime(DateTimeUtils.stringToStamp(split[0] + " " + split[1]));
+                    logEntity.setProcessId(split[2]);
+                    logEntity.setType(split[5]);
+                    logEntity.setInfo(split[7]);
+                    // 设置当前解析日志的时间
+                    logTime = logEntity.getTime();
+                    parse(logEntity);
+                } catch (Exception e) {
+                    log.error("解析日志{}失败:{}", line, e.getMessage());
                 }
-                String[] split = line.split(" +", 8);
-                LogEntity logEntity = new LogEntity();
-                logEntity.setTime(DateTimeUtils.stringToStamp(split[0] + " " + split[1]));
-                logEntity.setProcessId(split[2]);
-                logEntity.setType(split[5]);
-                logEntity.setInfo(split[7]);
-                parse(logEntity);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -72,14 +75,6 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
     }
 
     public void judgeSave(LogEntity logEntity) {
-        // 表示一个新的任务出现了
-        String info = logEntity.getInfo();
-        if (info.startsWith("enable Start task ")) {
-            Map<Object, Object> map = JSON.parseObject(info.split(":", 3)[2], Map.class);
-            workName = map.get("workName").toString();
-            workService.upsertWorkInfo(map.get("workName").toString(), map);
-        }
-
         if (logEntity.getProcessId().endsWith("_full_execute]")) {
             // 判断是否第一条一条数据
             if (logEntity.getInfo().contains(" this full task is expected to transfer")) {
@@ -87,6 +82,7 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
             }
         }
         if (logEntity.getProcessId().endsWith("_realtime_execute]")) {
+            // 判断是否第一条一条数据
             if (logEntity.getInfo().contains("the total number of event read currently")) {
                 realTimeMap.put("eventTime", eventTime);
                 realTimeMap.put("delayTime", delayTime);
@@ -94,28 +90,65 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
                 monitorDataService.saveRealTimeWorkData(workName, realTimeMap);
             }
         }
-
         if (logEntity.getProcessId().endsWith("hostInfo_print]")) {
+            // 判断是否第一条一条数据
             if (logEntity.getInfo().contains("cpu:current system CPU usage:")) {
                 monitorDataService.saveHostData(hostInfoMap);
             }
+        }
+    }
 
+    public void getWorkName(LogEntity logEntity) {
+        // 表示一个新的任务出现了
+        String info = logEntity.getInfo();
+        if (info.startsWith("enable Start task ") || info.startsWith("end execute task ")) {
+            Map<Object, Object> map = JSON.parseObject(info.split(":", 3)[2], Map.class);
+            workName = map.get("workName").toString();
+            map.put("hostName", hostName);
+            map.put("pid", pid);
+            map.put("bootDirectory", bootDirectory);
+            map.put("JVMInfo", JVMInfo);
+            workService.upsertWorkInfo(workName, map);
+        }
+        // 判断线程名字
+        if (logEntity.getProcessId().endsWith("_full_execute]") || logEntity.getProcessId().endsWith("_realtime_execute]")) {
+            String workNameTemp = logEntity.getProcessId().split("_")[0];
+            if (!workNameTemp.equals(workName)) {
+                workName = workNameTemp;
+            }
         }
     }
 
     public void parse(LogEntity logEntity) {
+        getWorkName(logEntity);
         judgeSave(logEntity);
+        fullMap.put("workName", workName);
+        fullMap.put("createTime", logTime);
         if (logEntity.getProcessId().endsWith("_full_execute]")) {
-            fullMap.put("workName", workName);
             parseFullTask(logEntity, fullMap);
         }
         if (logEntity.getProcessId().endsWith("_realtime_execute]")) {
-            fullMap.put("workName", workName);
             parseRealTask(logEntity, realTimeMap);
         }
         if (logEntity.getProcessId().endsWith("hostInfo_print]")) {
-            fullMap.put("workName", workName);
             parseHost(logEntity, hostInfoMap);
+        }
+        if (logEntity.getProcessId().equals("[main]")) {
+            parseMain(logEntity);
+        }
+    }
+
+
+    public static void parseMain(LogEntity logEntity) {
+        String info = logEntity.getInfo();
+        if (info.startsWith("D2T Boot information :")) {
+            Map<Object, Object> map = JSON.parseObject(info.replaceFirst("D2T Boot information :", ""), Map.class);
+            hostName = map.get("hostName").toString();
+            pid = map.get("pid").toString();
+            bootDirectory = map.get("bootDirectory").toString();
+        }
+        if (info.startsWith("JVM Info:")) {
+            JVMInfo = info.replaceFirst("JVM Info:", "");
         }
     }
 
@@ -262,5 +295,11 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
             parseDouble = -1;
         }
         return parseDouble;
+    }
+
+    public static void main(String[] args) {
+        String str = "{hostName:1,pid:2,bootDirectory:3}";
+        Map map = JSON.parseObject(str, Map.class);
+        System.out.println(map);
     }
 }

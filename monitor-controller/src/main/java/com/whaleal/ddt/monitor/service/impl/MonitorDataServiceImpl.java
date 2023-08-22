@@ -37,7 +37,7 @@ public class MonitorDataServiceImpl implements MonitorDataService {
     }
 
     private static void saveData(String filePath, Map<Object, Object> map) {
-        if (map.size() <= 3) {
+        if (map.size() < 10) {
             return;
         }
         try (FileOutputStream fileOutputStream = new FileOutputStream(filePath, true)) {

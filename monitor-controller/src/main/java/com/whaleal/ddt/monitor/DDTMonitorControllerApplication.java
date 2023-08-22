@@ -7,10 +7,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @author cc
  */
 @SpringBootApplication
-public class MongoTControlJavaApplication {
+public class DDTMonitorControllerApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(MongoTControlJavaApplication.class, args);
+        SpringApplication.run(DDTMonitorControllerApplication.class, args);
     }
 
 }
