@@ -6,13 +6,12 @@ import com.whaleal.ddt.monitor.service.MonitorDataService;
 import com.whaleal.ddt.monitor.service.ParseFileLogService;
 import com.whaleal.ddt.monitor.service.WorkService;
 import com.whaleal.ddt.monitor.util.DateTimeUtils;
+import com.whaleal.ddt.monitor.utilClass.BufferedRandomAccessFile;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
@@ -26,105 +25,187 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
     @Autowired
     private MonitorDataService monitorDataService;
 
+    /**
+     * Maps to store parsed data for full execution.
+     */
     private static final Map<Object, Object> fullMap = new TreeMap<>();
+
+    /**
+     * Maps to store parsed data for real-time execution.
+     */
     private static final Map<Object, Object> realTimeMap = new TreeMap<>();
+
+    /**
+     * Maps to store parsed host information.
+     */
     private static final Map<Object, Object> hostInfoMap = new TreeMap<>();
 
+    /**
+     * Volatile variable to store the host name.
+     */
     private static volatile String hostName = "";
+
+    /**
+     * Volatile variable to store the process ID.
+     */
     private static volatile String pid = "";
+
+    /**
+     * Volatile variable to store the boot directory.
+     */
     private static volatile String bootDirectory = "";
+
+    /**
+     * Volatile variable to store the JVM arguments.
+     */
     private static volatile String JVMArg = "";
+
+    /**
+     * Volatile variable to store the current work name.
+     */
     private static volatile String workName = "";
 
+    /**
+     * Volatile variable to store the event time.
+     */
     private static volatile double eventTime = 0D;
+
+    /**
+     * Volatile variable to store the delay time.
+     */
     private static volatile double delayTime = 0D;
+
+    /**
+     * Volatile variable to store the incremental progress.
+     */
     private static volatile double incProgress = 0D;
 
+    /**
+     * Volatile variable to store the current log time.
+     */
     private static volatile long logTime = 0;
 
 
+    /**
+     * Reads and parses the log file.
+     *
+     * @param filePath The path to the log file.
+     * @param position The starting position to read from.
+     */
     @Override
-    public void readFile(String filePath, long position) {
+    public long readFile(String filePath, long position) {
+        long filePointerTemp = position;
         File file = new File(filePath);
-        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-            String line;
-            while ((line = br.readLine()) != null) {
+        try (BufferedRandomAccessFile randomAccessFile = new BufferedRandomAccessFile(file, "r")) {
+            randomAccessFile.seek(position);
+            String line = "";
+            while ((line = randomAccessFile.readLine()) != null) {
                 try {
-                    // 过滤条件 符合日志输出规范的数据
+                    // Filter condition: Only process log lines that match the specified regex pattern
                     String regex = "^(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}) \\[(\\w+)\\] (.*)";
                     if (!line.matches(regex)) {
+                        // Skip non-matching lines
                         continue;
                     }
+                    // Split the log line into individual components
                     String[] split = line.split(" +", 8);
                     LogEntity logEntity = new LogEntity();
                     logEntity.setTime(DateTimeUtils.stringToStamp(split[0] + " " + split[1]));
                     logEntity.setProcessId(split[2]);
                     logEntity.setType(split[5]);
                     logEntity.setInfo(split[7]);
-                    // 设置当前解析日志的时间
+                    // Set the current log parsing time
                     logTime = logEntity.getTime();
                     parse(logEntity);
                 } catch (Exception e) {
                     e.printStackTrace();
-                    log.error("解析日志{}失败:{}", line, e.getMessage());
+                    log.error("Failed to parse log {}: {}", line, e.getMessage());
+                } finally {
+                    filePointerTemp = randomAccessFile.getFilePointer();
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
-            log.error("解析文件{},失败:{}", filePath, e.getMessage());
+            log.error("Failed to parse file {}: {}", filePath, e.getMessage());
         }
+        return filePointerTemp;
     }
 
+
+    /**
+     * Determines whether to save data based on the log content and process ID.
+     *
+     * @param logEntity The LogEntity containing the log information.
+     */
     public void judgeSave(LogEntity logEntity) {
+        // Check if the log is related to a full execution task
         if (logEntity.getProcessId().endsWith("_full_execute]")) {
-            // 判断是否第一条一条数据
+            // Check if it's the first data record for this task
             if (logEntity.getInfo().contains(" this full task is expected to transfer")) {
+                // Save full work data
                 monitorDataService.saveFullWorkData(workName, fullMap);
             }
         }
+
+        // Check if the log is related to a real-time execution task
         if (logEntity.getProcessId().endsWith("realTime_execute]")) {
-            // 判断是否第一条一条数据
+            // Check if it's the first data record for this task
             if (logEntity.getInfo().contains("the total number of event read currently")) {
+                // Save real-time work data
                 realTimeMap.put("eventTime", eventTime);
                 realTimeMap.put("delayTime", delayTime);
                 realTimeMap.put("incProgress", incProgress);
                 monitorDataService.saveRealTimeWorkData(workName, realTimeMap);
             }
         }
+
+        // Check if the log is related to host information
         if (logEntity.getProcessId().endsWith("hostInfo_print]")) {
-            // 判断是否第一条一条数据
+            // Check if it's the first data record for host information
             if (logEntity.getInfo().contains("cpu:current system CPU usage:")) {
+                // Save host data
                 monitorDataService.saveHostData(hostInfoMap);
             }
         }
     }
 
+
+    /**
+     * Extracts the work name from the log message and updates work-related information.
+     *
+     * @param logEntity The LogEntity containing the log information.
+     */
     public void getWorkName(LogEntity logEntity) {
-        // 表示一个新的任务出现了
+        // Check if the log message indicates the start or end of a task
         String info = logEntity.getInfo();
         if (info.startsWith("enable Start task ") || info.startsWith("end execute task ")) {
+            // Parse the JSON data from the log message
             Map<Object, Object> map = JSON.parseObject(info.split(":", 3)[2], Map.class);
             System.out.println(info);
-            workName = map.get("workName").toString();
+            // Extract work name and update work-related information
+            workName = map.get("workName").toString() + "_" + map.get("startTime");
+            map.put("workName",workName);
             map.put("hostName", hostName);
             map.put("pid", pid);
             map.put("bootDirectory", bootDirectory);
             map.put("JVMArg", JVMArg);
+            // Update work information using the service
             workService.upsertWorkInfo(workName, map);
         }
-        // 判断线程名字
-//        if (logEntity.getProcessId().endsWith("_full_execute]") || logEntity.getProcessId().endsWith("_realtime_execute]")) {
-//            String workNameTemp = logEntity.getProcessId().split("_")[0];
-//            if (!workNameTemp.equals(workName)) {
-//                workName = workNameTemp;
-//            }
-//        }
     }
 
+
+    /**
+     * Parses a LogEntity and populates relevant data into appropriate maps based on log type.
+     *
+     * @param logEntity The LogEntity containing the log information.
+     */
     public void parse(LogEntity logEntity) {
+        // Extract and set work name, and save data based on log type
         getWorkName(logEntity);
         judgeSave(logEntity);
 
+        // Process logs based on the process ID
         if (logEntity.getProcessId().endsWith("_full_execute]")) {
             fullMap.put("workName", workName);
             fullMap.put("createTime", logTime);
@@ -135,12 +216,7 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
             realTimeMap.put("createTime", logTime);
             parseRealTask(logEntity, realTimeMap);
         }
-        if (logEntity.getProcessId().endsWith("hostInfo_print]")) {
-            hostInfoMap.put("workName", workName);
-            hostInfoMap.put("createTime", logTime);
-            parseHost(logEntity, hostInfoMap);
-        }
-        if (logEntity.getProcessId().endsWith("hostInfo_limit]")) {
+        if (logEntity.getProcessId().endsWith("hostInfo_print]") || logEntity.getProcessId().endsWith("hostInfo_limit]")) {
             hostInfoMap.put("workName", workName);
             hostInfoMap.put("createTime", logTime);
             parseHost(logEntity, hostInfoMap);
@@ -151,17 +227,27 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
     }
 
 
+    /**
+     * Parses the main log message containing D2T Boot information and extracts relevant data.
+     *
+     * @param logEntity The LogEntity containing the log information.
+     */
     public static void parseMain(LogEntity logEntity) {
         String info = logEntity.getInfo();
+
+        // Check if the log message contains D2T Boot information
         if (info.startsWith("D2T Boot information :")) {
+            // Extract the JSON object from the log message and parse it
             Map<Object, Object> map = JSON.parseObject(info.replaceFirst("D2T Boot information :", ""), Map.class);
+
+            // Extract and store relevant information
             hostName = map.get("hostName").toString();
             pid = map.get("pid").toString();
             bootDirectory = map.get("bootDirectory").toString();
             JVMArg = map.get("JVMArg").toString();
         }
-
     }
+
 
     public static void parseFullTask(LogEntity logEntity, Map<Object, Object> parse) {
         // 定制化处理message
@@ -197,10 +283,18 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
     }
 
 
+    /**
+     * Parses host-related log messages and populates the provided map with relevant data.
+     *
+     * @param logEntity The LogEntity containing the log information.
+     * @param parse     The map to populate with parsed data.
+     */
     public static void parseHost(LogEntity logEntity, Map<Object, Object> parse) {
         String message = logEntity.getInfo();
-        // message 中memory 类型的日志处理
+
+        // Process memory-related log messages
         if (message.contains("D2T status")) {
+            // Check if the log type is "warn" and set isLimit accordingly
             parse.put("isLimit", "warn".equalsIgnoreCase(logEntity.getType()) ? 1 : 0);
         } else if (message.startsWith("memory")) {
             if (message.startsWith("memory:total memory")) {
@@ -214,8 +308,9 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
             } else if (message.startsWith("memory:heap memory")) {
                 parse.put("useMemory", formStrGetNum(message));
             }
-            // message cpu 类型的日志处理
-        } else if (message.startsWith("cpu")) {
+        }
+        // Process CPU-related log messages
+        else if (message.startsWith("cpu")) {
             if (message.startsWith("cpu:current system")) {
                 parse.put("sysUsage", formStrGetNum(message));
             } else if (message.startsWith("cpu:current idle")) {
@@ -225,18 +320,26 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
             } else if (message.startsWith("cpu:number")) {
                 parse.put("threadNum", formStrGetNum(message));
             }
-            // message disk 类型的日志处理
-        } else if (message.startsWith("netInfo")) {
-            // key前锥来匹配
+        }
+        // Process disk-related log messages
+        else if (message.startsWith("netInfo")) {
+            // Extract network information from the message
             Map map = JSON.parseObject(message.replaceFirst("netInfo:", ""), Map.class);
             parse.put("recvBytes_" + map.get("name"), map.get("bytesRecv"));
             parse.put("sendBytes_" + map.get("name"), map.get("bytesSent"));
         }
     }
 
+    /**
+     * 解析实时任务日志
+     *
+     * @param logEntity 日志实体类
+     * @param parse     存放数据区
+     */
     public static void parseRealTask(LogEntity logEntity, Map<Object, Object> parse) {
-        // 定制化处理message
+        // Customized message processing
         String message = logEntity.getInfo();
+
         if (message.contains("the current number of ")) {
             if (message.contains("_readEventThreadPoolName")) {
                 parse.put("readThreadNum", formStrGetNum(message));
@@ -260,39 +363,47 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
         } else if (message.contains(" current number of synchronization tables")) {
             parse.put("tableNum", formStrGetNum(message));
         } else if (message.contains(" number of executions")) {
-            Map map = JSON.parseObject(message.split("number of executions:")[1], Map.class);
-            parse.put("insert", map.get("insert"));
-            parse.put("delete", map.get("delete"));
-            parse.put("update", map.get("update"));
-            parse.put("cmd", map.get("cmd"));
+            // Extract and process execution statistics
+            Map<String, Object> executionMap = JSON.parseObject(message.split("number of executions:")[1], Map.class);
+            parse.put("insert", executionMap.get("insert"));
+            parse.put("delete", executionMap.get("delete"));
+            parse.put("update", executionMap.get("update"));
+            parse.put("cmd", executionMap.get("cmd"));
         } else if (message.contains(" total number of execution")) {
+            // Extract and process average write speed
             int startIndex = message.indexOf("average write speed:");
             if (startIndex != -1) {
                 String extracted = message.substring(startIndex);
                 parse.put("avgWriteSpeed", formStrGetNum(extracted));
             }
         } else if (message.contains(" current round (10s) execution")) {
+            // Extract and process real-time write speed
             int startIndex = message.indexOf("execution");
             if (startIndex != -1) {
                 String extracted = message.substring(startIndex);
                 parse.put("realTimeWriteSpeed", formStrGetNum(extracted));
             }
         } else if (message.contains("current read event time")) {
+            // Extract and store current event time
             parse.put("eventTime", formStrGetNum(message));
             eventTime = formStrGetNum(message);
         } else if (message.contains("current event delay time")) {
+            // Extract and store current event delay time
             parse.put("delayTime", formStrGetNum(message));
             delayTime = formStrGetNum(message);
         } else if (message.contains("current incremental progress")) {
+            // Extract and store current incremental progress
             parse.put("incProgress", formStrGetNum(message));
             incProgress = formStrGetNum(message);
         }
+
     }
 
     /**
-     * 提取字符串中的数字
+     * 提取字符串中的第一个数字
+     * 没有数字就返回-1
      *
-     * @param str
+     * @param str 字符串
      * @return
      */
     public static Double formStrGetNum(String str) {
@@ -310,9 +421,5 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
         return parseDouble;
     }
 
-    public static void main(String[] args) {
-        String str = "{hostName:server190,pid:19582,bootDirectory:/home/lhp/DDT/bin}";
-        Map map = JSON.parseObject(str, Map.class);
-        System.out.println(map);
-    }
+
 }

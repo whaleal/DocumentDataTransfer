@@ -1,6 +1,5 @@
 package com.whaleal.ddt.monitor.service.impl;
 
-
 import com.alibaba.fastjson.JSON;
 import com.whaleal.ddt.monitor.service.WorkService;
 import com.whaleal.icefrog.core.util.StrUtil;
@@ -13,23 +12,26 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @author liheping
+ * WorkServiceImpl 类
+ * <p>
+ * This class provides an implementation of the WorkService interface for managing work information.
+ * <p>
+ * Author: liheping
  */
 @Service
 @Log4j2
 public class WorkServiceImpl implements WorkService {
 
-
     /**
-     * workInfo 信息
-     * k:workName,v:workInfoEntity
-     * 数据量不大 可以放内存
+     * 存储工作信息
+     * Key: workName, Value: workInfoEntity
+     * Since the data size is not large, it can be stored in memory.
      */
     private static final Map<String, Map<Object, Object>> WORK_INFO_MAP = new ConcurrentHashMap<>();
 
     @Override
     public void upsertWorkInfo(String workName, Map<Object, Object> workInfo) {
-        log.info("upsertWorkInfo:{}", JSON.toJSONString(workInfo));
+        log.info("upsertWorkInfo: {}", JSON.toJSONString(workInfo));
         if (WORK_INFO_MAP.containsKey(workName)) {
             WORK_INFO_MAP.get(workName).putAll(workInfo);
         } else {
@@ -52,9 +54,4 @@ public class WorkServiceImpl implements WorkService {
         }
         return result;
     }
-
-
-
-
-
 }

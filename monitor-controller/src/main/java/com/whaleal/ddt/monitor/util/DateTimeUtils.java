@@ -14,9 +14,9 @@ public class DateTimeUtils {
 
     static {
         TimeZone aDefault = TimeZone.getDefault();
+        // 默认时区
         offset = aDefault.getRawOffset() / 1000;
     }
-
 
     public static Long stringToStamp(String str, String format) {
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(format);

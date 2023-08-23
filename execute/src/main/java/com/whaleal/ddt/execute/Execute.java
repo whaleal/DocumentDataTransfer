@@ -91,12 +91,12 @@ public class Execute {
             workInfo.setWorkName(workName + "_full");
             // 全量同步模式
             startFull(workInfo, fullType);
-            workInfo.setEndTime(System.currentTimeMillis());
+            //workInfo.setEndTime(System.currentTimeMillis());
         } else if (syncMode.equalsIgnoreCase(WorkInfo.SYNC_MODE_REAL_TIME)) {
             workInfo.setWorkName(workName + "_realTime");
             // 实时同步模式
             startRealTime(workInfo, realTimeType);
-            workInfo.setEndTime(System.currentTimeMillis());
+            //workInfo.setEndTime(System.currentTimeMillis());
         } else if (syncMode.equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL_AND_INCREMENT)) {
             // 全量+增量同步模式
             // 先执行全量同步，然后再执行增量同步
@@ -104,7 +104,7 @@ public class Execute {
             workInfo.setWorkName(workName + "_full");
             workInfo.setSyncMode(WorkInfo.SYNC_MODE_ALL);
             startFull(workInfo, fullType);
-            workInfo.setEndTime(System.currentTimeMillis());
+            //workInfo.setEndTime(System.currentTimeMillis());
             // 设置新的任务的时区
             // Q: 增量任务 也可以加上进度百分比
             // A: 已在ReadOplog 增加进度百分比
@@ -113,7 +113,7 @@ public class Execute {
             workInfo.setWorkName(workName + "_realTime");
             workInfo.setSyncMode(WorkInfo.SYNC_MODE_REAL_TIME);
             startRealTime(workInfo, realTimeType);
-            workInfo.setEndTime(System.currentTimeMillis());
+            //workInfo.setEndTime(System.currentTimeMillis());
         } else if (syncMode.equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL_AND_REAL_TIME)) {
             // 全量+实时同步模式
             // 先执行全量同步，然后再执行实时同步
@@ -121,13 +121,13 @@ public class Execute {
             workInfo.setWorkName(workName + "_full");
             workInfo.setSyncMode(WorkInfo.SYNC_MODE_ALL);
             startFull(workInfo, fullType);
-            workInfo.setEndTime(System.currentTimeMillis());
+            //workInfo.setEndTime(System.currentTimeMillis());
             workInfo.setStartTime(System.currentTimeMillis());
             // 设置新的任务的时区
             workInfo.setWorkName(workName + "_realTime");
             workInfo.setSyncMode(WorkInfo.SYNC_MODE_REAL_TIME);
             startRealTime(workInfo, realTimeType);
-            workInfo.setEndTime(System.currentTimeMillis());
+            //workInfo.setEndTime(System.currentTimeMillis());
         }
     }
 

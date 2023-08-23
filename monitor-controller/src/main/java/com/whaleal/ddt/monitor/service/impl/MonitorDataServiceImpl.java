@@ -19,7 +19,8 @@ import java.util.Map;
  */
 @Service
 public class MonitorDataServiceImpl implements MonitorDataService {
-    private  static final  Map<String, Object> MESSAGE_MAP = new HashMap<>();
+    private static final Map<String, Object> MESSAGE_MAP = new HashMap<>();
+
     static {
 
 
@@ -114,6 +115,7 @@ public class MonitorDataServiceImpl implements MonitorDataService {
         MESSAGE_MAP.put("realTimeIncProgress", realTimeIncProgress);
 
     }
+
     private static String hostInfoDataFile = "hostInfoDataFile.txt";
     private static String fullWorkDataFile = "fullWorkDataFile.txt";
     private static String realTimeWorkDataFile = "realTimeWorkDataFile.txt";
@@ -146,23 +148,22 @@ public class MonitorDataServiceImpl implements MonitorDataService {
     }
 
 
-    public Map<String, List<Object>> getMonitor(String filePath, List<String> typeList, long startTime, long endTime) {
+    public static Map<String, List<Object>> getMonitor(String filePath, List<String> typeList, long startTime, long endTime) {
         Map<String, List<Object>> resultMap = new HashMap<>();
 
         for (String type : typeList) {
             resultMap.put(type, new ArrayList<>());
         }
-        if (typeList.size() == 3 && typeList.get(2).equals("netIO")) {
+        if (typeList.contains("netIO")) {
             resultMap.remove("netIO");
         }
-
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 Map<String, Object> map = JSON.parseObject(line, Map.class);
                 double createTime = Double.parseDouble(map.get("createTime").toString());
                 if (createTime <= endTime && createTime >= startTime) {
-                    if (typeList.size() == 3 && typeList.get(2).equals("netIO")) {
+                    if (typeList.contains("netIO")) {
                         for (Map.Entry<String, Object> entry : map.entrySet()) {
                             String key = entry.getKey();
                             if (key.startsWith("sendBytes")) {
@@ -214,152 +215,145 @@ public class MonitorDataServiceImpl implements MonitorDataService {
         return getMonitor(workName + "_" + realTimeWorkDataFile, typeList, startTime, endTime);
     }
 
+
     @Override
-    public Map<String, Object> getWorkMonitor(String workName,
-                                              long startTime,
-                                              long endTime,
-                                              String type) {
+    public Map<String, Object> getWorkMonitor(String workName, long startTime, long endTime, String type) {
         Map<String, Object> resultMap = new HashMap<>();
         resultMap.put("name", type);
         resultMap.put("message", MESSAGE_MAP.get(type));
-        // 必备参数
+
         List<String> typeList = new ArrayList<>();
         typeList.add("createTime");
 
-
+        String unit = "";
         Map<String, List<Object>> monitorData = new HashMap<>();
-        if ("hostMemory".equals(type) || "netIO".equals(type) || "hostCPU".equals(type) || "status".equals(type)) {
 
-            if ("hostCPU".equals(type)) {
-                typeList.add("javaCpuUsage");
-                typeList.add("sysIdle");
-                typeList.add("sysUsage");
-                resultMap.put("unit", "%");
-
-            }
-            if ("hostMemory".equals(type)) {
-                typeList.add("avaHeap");
-                typeList.add("freeHeap");
-                typeList.add("totalHeap");
-                typeList.add("totalMemory");
-                typeList.add("useMemory");
-
-                resultMap.put("unit", "MB");
-
-            }
-
-            if ("netIO".equals(type)) {
-                // 进入下级处理
-                typeList.add("netIO");
-                resultMap.put("unit", "byte");
-            }
-            if ("netIO".equals(type)) {
-                // 进入下级处理
-                typeList.add("netIO");
-                resultMap.put("unit", "byte");
-            }
-
-            if ("status".equals(type)) {
-                typeList.add("isLimit");
-                resultMap.put("unit", "boolean");
-            }
-            monitorData = getHostMonitor(typeList, startTime, endTime);
+        switch (type) {
+            case "hostCPU":
+            case "hostMemory":
+            case "netIO":
+            case "status":
+                unit = handleHostType(type, typeList, resultMap);
+                monitorData = getHostMonitor(typeList, startTime, endTime);
+                break;
+            case "fullRate":
+            case "fullThreadNum":
+            case "fullCount":
+            case "fullCache":
+                unit = handleFullType(type, typeList, resultMap);
+                monitorData = getFullWorkMonitor(workName, typeList, startTime, endTime);
+                break;
+            case "realTimeRate":
+            case "realTimeCache":
+            case "realTimeThreadNum":
+            case "realTimeExecute":
+            case "realTimeDelayTime":
+            case "realTimeIncProgress":
+                unit = handleRealTimeType(type, typeList, resultMap);
+                monitorData = getRealTimeWorkMonitor(workName, typeList, startTime, endTime);
+                break;
+            default:
+                // Handle the case where 'type' is not recognized
+                break;
         }
-
-        if ("fullRate".equals(type) || "fullThreadNum".equals(type) || "fullCount".equals(type)) {
-            if ("fullRate".equals(type)) {
-                typeList.add("avgWriteSpeed");
-                typeList.add("realTimeWriteSpeed");
-
-                resultMap.put("unit", "per");
-
-            }
-            if ("fullThreadNum".equals(type)) {
-                // 进入下级处理
-                typeList.add("commonThreadNum");
-                typeList.add("readThreadNum");
-                typeList.add("writeThreadNum");
-                typeList.add("writeOfBulkThreadNum");
-
-                resultMap.put("unit", "num");
-
-            }
-            if ("fullCount".equals(type)) {
-                typeList.add("readNum");
-                typeList.add("writeNum");
-                typeList.add("estimatedTotalNum");
-
-                resultMap.put("unit", "count");
-
-            }
-            if ("fullCache".equals(type)) {
-                typeList.add("cacheBatchNumber");
-                typeList.add("cacheDocumentNum");
-                typeList.add("cacheTaskNum");
-
-                resultMap.put("unit", "count");
-
-            }
-            monitorData = getFullWorkMonitor(workName, typeList, startTime, endTime);
-        }
-        if ("realTimeRate".equals(type)
-                || "realTimeCache".equals(type)
-                || ("realTimeThreadNum".equals(type))
-                || "realTimeExecute".equals(type)
-                || "realTimeDelayTime".equals(type)
-                || "realTimeIncProgress".equals(type)) {
-            if ("realTimeRate".equals(type)) {
-                typeList.add("avgWriteSpeed");
-                typeList.add("realTimeWriteSpeed");
-                resultMap.put("unit", "%");
-            }
-            if ("realTimeCache".equals(type)) {
-                typeList.add("bucketBatchNum");
-                typeList.add("nsBatchNum");
-                typeList.add("tableNum");
-                typeList.add("totalCacheNum");
-                resultMap.put("unit", "count");
-            }
-
-
-            if ("realTimeThreadNum".equals(type)) {
-                typeList.add("bucketThreadNum");
-                typeList.add("parseNSThreadNum");
-                typeList.add("readThreadNum");
-                typeList.add("writeThreadNum");
-                resultMap.put("unit", "num");
-            }
-
-            if ("realTimeExecute".equals(type)) {
-                typeList.add("cmd");
-                typeList.add("insert");
-                typeList.add("delete");
-                typeList.add("update");
-                resultMap.put("unit", "num");
-            }
-
-            if ("realTimeDelayTime".equals(type)) {
-                typeList.add("delayTime");
-                resultMap.put("unit", "second");
-            }
-            if ("realTimeIncProgress".equals(type)) {
-                typeList.add("incProgress");
-                resultMap.put("unit", "%");
-            }
-            monitorData = getRealTimeWorkMonitor(workName, typeList, startTime, endTime);
-
-        }
-
 
         List<Object> createTimeList = monitorData.containsKey("createTime") ? monitorData.get("createTime") : new ArrayList<>();
         monitorData.remove("createTime");
         resultMap.put("data", monitorData);
         resultMap.put("createTime", createTimeList);
         resultMap.put("isShow", !createTimeList.isEmpty());
+        resultMap.put("unit", unit);
+
         return resultMap;
     }
 
+// Define separate methods for each type category
 
+    private String handleHostType(String type, List<String> typeList, Map<String, Object> resultMap) {
+        String unit = "";
+        if ("hostCPU".equals(type)) {
+            typeList.add("javaCpuUsage");
+            typeList.add("sysIdle");
+            typeList.add("sysUsage");
+            unit = "%";
+        } else if ("hostMemory".equals(type)) {
+            typeList.add("avaHeap");
+            typeList.add("freeHeap");
+            typeList.add("totalHeap");
+            typeList.add("totalMemory");
+            typeList.add("useMemory");
+            unit = "MB";
+        } else if ("netIO".equals(type)) {
+            typeList.add("netIO");
+            unit = "byte";
+        } else if ("status".equals(type)) {
+            typeList.add("isLimit");
+            unit = "boolean";
+        }
+        resultMap.put("unit", unit);
+        return unit;
+    }
 
+    private String handleFullType(String type, List<String> typeList, Map<String, Object> resultMap) {
+        String unit = "";
+        if ("fullRate".equals(type)) {
+            typeList.add("avgWriteSpeed");
+            typeList.add("realTimeWriteSpeed");
+            unit = "per";
+        } else if ("fullThreadNum".equals(type)) {
+            typeList.add("commonThreadNum");
+            typeList.add("readThreadNum");
+            typeList.add("writeThreadNum");
+            typeList.add("writeOfBulkThreadNum");
+            unit = "num";
+        } else if ("fullCount".equals(type)) {
+            typeList.add("readNum");
+            typeList.add("writeNum");
+            typeList.add("estimatedTotalNum");
+            unit = "count";
+        } else if ("fullCache".equals(type)) {
+            typeList.add("cacheBatchNumber");
+            typeList.add("cacheDocumentNum");
+            typeList.add("cacheTaskNum");
+            unit = "count";
+        }
+        resultMap.put("unit", unit);
+        return unit;
+    }
+
+    private String handleRealTimeType(String type, List<String> typeList, Map<String, Object> resultMap) {
+        String unit = "";
+        if ("realTimeRate".equals(type)) {
+            typeList.add("avgWriteSpeed");
+            typeList.add("realTimeWriteSpeed");
+            unit = "%";
+        } else if ("realTimeCache".equals(type)) {
+            typeList.add("bucketBatchNum");
+            typeList.add("nsBatchNum");
+            typeList.add("tableNum");
+            typeList.add("totalCacheNum");
+            unit = "count";
+        } else if ("realTimeThreadNum".equals(type)) {
+            typeList.add("bucketThreadNum");
+            typeList.add("parseNSThreadNum");
+            typeList.add("readThreadNum");
+            typeList.add("writeThreadNum");
+            unit = "num";
+        } else if ("realTimeExecute".equals(type)) {
+            typeList.add("cmd");
+            typeList.add("insert");
+            typeList.add("delete");
+            typeList.add("update");
+            unit = "num";
+        } else if ("realTimeDelayTime".equals(type)) {
+            typeList.add("delayTime");
+            unit = "second";
+        } else if ("realTimeIncProgress".equals(type)) {
+            typeList.add("incProgress");
+            unit = "%";
+        }
+        resultMap.put("unit", unit);
+        return unit;
+    }
 
 }

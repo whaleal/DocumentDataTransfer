@@ -1,12 +1,12 @@
 package com.whaleal.ddt.execute.realtime.common;
 
 import com.whaleal.ddt.common.Datasource;
+import com.whaleal.ddt.conection.sync.MongoDBConnectionSync;
 import com.whaleal.ddt.execute.config.WorkInfo;
 import com.whaleal.ddt.execute.realtime.BaseRealTimeChangeStream;
 import com.whaleal.ddt.execute.realtime.BaseRealTimeOplog;
 import com.whaleal.ddt.realtime.common.cache.RealTimeMetaData;
 import com.whaleal.ddt.status.WorkStatus;
-import com.whaleal.ddt.conection.sync.MongoDBConnectionSync;
 import com.whaleal.ddt.thread.pool.ThreadPoolManager;
 import lombok.extern.log4j.Log4j2;
 
@@ -221,7 +221,9 @@ public abstract class BaseRealTimeWork {
             }
             // 回收资源
             baseRealTimeWork.destroy();
+            workInfo.setEndTime(System.currentTimeMillis());
             log.info("end execute task :{}, task configuration information :{}", workInfo.getWorkName(), workInfo.toString());
+            workInfo.setEndTime(Long.MAX_VALUE);
         };
         Thread thread = new Thread(runnable);
         thread.setName(workInfo.getWorkName() + "_execute");
