@@ -91,6 +91,9 @@ public class HostInfoUtil {
                     }
                     if (!isLimitTemp) {
                         isLimit = false;
+                        log.info("D2T status:{}", isLimit);
+                    } else {
+                        log.warn("D2T status:{}", isLimit);
                     }
                 } catch (Exception ignored) {
                 }

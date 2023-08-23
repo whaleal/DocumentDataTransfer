@@ -46,12 +46,15 @@ public class WorkServiceImpl implements WorkService {
     public List<Map<Object, Object>> getWorkInfoList(String workName) {
         List<Map<Object, Object>> result = new ArrayList<>();
         for (Map.Entry<String, Map<Object, Object>> entry : WORK_INFO_MAP.entrySet()) {
-            if (StrUtil.isNotBlank(workName) && entry.getKey().contains(workName)) {
+            if (StrUtil.isBlank(workName) || entry.getKey().contains(workName)) {
                 result.add(entry.getValue());
             }
         }
         return result;
     }
+
+
+
 
 
 }

@@ -33,7 +33,7 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
     private static volatile String hostName = "";
     private static volatile String pid = "";
     private static volatile String bootDirectory = "";
-    private static volatile String JVMInfo = "";
+    private static volatile String JVMArg = "";
     private static volatile String workName = "";
 
     private static volatile double eventTime = 0D;
@@ -65,6 +65,7 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
                     logTime = logEntity.getTime();
                     parse(logEntity);
                 } catch (Exception e) {
+                    e.printStackTrace();
                     log.error("解析日志{}失败:{}", line, e.getMessage());
                 }
             }
@@ -78,10 +79,10 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
         if (logEntity.getProcessId().endsWith("_full_execute]")) {
             // 判断是否第一条一条数据
             if (logEntity.getInfo().contains(" this full task is expected to transfer")) {
-                monitorDataService.saveRealTimeWorkData(workName, fullMap);
+                monitorDataService.saveFullWorkData(workName, fullMap);
             }
         }
-        if (logEntity.getProcessId().endsWith("_realtime_execute]")) {
+        if (logEntity.getProcessId().endsWith("realTime_execute]")) {
             // 判断是否第一条一条数据
             if (logEntity.getInfo().contains("the total number of event read currently")) {
                 realTimeMap.put("eventTime", eventTime);
@@ -103,34 +104,45 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
         String info = logEntity.getInfo();
         if (info.startsWith("enable Start task ") || info.startsWith("end execute task ")) {
             Map<Object, Object> map = JSON.parseObject(info.split(":", 3)[2], Map.class);
+            System.out.println(info);
             workName = map.get("workName").toString();
             map.put("hostName", hostName);
             map.put("pid", pid);
             map.put("bootDirectory", bootDirectory);
-            map.put("JVMInfo", JVMInfo);
+            map.put("JVMArg", JVMArg);
             workService.upsertWorkInfo(workName, map);
         }
         // 判断线程名字
-        if (logEntity.getProcessId().endsWith("_full_execute]") || logEntity.getProcessId().endsWith("_realtime_execute]")) {
-            String workNameTemp = logEntity.getProcessId().split("_")[0];
-            if (!workNameTemp.equals(workName)) {
-                workName = workNameTemp;
-            }
-        }
+//        if (logEntity.getProcessId().endsWith("_full_execute]") || logEntity.getProcessId().endsWith("_realtime_execute]")) {
+//            String workNameTemp = logEntity.getProcessId().split("_")[0];
+//            if (!workNameTemp.equals(workName)) {
+//                workName = workNameTemp;
+//            }
+//        }
     }
 
     public void parse(LogEntity logEntity) {
         getWorkName(logEntity);
         judgeSave(logEntity);
-        fullMap.put("workName", workName);
-        fullMap.put("createTime", logTime);
+
         if (logEntity.getProcessId().endsWith("_full_execute]")) {
+            fullMap.put("workName", workName);
+            fullMap.put("createTime", logTime);
             parseFullTask(logEntity, fullMap);
         }
-        if (logEntity.getProcessId().endsWith("_realtime_execute]")) {
+        if (logEntity.getProcessId().endsWith("realTime_execute]")) {
+            realTimeMap.put("workName", workName);
+            realTimeMap.put("createTime", logTime);
             parseRealTask(logEntity, realTimeMap);
         }
         if (logEntity.getProcessId().endsWith("hostInfo_print]")) {
+            hostInfoMap.put("workName", workName);
+            hostInfoMap.put("createTime", logTime);
+            parseHost(logEntity, hostInfoMap);
+        }
+        if (logEntity.getProcessId().endsWith("hostInfo_limit]")) {
+            hostInfoMap.put("workName", workName);
+            hostInfoMap.put("createTime", logTime);
             parseHost(logEntity, hostInfoMap);
         }
         if (logEntity.getProcessId().equals("[main]")) {
@@ -146,10 +158,9 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
             hostName = map.get("hostName").toString();
             pid = map.get("pid").toString();
             bootDirectory = map.get("bootDirectory").toString();
+            JVMArg = map.get("JVMArg").toString();
         }
-        if (info.startsWith("JVM Info:")) {
-            JVMInfo = info.replaceFirst("JVM Info:", "");
-        }
+
     }
 
     public static void parseFullTask(LogEntity logEntity, Map<Object, Object> parse) {
@@ -189,7 +200,9 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
     public static void parseHost(LogEntity logEntity, Map<Object, Object> parse) {
         String message = logEntity.getInfo();
         // message 中memory 类型的日志处理
-        if (message.startsWith("memory")) {
+        if (message.contains("D2T status")) {
+            parse.put("isLimit", "warn".equalsIgnoreCase(logEntity.getType()) ? 1 : 0);
+        } else if (message.startsWith("memory")) {
             if (message.startsWith("memory:total memory")) {
                 parse.put("totalMemory", formStrGetNum(message));
             } else if (message.startsWith("memory:free heap")) {
@@ -216,8 +229,8 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
         } else if (message.startsWith("netInfo")) {
             // key前锥来匹配
             Map map = JSON.parseObject(message.replaceFirst("netInfo:", ""), Map.class);
-            parse.put("recvBytesOf" + map.get("name"), map.get("bytesRecv"));
-            parse.put("sendBytesOf" + map.get("name"), map.get("bytesSent"));
+            parse.put("recvBytes_" + map.get("name"), map.get("bytesRecv"));
+            parse.put("sendBytes_" + map.get("name"), map.get("bytesSent"));
         }
     }
 
@@ -247,7 +260,7 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
         } else if (message.contains(" current number of synchronization tables")) {
             parse.put("tableNum", formStrGetNum(message));
         } else if (message.contains(" number of executions")) {
-            Map map = JSON.parseObject(message.replaceFirst("number of executions:", ""), Map.class);
+            Map map = JSON.parseObject(message.split("number of executions:")[1], Map.class);
             parse.put("insert", map.get("insert"));
             parse.put("delete", map.get("delete"));
             parse.put("update", map.get("update"));
@@ -298,7 +311,7 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
     }
 
     public static void main(String[] args) {
-        String str = "{hostName:1,pid:2,bootDirectory:3}";
+        String str = "{hostName:server190,pid:19582,bootDirectory:/home/lhp/DDT/bin}";
         Map map = JSON.parseObject(str, Map.class);
         System.out.println(map);
     }

@@ -65,7 +65,7 @@ public class MongoDBMetadata {
             for (String dbName : client.listDatabaseNames()) {
                 // 此操作有可能无权限遍历库表信息
                 if ("admin".equalsIgnoreCase(dbName) || "local".equalsIgnoreCase(dbName) || "config".equalsIgnoreCase(dbName)) {
-                    log.info("不同步库:{}数据", dbName);
+//                    log.info("不同步库:{}数据", dbName);
                     continue;
                 }
                 // 遍历表列表
@@ -84,7 +84,6 @@ public class MongoDBMetadata {
             e.printStackTrace();
             log.error("{}获取NS列表信息失败:{}", dsName, e.getMessage());
         }
-        log.info("{} 获取NS:{}", dsName, JSON.toJSONString(nsList));
         return nsList;
     }
 

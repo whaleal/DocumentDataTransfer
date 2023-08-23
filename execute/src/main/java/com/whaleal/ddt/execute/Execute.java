@@ -1,5 +1,6 @@
 package com.whaleal.ddt.execute;
 
+import com.alibaba.fastjson2.JSON;
 import com.whaleal.ddt.execute.config.Property;
 import com.whaleal.ddt.execute.config.WorkInfo;
 import com.whaleal.ddt.execute.config.WorkInfoGenerator;
@@ -9,6 +10,9 @@ import com.whaleal.ddt.task.CommonTask;
 import com.whaleal.ddt.util.HostInfoUtil;
 import lombok.extern.log4j.Log4j2;
 
+import java.util.Map;
+import java.util.TreeMap;
+
 
 /**
  * @author liheping
@@ -16,8 +20,13 @@ import lombok.extern.log4j.Log4j2;
 @Log4j2
 public class Execute {
     static {
-        log.info("D2T Boot information :{hostName:{},pid:{},bootDirectory:{}}", HostInfoUtil.getHostName(), HostInfoUtil.getProcessID(), HostInfoUtil.getProcessDir());
-        log.info("JVM Info:{}", HostInfoUtil.getJvmArg());
+        Map<String, Object> jvmInfo = new TreeMap<>();
+        jvmInfo.put("JVMArg", HostInfoUtil.getJvmArg());
+        jvmInfo.put("hostName", HostInfoUtil.getHostName());
+        jvmInfo.put("pid", HostInfoUtil.getProcessID());
+        jvmInfo.put("bootDirectory", HostInfoUtil.getProcessDir());
+        log.info("D2T Boot information :{}", JSON.toJSONString(jvmInfo));
+
         log.info("\n" +
                 "  ____    ____    _____ \n" +
                 " |  _ \\  |___ \\  |_   _|\n" +
@@ -75,23 +84,25 @@ public class Execute {
      */
     private static void start(final WorkInfo workInfo, final String fullType, final String realTimeType) {
         // 获取工作名称
-        String workName = workInfo.getWorkName();
+        final String workName = workInfo.getWorkName();
+        final String syncMode = workInfo.getSyncMode();
         // 根据同步模式选择不同的启动方式
-        if (workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL)) {
+        if (syncMode.equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL)) {
             workInfo.setWorkName(workName + "_full");
             // 全量同步模式
             startFull(workInfo, fullType);
             workInfo.setEndTime(System.currentTimeMillis());
-        } else if (workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_REAL_TIME)) {
+        } else if (syncMode.equalsIgnoreCase(WorkInfo.SYNC_MODE_REAL_TIME)) {
             workInfo.setWorkName(workName + "_realTime");
             // 实时同步模式
             startRealTime(workInfo, realTimeType);
             workInfo.setEndTime(System.currentTimeMillis());
-        } else if (workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL_AND_INCREMENT)) {
+        } else if (syncMode.equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL_AND_INCREMENT)) {
             // 全量+增量同步模式
             // 先执行全量同步，然后再执行增量同步
             workInfo.setStartOplogTime((int) (System.currentTimeMillis() / 1000));
             workInfo.setWorkName(workName + "_full");
+            workInfo.setSyncMode(WorkInfo.SYNC_MODE_ALL);
             startFull(workInfo, fullType);
             workInfo.setEndTime(System.currentTimeMillis());
             // 设置新的任务的时区
@@ -100,18 +111,21 @@ public class Execute {
             workInfo.setEndOplogTime((int) (System.currentTimeMillis() / 1000));
             workInfo.setStartTime(System.currentTimeMillis());
             workInfo.setWorkName(workName + "_realTime");
+            workInfo.setSyncMode(WorkInfo.SYNC_MODE_REAL_TIME);
             startRealTime(workInfo, realTimeType);
             workInfo.setEndTime(System.currentTimeMillis());
-        } else if (workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL_AND_REAL_TIME)) {
+        } else if (syncMode.equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL_AND_REAL_TIME)) {
             // 全量+实时同步模式
             // 先执行全量同步，然后再执行实时同步
             workInfo.setStartOplogTime((int) (System.currentTimeMillis() / 1000));
             workInfo.setWorkName(workName + "_full");
+            workInfo.setSyncMode(WorkInfo.SYNC_MODE_ALL);
             startFull(workInfo, fullType);
             workInfo.setEndTime(System.currentTimeMillis());
             workInfo.setStartTime(System.currentTimeMillis());
             // 设置新的任务的时区
             workInfo.setWorkName(workName + "_realTime");
+            workInfo.setSyncMode(WorkInfo.SYNC_MODE_REAL_TIME);
             startRealTime(workInfo, realTimeType);
             workInfo.setEndTime(System.currentTimeMillis());
         }
