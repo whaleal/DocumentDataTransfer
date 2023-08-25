@@ -19,6 +19,8 @@ import java.util.TreeMap;
  */
 @Log4j2
 public class Execute {
+
+
     static {
         Map<String, Object> jvmInfo = new TreeMap<>();
         jvmInfo.put("JVMArg", HostInfoUtil.getJvmArg());
@@ -70,11 +72,11 @@ public class Execute {
             log.error("start parameter error");
         }
         // 生成工作信息
-        final WorkInfo workInfo = WorkInfoGenerator.generateWorkInfo();
+        WorkInfo workInfo = WorkInfoGenerator.generateWorkInfo();
         // 启动任务
         start(workInfo, workInfo.getFullType(), workInfo.getRealTimeType());
         // 退出程序
-        System.exit(0);
+        System.exit(1);
     }
 
     /**
@@ -93,12 +95,12 @@ public class Execute {
             // 全量同步模式
             workInfo.setStartTime(System.currentTimeMillis());
             startFull(workInfo, fullType);
-            //workInfo.setEndTime(System.currentTimeMillis());
+
         } else if (syncMode.equalsIgnoreCase(WorkInfo.SYNC_MODE_REAL_TIME)) {
             workInfo.setWorkName(workName + "_realTime");
             // 实时同步模式
             startRealTime(workInfo, realTimeType);
-            //workInfo.setEndTime(System.currentTimeMillis());
+
         } else if (syncMode.equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL_AND_INCREMENT)) {
             // 全量+增量同步模式
             // 先执行全量同步，然后再执行增量同步
@@ -106,7 +108,7 @@ public class Execute {
             workInfo.setWorkName(workName + "_full");
             workInfo.setSyncMode(WorkInfo.SYNC_MODE_ALL);
             startFull(workInfo, fullType);
-            //workInfo.setEndTime(System.currentTimeMillis());
+
             // 设置新的任务的时区
             // Q: 增量任务 也可以加上进度百分比
             // A: 已在ReadOplog 增加进度百分比
@@ -115,7 +117,7 @@ public class Execute {
             workInfo.setWorkName(workName + "_realTime");
             workInfo.setSyncMode(WorkInfo.SYNC_MODE_REAL_TIME);
             startRealTime(workInfo, realTimeType);
-            //workInfo.setEndTime(System.currentTimeMillis());
+
         } else if (syncMode.equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL_AND_REAL_TIME)) {
             // 全量+实时同步模式
             // 先执行全量同步，然后再执行实时同步
@@ -123,19 +125,21 @@ public class Execute {
             workInfo.setWorkName(workName + "_full");
             workInfo.setSyncMode(WorkInfo.SYNC_MODE_ALL);
             startFull(workInfo, fullType);
-            //workInfo.setEndTime(System.currentTimeMillis());
+            workInfo.setEndOplogTime(0);
+
             workInfo.setStartTime(System.currentTimeMillis());
             // 设置新的任务的时区
             workInfo.setWorkName(workName + "_realTime");
             workInfo.setSyncMode(WorkInfo.SYNC_MODE_REAL_TIME);
             startRealTime(workInfo, realTimeType);
-            //workInfo.setEndTime(System.currentTimeMillis());
+
         }
     }
 
 
     private static void startFull(final WorkInfo workInfo, final String fullType) {
         BaseFullWork.startFull(workInfo, fullType);
+
     }
 
     private static void startRealTime(final WorkInfo workInfo, final String realTimeType) {

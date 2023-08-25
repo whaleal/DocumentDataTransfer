@@ -22,9 +22,9 @@ export const routers = [
         children: [
             {
                 path: "home",
-                name: "home",
+                name: "HomePage",
                 meta: {
-                    title: '首页',
+                    title: 'HomePage',
                     noCache: true,
                     affix: true
                 },
@@ -41,9 +41,9 @@ export const routers = [
         children: [
             {
                 path: '',
-                name: 'logList',
+                name: 'LogList',
                 meta: {
-                    title: '日志列表'
+                    title: 'LogList'
                 },
                 component: () => import('@/views/log/taskLog.vue'),
             }

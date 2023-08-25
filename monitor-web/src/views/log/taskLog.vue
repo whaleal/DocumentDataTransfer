@@ -1,16 +1,18 @@
 <template>
   <div>
     <el-form :inline="true" :model="query" class="demo-form-inline">
-      <el-row>
-        <el-col :span="5">
-          <el-form-item label="内容">
-            <el-input size="small" clearable v-model="query.info" placeholder="请输入内容"></el-input>
-          </el-form-item>
-        </el-col>
+<!--      <el-row>-->
+<!--        <el-col :span="5.5">-->
 
-        <el-col :span="5">
-          <el-form-item label="类型" >
-            <el-select size="small" clearable v-model="query.type" placeholder="请选择">
+
+          <el-form-item label="Content">
+            <el-input size="small" clearable v-model="query.info" placeholder="Content"></el-input>
+          </el-form-item>
+<!--        </el-col>-->
+
+<!--        <el-col :span="5.5">-->
+          <el-form-item label="Type">
+            <el-select size="small" clearable v-model="query.type" placeholder="Select">
               <el-option
                   v-for="item in queryTypeOptions"
                   :key="item.value"
@@ -19,24 +21,28 @@
               </el-option>
             </el-select>
           </el-form-item>
-        </el-col>
+<!--        </el-col>-->
 
-        <el-col :span="10">
-          <el-form-item label="日期">
+<!--        <el-col :span="8.5">-->
+          <el-form-item label="Date">
             <el-date-picker size="small"
-                :picker-options="pickerOptions"
-                v-model="dateTimeRange"
-                type="datetimerange"
-                range-separator="至"
-                start-placeholder="开始日期"
-                end-placeholder="结束日期">
+                            :picker-options="pickerOptions"
+                            v-model="dateTimeRange"
+                            type="datetimerange"
+                            range-separator="to"
+                            start-placeholder="Start Date"
+                            end-placeholder="End Date">
             </el-date-picker>
           </el-form-item>
-        </el-col>
-        <el-button class="el-icon-search"  size="small" type="primary" @click="pre()">前一页</el-button>
-        <el-button class="el-icon-search" size="small" type="primary" @click="searchTaskLog();"></el-button>
-        <el-button class="el-icon-search" size="small" type="primary" @click="next()">后一页</el-button>
-      </el-row>
+<!--        </el-col>-->
+<!--        <el-col :span="5">-->
+      <el-form-item >
+        <el-button class="el-icon-search"  size="small" type="primary" @click="pre()">Pre</el-button>
+        <el-button class="el-icon-search" size="small" type="primary" @click="searchTaskLog();">Search</el-button>
+        <el-button class="el-icon-search" size="small" type="primary" @click="next()">Next</el-button>
+      </el-form-item>
+<!--        </el-col>-->
+<!--      </el-row>-->
     </el-form>
 
     <div>
@@ -46,7 +52,7 @@
           style="width: 100%">
         <el-table-column
             prop="createTime"
-            label="日期"
+            label="Date"
             sortable
             width="180">
           <template slot-scope="scope">
@@ -56,37 +62,27 @@
 
         <el-table-column
             prop="type"
-            label="类型"
+            label="Type"
             width="180">
 
           <template slot-scope="scope">
             <el-button size="mini" v-if="scope.row.type==='INFO'" type="success" plain>{{ scope.row.type }}</el-button>
-            <el-button size="mini" v-else-if="scope.row.type==='WARN'" type="warning" plain>{{
-                scope.row.type
-              }}
-            </el-button>
-            <el-button size="mini" v-else-if="scope.row.type==='ERROR'" type="danger" plain>{{
-                scope.row.type
-              }}
-            </el-button>
-            <el-button size="mini" v-else-if="scope.row.type==='TRACE'" type="primary" plain>{{
-                scope.row.type
-              }}
-            </el-button>
+            <el-button size="mini" v-else-if="scope.row.type==='WARN'" type="warning" plain>{{ scope.row.type }}</el-button>
+            <el-button size="mini" v-else-if="scope.row.type==='ERROR'" type="danger" plain>{{ scope.row.type }}</el-button>
+            <el-button size="mini" v-else-if="scope.row.type==='TRACE'" type="primary" plain>{{ scope.row.type }}</el-button>
             <el-button v-else size="mini" type="primary" plain>{{ scope.row.type }}</el-button>
           </template>
 
         </el-table-column>
         <el-table-column
             prop="info"
-            label="内容">
+            label="Content">
         </el-table-column>
       </el-table>
     </div>
-
-
   </div>
 </template>
+
 
 <script>
 import {findLog} from '@/api/logManagement';
@@ -99,7 +95,7 @@ export default {
       pickerOptions: {
         shortcuts: [
           {
-            text: '最近一天',
+            text: 'Last day',
             onClick(picker) {
               const end = new Date();
               const start = new Date();
@@ -107,7 +103,7 @@ export default {
               picker.$emit('pick', [start, end]);
             }
           }, {
-            text: '最近一周',
+            text: 'Last week',
             onClick(picker) {
               const end = new Date();
               const start = new Date();
@@ -115,7 +111,7 @@ export default {
               picker.$emit('pick', [start, end]);
             }
           }, {
-            text: '最近一个月',
+            text: 'Last month',
             onClick(picker) {
               const end = new Date();
               const start = new Date();

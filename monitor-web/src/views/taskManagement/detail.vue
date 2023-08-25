@@ -4,16 +4,12 @@
       <el-page-header @back="goBack" :content="taskName" style="padding-bottom:10px;">
       </el-page-header>
       <el-tabs v-model="activeName" @tab-click="handleClick">
-        <el-tab-pane label="基本信息" name='first'>
+        <el-tab-pane label="BasicInfo" name='first'>
           <basic-info :workName='workName' v-if="activeName == 'first' "></basic-info>
         </el-tab-pane>
-        <el-tab-pane label="监控" name="second">
+        <el-tab-pane label="Monitor" name="second">
           <monitor :workName='workName' v-if="activeName == 'second' "></monitor>
         </el-tab-pane>
-<!--        <el-tab-pane label="日志" name="third">-->
-<!--          <task-log :workName='workName' v-if="activeName == 'third'"></task-log>-->
-<!--        </el-tab-pane>-->
-
       </el-tabs>
     </el-card>
   </div>

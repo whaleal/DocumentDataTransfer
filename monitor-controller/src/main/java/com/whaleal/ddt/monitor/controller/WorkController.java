@@ -59,10 +59,10 @@ public class WorkController {
         if (workInfo == null) {
             return r;
         }
-        if (Long.parseLong(workInfo.get("startTime").toString()) < startTime) {
+        if (Long.parseLong(workInfo.get("startTime").toString()) > startTime) {
             startTime = Long.parseLong(workInfo.get("startTime").toString());
         }
-        if (Long.parseLong(workInfo.get("endTime").toString()) > endTime) {
+        if (Long.parseLong(workInfo.get("endTime").toString()) < endTime) {
             endTime = Long.parseLong(workInfo.get("endTime").toString());
         }
         r.putAll(monitorDataService.getWorkMonitor(workName, startTime, endTime, type));

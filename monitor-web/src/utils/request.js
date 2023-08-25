@@ -3,8 +3,8 @@ import { Message } from 'element-ui';
 import route from '../router/index';
 
 
-const constBaseURL = 'http://whalealDDT.com:58001';
-
+// const constBaseURL = 'http://whalealDDT.com:58001';
+const constBaseURL = 'http://192.168.12.190:58001';
 export default constBaseURL;
 
 // // post请求头

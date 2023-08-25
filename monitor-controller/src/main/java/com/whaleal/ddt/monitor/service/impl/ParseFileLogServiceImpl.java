@@ -223,7 +223,7 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
         if (info.startsWith("enable Start task ") || info.startsWith("end execute task ")) {
             // Parse the JSON data from the log message
             Map<Object, Object> map = JSON.parseObject(info.split(":", 3)[2], Map.class);
-            System.out.println(info);
+            log.info(info);
             // Extract work name and update work-related information
             workName = map.get("workName").toString() + "_" + map.get("startTime");
             map.put("workName", workName);
@@ -233,6 +233,12 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
             map.put("JVMArg", JVMArg);
             // Update work information using the service
             workService.upsertWorkInfo(workName, map);
+            fullMap.clear();
+            realTimeMap.clear();
+
+            eventTime = 0;
+            delayTime = 0;
+            incProgress = 0;
         }
     }
 
@@ -254,7 +260,7 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
             fullMap.put("createTime", logTime);
             parseFullTask(logEntity, fullMap);
         }
-        if (logEntity.getProcessId().endsWith("realTime_execute]")) {
+        if (logEntity.getProcessId().endsWith("realTime_execute]") || logEntity.getProcessId().contains("_realTime_readEventThreadPoolName_")) {
             realTimeMap.put("workName", workName);
             realTimeMap.put("createTime", logTime);
             parseRealTask(logEntity, realTimeMap);
@@ -438,11 +444,11 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
             // Extract and store current event time
             parse.put("eventTime", formStrGetNum(message));
             eventTime = formStrGetNum(message);
-        } else if (message.contains("current event delay time")) {
+        } else if (message.contains(" current event delay time")) {
             // Extract and store current event delay time
             parse.put("delayTime", formStrGetNum(message));
             delayTime = formStrGetNum(message);
-        } else if (message.contains("current incremental progress")) {
+        } else if (message.contains(" current incremental progress")) {
             // Extract and store current incremental progress
             parse.put("incProgress", formStrGetNum(message));
             incProgress = formStrGetNum(message);
@@ -472,5 +478,11 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
         return parseDouble;
     }
 
-
+    public static void main(String[] args) {
+        ParseFileLogServiceImpl parseFileLogService = new ParseFileLogServiceImpl();
+        LogEntity logEntity = ParseFileLogServiceImpl.logToLogEntity("2023-08-25 11:49:41.084 [mongoTask_realTime_readEventThreadPoolName_1] com.whaleal.ddt.sync.changestream.read.RealTimeReadDataByChangeStream.source(124) - INFO  -- mongoTask_realTime current event delay time:512.0 s");
+        parseFileLogService.parse(logEntity);
+        System.out.println(formStrGetNum(logEntity.getInfo()));
+        System.out.println(delayTime);
+    }
 }

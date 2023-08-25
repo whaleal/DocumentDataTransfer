@@ -23,96 +23,99 @@ public class MonitorDataServiceImpl implements MonitorDataService {
     private static final Map<String, Object> MESSAGE_MAP = new HashMap<>();
 
     static {
-
-
+        // Create a map to store CPU usage metrics and their descriptions
         Map<String, Object> hostCPU = new HashMap<>();
-        hostCPU.put("javaCpuUsage", "进程cpu使用率");
-        hostCPU.put("sysIdle", "系统cpu空闲率");
-        hostCPU.put("sysUsage", "系统cpu使用率");
+        hostCPU.put("javaCpuUsage", "Process CPU Usage");
+        hostCPU.put("sysIdle", "System CPU Idle Rate");
+        hostCPU.put("sysUsage", "System CPU Usage Rate");
         MESSAGE_MAP.put("hostCPU", hostCPU);
 
-
+// Create a map to store memory usage metrics and their descriptions
         Map<String, Object> hostMemory = new HashMap<>();
-        hostMemory.put("avaHeap", "可用堆栈内存");
-        hostMemory.put("freeHeap", "空闲堆栈内存");
-        hostMemory.put("totalHeap", "总量堆栈内存");
-        hostMemory.put("totalMemory", "总量内存");
-        hostMemory.put("useMemory", "已使用内存");
+        hostMemory.put("avaHeap", "Available Heap Memory");
+        hostMemory.put("freeHeap", "Free Heap Memory");
+        hostMemory.put("totalHeap", "Total Heap Memory");
+        hostMemory.put("totalMemory", "Total Memory");
+        hostMemory.put("useMemory", "Used Memory");
         MESSAGE_MAP.put("hostMemory", hostMemory);
 
-
+// Create a map to store network I/O metrics and their descriptions
         Map<String, Object> netIO = new HashMap<>();
-        netIO.put("recvBytes", "网卡接收流量字节数");
-        netIO.put("sendBytes", "网卡发送流量字节数");
+        netIO.put("recvBytes", "Network Received Bytes");
+        netIO.put("sendBytes", "Network Sent Bytes");
         MESSAGE_MAP.put("netIO", netIO);
 
+// Create a map to store status metrics and their descriptions
         Map<String, Object> status = new HashMap<>();
-        status.put("isLimit", "是否限速运行:1为限速,0为正常运行");
+        status.put("isLimit", "Is Limited Speed Running: 1 for Limited, 0 for Normal");
         MESSAGE_MAP.put("status", status);
 
+// Create a map to store full synchronization rate metrics and their descriptions
         Map<String, Object> fullRate = new HashMap<>();
-        fullRate.put("avgWriteSpeed", "平均写入数据");
-        fullRate.put("realTimeWriteSpeed", "瞬时写入速度");
+        fullRate.put("avgWriteSpeed", "Average Write Speed");
+        fullRate.put("realTimeWriteSpeed", "Instantaneous Write Speed");
         MESSAGE_MAP.put("fullRate", fullRate);
 
-
+// Create a map to store thread count metrics for full synchronization and their descriptions
         Map<String, Object> fullThreadNum = new HashMap<>();
-        fullThreadNum.put("commonThreadNum", "公共线程数");
-        fullThreadNum.put("readThreadNum", "读取task线程数");
-        fullThreadNum.put("writeThreadNum", "写入task线程数");
-        fullThreadNum.put("writeOfBulkThreadNum", "bulk写入线程数");
+        fullThreadNum.put("commonThreadNum", "Common Thread Count");
+        fullThreadNum.put("readThreadNum", "Read Task Thread Count");
+        fullThreadNum.put("writeThreadNum", "Write Task Thread Count");
+        fullThreadNum.put("writeOfBulkThreadNum", "Bulk Write Thread Count");
         MESSAGE_MAP.put("fullThreadNum", fullThreadNum);
 
-
+// Create a map to store data count metrics for full synchronization and their descriptions
         Map<String, Object> fullCount = new HashMap<>();
-        fullCount.put("readNum", "读取数据条数");
-        fullCount.put("writeNum", "写入数据条数");
-        fullCount.put("estimatedTotalNum", "预估写入总数据条数");
+        fullCount.put("readNum", "Read Data Count");
+        fullCount.put("writeNum", "Write Data Count");
+        fullCount.put("estimatedTotalNum", "Estimated Total Write Data Count");
         MESSAGE_MAP.put("fullCount", fullCount);
 
+// Create a map to store caching metrics for full synchronization and their descriptions
         Map<String, Object> fullCache = new HashMap<>();
-        fullCount.put("cacheBatchNumber", "缓存批次数");
-        fullCount.put("cacheDocumentNum", "总缓存数据条数");
-        fullCount.put("cacheTaskNum", "缓存读取task数");
+        fullCache.put("cacheBatchNumber", "Cache Batch Count");
+        fullCache.put("cacheDocumentNum", "Total Cached Data Count");
+        fullCache.put("cacheTaskNum", "Cache Read Task Count");
         MESSAGE_MAP.put("fullCache", fullCache);
 
+// Create a map to store real-time synchronization rate metrics and their descriptions
         Map<String, Object> realTimeRate = new HashMap<>();
-        realTimeRate.put("avgWriteSpeed", "平均写入数据");
-        realTimeRate.put("realTimeWriteSpeed", "瞬时写入速度");
+        realTimeRate.put("avgWriteSpeed", "Average Write Speed");
+        realTimeRate.put("realTimeWriteSpeed", "Instantaneous Write Speed");
         MESSAGE_MAP.put("realTimeRate", realTimeRate);
 
-
+// Create a map to store caching metrics for real-time synchronization and their descriptions
         Map<String, Object> realTimeCache = new HashMap<>();
-        realTimeCache.put("bucketBatchNum", "分桶区缓存批次数");
-        realTimeCache.put("nsBatchNum", "分表区缓存批次数");
-        realTimeCache.put("tableNum", "处理ns数");
-        realTimeCache.put("totalCacheNum", "总缓存数据条数");
+        realTimeCache.put("bucketBatchNum", "Bucket Area Cache Batch Count");
+        realTimeCache.put("nsBatchNum", "Table Area Cache Batch Count");
+        realTimeCache.put("tableNum", "Processed NS Count");
+        realTimeCache.put("totalCacheNum", "Total Cached Data Count");
         MESSAGE_MAP.put("realTimeCache", realTimeCache);
 
-
+// Create a map to store thread count metrics for real-time synchronization and their descriptions
         Map<String, Object> realTimeThreadNum = new HashMap<>();
-        realTimeThreadNum.put("bucketThreadNum", "分桶线程数");
-        realTimeThreadNum.put("parseNSThreadNum", "解析ns线程数");
-        realTimeThreadNum.put("readThreadNum", "读取线程数");
-        realTimeThreadNum.put("writeThreadNum", "写入线程数");
+        realTimeThreadNum.put("bucketThreadNum", "Bucket Thread Count");
+        realTimeThreadNum.put("parseNSThreadNum", "Parse NS Thread Count");
+        realTimeThreadNum.put("readThreadNum", "Read Thread Count");
+        realTimeThreadNum.put("writeThreadNum", "Write Thread Count");
         MESSAGE_MAP.put("realTimeThreadNum", realTimeThreadNum);
 
-
+// Create a map to store execution metrics for real-time synchronization and their descriptions
         Map<String, Object> realTimeExecute = new HashMap<>();
-        realTimeExecute.put("cmd", "执行DDL数");
-        realTimeExecute.put("insert", "插入数");
-        realTimeExecute.put("delete", "删除数");
-        realTimeExecute.put("update", "更新数");
+        realTimeExecute.put("cmd", "DDL Execution Count");
+        realTimeExecute.put("insert", "Insertion Count");
+        realTimeExecute.put("delete", "Deletion Count");
+        realTimeExecute.put("update", "Update Count");
         MESSAGE_MAP.put("realTimeExecute", realTimeExecute);
 
-
+// Create a map to store delay time metrics for real-time synchronization and their descriptions
         Map<String, Object> realTimeDelayTime = new HashMap<>();
-        realTimeDelayTime.put("delayTime", "延迟秒数");
+        realTimeDelayTime.put("delayTime", "Delay Time in Seconds");
         MESSAGE_MAP.put("realTimeDelayTime", realTimeDelayTime);
 
-
+// Create a map to store incremental progress metrics for real-time synchronization and their descriptions
         Map<String, Object> realTimeIncProgress = new HashMap<>();
-        realTimeIncProgress.put("incProgress", "增量同步进度");
+        realTimeIncProgress.put("incProgress", "Incremental Sync Progress");
         MESSAGE_MAP.put("realTimeIncProgress", realTimeIncProgress);
 
     }

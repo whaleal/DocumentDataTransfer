@@ -13,8 +13,12 @@ rm -rf ../apache-tomcat-8.5.78/
 echo "开始解压tomcat"
 tar -zxf ../apache-tomcat-8.5.78.tar.gz -C ../
 
+
+sed -i 's/port="8080"/port="58000"/' ../apache-tomcat-8.5.78/conf/server.xml
+
 echo "DDT_WEB"
 tar -zxf ../DDT_WEB.tar.gz -C ../apache-tomcat-8.5.78/webapps/
+
 
 # 读取DDT.properties配置文件中的bind_ip属性
 echo "读取DDT.properties配置文件中的bind_ip属性"

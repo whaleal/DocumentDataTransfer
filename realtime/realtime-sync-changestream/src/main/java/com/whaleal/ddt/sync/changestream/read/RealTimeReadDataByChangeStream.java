@@ -90,7 +90,7 @@ public class RealTimeReadDataByChangeStream extends BaseRealTimeReadData<ChangeS
         final BsonTimestamp endOplogTimeBson = new BsonTimestamp(endTimeOfOplog, 0);
         int readNum = 1024000;
         try {
-
+            // 过滤条件 没有加上
             List<Bson> pipeline = singletonList(Aggregates.match(Filters.and(new Document())));
             ChangeStreamIterable<Document> changeStream = mongoClient.watch(pipeline);
 
@@ -98,7 +98,8 @@ public class RealTimeReadDataByChangeStream extends BaseRealTimeReadData<ChangeS
                 changeStream.showExpandedEvents(true);
             }
             // 可以改变这个值 建议可以计算得出
-            changeStream.batchSize(8086);
+            // todo 计算而来
+            changeStream.batchSize(100000);
             changeStream.startAtOperationTime(docTime);
             MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = changeStream.cursor();
 
@@ -129,11 +130,11 @@ public class RealTimeReadDataByChangeStream extends BaseRealTimeReadData<ChangeS
                     if (endTimeOfOplog != 0) {
                         // endTimeOfOplog- startTimeOfOplog 的总时间
                         // endTimeOfOplog -lastOplogTs 的总时间
-                        int percentage = (Math.round((0.0F + lastOplogTs.getTime() - startTimeOfOplog) / ((0.0F + endTimeOfOplog - startTimeOfOplog))));
+                        int percentage = (Math.round(100 * ((0.0F + lastOplogTs.getTime() - startTimeOfOplog) / ((0.0F + endTimeOfOplog - startTimeOfOplog)))));
                         if (percentage < 0) {
                             percentage = 0;
                         }
-                        log.info("{} current incremental progress{}%", workName, percentage);
+                        log.info("{} current incremental progress {}%", workName, percentage);
                     }
                     // 读取的第一条数据，一定会进来
                     // 判断是否在窗口期范围内

@@ -8,21 +8,21 @@ export default [
     children:[
       {
         path:'',
-        name:'taskManagement',
+        name:'TaskManagement',
         meta:{
-          title:'任务管理'
+          title:'TaskManagement'
         },
         component: () => import('@/views/taskManagement/index.vue'),
       },
       {
-        path:'taskDetail',
-        name:'taskDetail',
+        path:'TaskDetail',
+        name:'TaskDetail',
         meta:{
-          title:'任务详情'
+          title:'TaskDetail'
         },
         component: () => import('@/views/taskManagement/detail.vue'),
       },
-    ],   
+    ],
   },
 
 ]

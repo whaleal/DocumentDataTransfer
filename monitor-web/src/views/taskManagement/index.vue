@@ -3,8 +3,8 @@
     <el-card shadow="none">
       <div class="form-create-header">
         <div class="form-search">
-          <el-input placeholder="任务名" v-model="query.workName" size="small" style="width:200px;"></el-input>
-          <el-button class="el-icon-search" @click="getWorkList()" size="small" type="primary"> 搜索</el-button>
+          <el-input placeholder="Task Name" v-model="query.workName" size="small" style="width:200px;"></el-input>
+          <el-button class="el-icon-search" @click="getWorkList()" size="small" type="primary"> Search</el-button>
         </div>
       </div>
 
@@ -28,9 +28,10 @@
                             </span>
 
               <span v-else-if="info.key==='syncMode'">
-                <span v-if="scope.row[info.key]==='all'">全量</span>
-                              <span v-if="scope.row[info.key]==='realTime'">实时</span>
-                            </span>
+                <span v-if="scope.row[info.key]==='all'">Full</span>
+                  <span v-if="scope.row[info.key]==='realTime'">RealTime</span>
+                 </span>
+
               <span v-else-if="info.key==='startTime'">
                                 {{ $dateZoneFtt(scope.row[info.key]) }}
                             </span>
@@ -39,7 +40,7 @@
                             </span>
               <span v-else-if="info.key==='status'">
                                 <el-tag :type="scope.row[info.key]?'success':'danger'">
-                                        {{ scope.row[info.key] ? '运行' : '关闭' }}
+                                        {{ scope.row[info.key] ? 'Running' : 'Closed' }}
                                 </el-tag>
                             </span>
               <span v-else>{{ scope.row[info.key] }} </span>
@@ -69,19 +70,19 @@ export default {
       formList: [],
       tableHeader: [
         {
-          label: '任务名',
+          label: 'Task Name',
           key: 'workName',
         },
         {
-          label: '同步模式',
+          label: 'Sync Mode',
           key: 'syncMode',
         },
         {
-          label: '创建时间',
+          label: 'Creation Time',
           key: 'startTime',
         },
         {
-          label: '结束时间',
+          label: 'End Time',
           key: 'endTime',
         }
       ]
@@ -94,18 +95,18 @@ export default {
 
   methods: {
     getWorkList() {
-      //任务列表
+      // Task list
       getWorkList(this.query).then(res => {
         // console.log(res);
         this.formList = res.data
       })
     },
-    //任务详情页
+    // Task detail page
     taskDetail(workName) {
       window.localStorage.setItem('workName', workName)
       this.$router.push(
           {
-            name: 'taskDetail',
+            name: 'TaskDetail',
             query: {
               workName: workName
             }
@@ -121,6 +122,5 @@ export default {
 .form-create-header {
   margin: 10px 0;
 }
-
 
 </style>

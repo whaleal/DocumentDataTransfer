@@ -64,18 +64,18 @@ export default {
         {
           icon: 'el-icon-menu',
           index: `/home`,
-          title: '首页'
+          title: 'HomePage'
         },
 
         {
           icon: 'el-icon-date',
           index: '/taskManagement',
-          title: '任务管理',
+          title: 'TaskManagement',
         },
         {
           icon: 'el-icon-notebook-2',
           index: '/log',
-          title: '日志列表',
+          title: 'LogList',
         },
 
       ],
