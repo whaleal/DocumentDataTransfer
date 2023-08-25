@@ -6,6 +6,8 @@ import com.whaleal.ddt.monitor.util.R;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/work")
 public class WorkController {
@@ -40,10 +42,10 @@ public class WorkController {
     /**
      * 获取工作监控信息
      *
-     * @param workName   工作名称
-     * @param startTime  监控数据起始时间
-     * @param endTime    监控数据结束时间
-     * @param type       监控数据类型
+     * @param workName  工作名称
+     * @param startTime 监控数据起始时间
+     * @param endTime   监控数据结束时间
+     * @param type      监控数据类型
      * @return 执行结果
      */
     @GetMapping("/getWorkMonitor/{workName}")
@@ -53,6 +55,16 @@ public class WorkController {
                             @RequestParam("type") String type) {
 
         R r = R.ok();
+        Map<Object, Object> workInfo = workService.getWorkInfo(workName);
+        if (workInfo == null) {
+            return r;
+        }
+        if (Long.parseLong(workInfo.get("startTime").toString()) < startTime) {
+            startTime = Long.parseLong(workInfo.get("startTime").toString());
+        }
+        if (Long.parseLong(workInfo.get("endTime").toString()) > endTime) {
+            endTime = Long.parseLong(workInfo.get("endTime").toString());
+        }
         r.putAll(monitorDataService.getWorkMonitor(workName, startTime, endTime, type));
         return r;
     }

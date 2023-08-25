@@ -72,6 +72,11 @@ export default {
           index: '/taskManagement',
           title: '任务管理',
         },
+        {
+          icon: 'el-icon-notebook-2',
+          index: '/log',
+          title: '日志列表',
+        },
 
       ],
       createMongoDBAble: '',

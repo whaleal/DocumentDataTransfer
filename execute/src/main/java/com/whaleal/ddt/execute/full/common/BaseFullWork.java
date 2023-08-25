@@ -306,6 +306,7 @@ public abstract class BaseFullWork {
      */
     public static void startFull(final WorkInfo workInfo, final String fullType) {
         Runnable runnable = () -> {
+            workInfo.setStartTime(System.currentTimeMillis());
             log.info("enable Start task :{}, task configuration information :{}", workInfo.getWorkName(), workInfo.toString());
             // 设置程序状态为运行中
             WorkStatus.updateWorkStatus(workInfo.getWorkName(), WorkStatus.WORK_RUN);

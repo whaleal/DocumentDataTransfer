@@ -57,9 +57,11 @@ public class WorkInfoGenerator {
         {
             String workName = Property.getPropertiesByKey("workName");
             if (StrUtil.isBlank(workName)) {
-                workName = "work_" + HostInfoUtil.getHostName() + "_" + HostInfoUtil.getProcessID();
+                workName = "workNameDefault";
                 log.warn("workName is empty, system generated workName is: " + workName);
             }
+            // 任务名没有数字和_
+            workName.replaceAll("\\d+", "").replaceAll("_", "");
             workInfo.setWorkName(workName);
         }
 

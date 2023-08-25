@@ -21,7 +21,7 @@
 
 <script>
 import basicInfo from './basicInfo.vue'
-import taskLog from './taskLog.vue';
+import taskLog from '../log/taskLog.vue';
 import monitor from './monitor.vue'
 
 export default {

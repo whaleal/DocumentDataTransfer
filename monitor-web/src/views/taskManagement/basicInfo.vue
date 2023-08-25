@@ -7,40 +7,50 @@
       </el-descriptions-item>
       <el-descriptions-item label="进程目录">{{ info.config.bootDirectory }}</el-descriptions-item>
       <el-descriptions-item label="当前同步模式">{{ info.config.syncMode }}</el-descriptions-item>
-      <el-descriptions-item label="创建时间">{{ this.$dateZoneFtt(info.config.startTime, null) }}</el-descriptions-item>
-      <el-descriptions-item label="是否限速" v-if="info.config.isLimit">
-        <el-button size="mini" type="danger" round>限速</el-button>
-      </el-descriptions-item>
+      <el-descriptions-item label="开始时间">{{ this.$dateZoneFtt(info.config.startTime, null) }}</el-descriptions-item>
+      <el-descriptions-item label="结束时间">{{ this.$dateZoneFtt(info.config.endTime, null) }}</el-descriptions-item>
+      <el-descriptions-item label="JVMArg">{{ info.config.JVMArg }}</el-descriptions-item>
     </el-descriptions>
 
     <div style="margin-top:10px;">
-
       <el-collapse v-model="activeName" accordion>
         <el-collapse-item title="配置" name="1">
           <el-form
               :model="info.config"
               ref="createOrEditFormRef"
-              label-position="right">
+              label-position="right"
+              label-width="130px">
+
             <el-row>
-              <el-col :span="12">
-                <el-form-item label="任务名" label-width="80px">
-                  <el-input v-model="info.config.workName" size="small" disabled></el-input>
+              <el-col span="12">
+                <el-form-item label="任务名">
+                  <el-input v-model="info.config.workName" size="small" disabled ></el-input>
                 </el-form-item>
               </el-col>
             </el-row>
 
-            <el-form-item label="source URL" label-width="100px">
-              <el-input v-model="info.config.sourceDsUrl" size="small" style="width:100%" disabled>
-              </el-input>
-            </el-form-item>
-            <el-form-item label="target URL" label-width="100px">
-              <el-input v-model="info.config.targetDsUrl" size="small" style="width:100%" disabled>
-              </el-input>
-            </el-form-item>
+            <el-row>
+              <el-col>
+                <el-form-item label="source URL" >
+                  <el-input v-model="info.config.sourceDsUrl" size="small" style="width:100%" disabled>
+                  </el-input>
+                </el-form-item>
+              </el-col>
+            </el-row>
 
             <el-row>
-              <el-col :span="11">
-                <el-form-item label="同步模式" label-width="100px">
+              <el-col>
+                <el-form-item label="target URL" >
+                  <el-input v-model="info.config.targetDsUrl" size="small" style="width:100%" disabled>
+                  </el-input>
+                </el-form-item>
+              </el-col>
+            </el-row>
+
+
+            <el-row>
+              <el-col :span="10">
+                <el-form-item label="同步模式" >
                   <el-select v-model="info.config.syncMode" size="small" disabled>
                     <el-option
                         v-for="item in syncMode"
@@ -49,16 +59,28 @@
                         :value="item.value"/>
                   </el-select>
                 </el-form-item>
-              </el-col>
 
+              </el-col>
+              <el-col :span="10">
+                <el-form-item label="同步方式" label-width="100px">
+                  <el-input v-if="info.config.syncMode==='all'" v-model="info.config.fullType" size="small"
+                            style="width:100%" disabled></el-input>
+                  <el-input v-if="info.config.syncMode==='realTime'" v-model="info.config.realTimeType" size="small"
+                            style="width:100%" disabled></el-input>
+                </el-form-item>
+              </el-col>
             </el-row>
 
-            <el-form-item label="同步表名单" label-width="100px">
+            <el-row>
+              <el-col :span="12">
+            <el-form-item label="同步表名单" >
               <el-input v-model="info.config.dbTableWhite" size="small" style="width:100%" disabled>
               </el-input>
             </el-form-item>
+              </el-col>
+            </el-row>
 
-            <el-form-item label="同步DDL" label-width="100px">
+            <el-form-item label="同步DDL"  v-if="info.config.syncMode==='realTime'">
               <el-select v-model="info.config.ddlFilterSet" multiple size="small" style="width:100%" disabled>
                 <el-option
                     v-for="item in ddlFilterSet"
@@ -68,8 +90,10 @@
               </el-select>
             </el-form-item>
 
-            <el-form-item label="预处理集群DDL" label-width="140px" prop="clusterDDL">
-              <el-select v-model="info.config.clusterDDL" multiple clearable size="small" style="width:100%" disabled>
+            <el-form-item label="预处理集群DDL" prop="clusterDDL" v-if="info.config.syncMode==='all'">
+
+              <el-select v-model="info.config.clusterInfoSet" multiple clearable size="small" style="width:100%"
+                         disabled>
                 <el-option
                     v-for="item in clusterDDL"
                     :key="item.value"
@@ -78,58 +102,68 @@
               </el-select>
             </el-form-item>
 
-            <el-row>
-              <el-col :span="12">
-                <el-form-item label="读线程数" label-width="80px" >
+            <el-row v-if="info.config.syncMode==='all'">
+              <el-col :span="6">
+                <el-form-item label="读线程数" >
                   <el-input v-model.number="info.config.sourceThreadNum" size="small" disabled>
                   </el-input>
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
-                <el-form-item label="写线程" label-width="80px" >
+
+              <el-col :span="6">
+                <el-form-item label="写线程" >
                   <el-input v-model.number="info.config.targetThreadNum" size="small" disabled>
                   </el-input>
                 </el-form-item>
               </el-col>
+
+
+              <el-col :span="10">
+                <el-form-item label="索引线程" >
+                  <el-input v-model.number="info.config.createIndexThreadNum" size="small" disabled>
+                  </el-input>
+                </el-form-item>
+              </el-col>
             </el-row>
+
+
             <el-row>
-              <el-col :span="12">
-                <el-form-item label="桶大小" label-width="80px">
+              <el-col :span="5">
+                <el-form-item label="桶大小">
                   <el-input v-model.number="info.config.bucketSize" size="small" disabled>
                   </el-input>
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
-                <el-form-item label="缓存区个数" label-width="100px">
+              <el-col :span="5">
+                <el-form-item label="缓存桶个数">
                   <el-input v-model.number="info.config.bucketNum" size="small" disabled>
                   </el-input>
                 </el-form-item>
               </el-col>
-            </el-row>
-            <el-row>
-              <el-col :span="12">
-                <el-form-item label="批数据大小" label-width="100px">
+              <el-col :span="5">
+                <el-form-item label="批数据大小">
                   <el-input v-model.number="info.config.batchSize" size="small" disabled>
                   </el-input>
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
-                <el-form-item label="oplog开始时间" label-width="120px">
+            </el-row>
+
+            <el-row v-if="info.config.syncMode==='realTime'">
+              <el-col :span="5">
+                <el-form-item label="oplog开始时间" >
                   <el-date-picker
                       v-model="info.config.startOplogTime * 1000"
                       type="datetime"
                       value-format="timestamp"
                       placeholder="选择日期时间"
                       size="small"
-                      disabled
-                  >
+                      disabled>
                   </el-date-picker>
                 </el-form-item>
               </el-col>
-            </el-row>
-            <el-row>
-              <el-col :span="12">
-                <el-form-item label="oplog结束时间" label-width="120px">
+
+              <el-col :span="5" v-if="info.config.endOplogTime>0">
+                <el-form-item label="oplog结束时间" >
                   <el-date-picker
                       v-model="info.config.endOplogTime"
                       type="datetime"
@@ -141,26 +175,46 @@
                   </el-date-picker>
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
-                <el-form-item label="oplog延迟时间" label-width="120px">
+              <el-col :span="6">
+                <el-form-item label="oplog延迟时间">
                   <el-input v-model.number="info.config.delayTime" size="small" disabled>
                   </el-input>
                 </el-form-item>
               </el-col>
             </el-row>
-            <el-row>
-              <el-col :span="12">
-                <el-form-item label="实时分桶线程数" label-width="130px" >
+
+
+            <el-row v-if="info.config.syncMode==='realTime'">
+              <el-col :span="5">
+                <el-form-item label="分桶线程数" >
                   <el-input v-model.number="info.config.nsBucketThreadNum" size="small" disabled>
                   </el-input>
                 </el-form-item>
-                <el-form-item label="实时写入线程数" label-width="130px" >
+
+              </el-col>
+
+              <el-col :span="5">
+                <el-form-item label="写入线程数">
                   <el-input v-model.number="info.config.writeThreadNum" size="small" disabled>
                   </el-input>
                 </el-form-item>
               </el-col>
+
             </el-row>
+
+
+            <el-row>
+
+              <el-col :span="5">
+                <el-form-item label="DDL最大耗时" >
+                  <el-input v-model.number="info.config.ddlWait" size="small" disabled>
+                  </el-input>
+                </el-form-item>
+              </el-col>
+            </el-row>
+
           </el-form>
+
         </el-collapse-item>
 
       </el-collapse>

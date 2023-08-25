@@ -3,7 +3,7 @@ import { Message } from 'element-ui';
 import route from '../router/index';
 
 
-const constBaseURL = 'http://127.0.0.1:58001';
+const constBaseURL = 'http://whalealDDT.com:58001';
 
 export default constBaseURL;
 

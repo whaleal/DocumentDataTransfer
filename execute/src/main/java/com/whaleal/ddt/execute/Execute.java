@@ -88,8 +88,10 @@ public class Execute {
         final String syncMode = workInfo.getSyncMode();
         // 根据同步模式选择不同的启动方式
         if (syncMode.equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL)) {
+            workInfo.setStartTime(System.currentTimeMillis());
             workInfo.setWorkName(workName + "_full");
             // 全量同步模式
+            workInfo.setStartTime(System.currentTimeMillis());
             startFull(workInfo, fullType);
             //workInfo.setEndTime(System.currentTimeMillis());
         } else if (syncMode.equalsIgnoreCase(WorkInfo.SYNC_MODE_REAL_TIME)) {

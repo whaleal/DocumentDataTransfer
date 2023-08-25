@@ -32,6 +32,14 @@ public class WorkServiceImpl implements WorkService {
     @Override
     public void upsertWorkInfo(String workName, Map<Object, Object> workInfo) {
         log.info("upsertWorkInfo: {}", JSON.toJSONString(workInfo));
+        for (Map.Entry<String, Map<Object, Object>> entry : WORK_INFO_MAP.entrySet()) {
+            if ((!entry.getValue().containsKey("endTime"))
+                    || "0".equals(entry.getValue().get("endTime").toString()) ||
+                    entry.getValue().get("endTime").toString().equals(Long.MAX_VALUE + "")) {
+                entry.getValue().put("endTime", workInfo.get("startTime"));
+            }
+        }
+
         if (WORK_INFO_MAP.containsKey(workName)) {
             WORK_INFO_MAP.get(workName).putAll(workInfo);
         } else {
@@ -52,6 +60,7 @@ public class WorkServiceImpl implements WorkService {
                 result.add(entry.getValue());
             }
         }
+        result.sort((o1, o2) -> o2.get("startTime").toString().compareTo(o1.get("startTime").toString()));
         return result;
     }
 }

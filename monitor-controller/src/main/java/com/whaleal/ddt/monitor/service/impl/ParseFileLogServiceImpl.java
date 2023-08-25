@@ -2,6 +2,7 @@ package com.whaleal.ddt.monitor.service.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.whaleal.ddt.monitor.model.LogEntity;
+import com.whaleal.ddt.monitor.service.LogService;
 import com.whaleal.ddt.monitor.service.MonitorDataService;
 import com.whaleal.ddt.monitor.service.ParseFileLogService;
 import com.whaleal.ddt.monitor.service.WorkService;
@@ -11,11 +12,16 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.GZIPInputStream;
 
 @Service
 @Log4j2
@@ -93,7 +99,7 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
      * @param position The starting position to read from.
      */
     @Override
-    public long readFile(String filePath, long position) {
+    public long readFile(String filePath, long position, long endPosition) {
         long filePointerTemp = position;
         File file = new File(filePath);
         try (BufferedRandomAccessFile randomAccessFile = new BufferedRandomAccessFile(file, "r")) {
@@ -101,25 +107,16 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
             String line = "";
             while ((line = randomAccessFile.readLine()) != null) {
                 try {
+                    if (randomAccessFile.getFilePointer() > endPosition) {
+                        break;
+                    }
                     // Filter condition: Only process log lines that match the specified regex pattern
                     String regex = "^(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}) \\[(\\w+)\\] (.*)";
                     if (!line.matches(regex)) {
                         // Skip non-matching lines
                         continue;
                     }
-                    // Split the log line into individual components
-                    String[] split = line.split(" +", 8);
-                    LogEntity logEntity = new LogEntity();
-                    logEntity.setTime(DateTimeUtils.stringToStamp(split[0] + " " + split[1]));
-                    logEntity.setProcessId(split[2]);
-                    logEntity.setType(split[5]);
-                    logEntity.setInfo(split[7]);
-                    // Set the current log parsing time
-                    logTime = logEntity.getTime();
-                    parse(logEntity);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    log.error("Failed to parse log {}: {}", line, e.getMessage());
+                    parse(logToLogEntity(line));
                 } finally {
                     filePointerTemp = randomAccessFile.getFilePointer();
                 }
@@ -129,6 +126,51 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
             log.error("Failed to parse file {}: {}", filePath, e.getMessage());
         }
         return filePointerTemp;
+    }
+
+    @Override
+    public void readGZFile(String filePath) {
+        try (FileInputStream fileInputStream = new FileInputStream(filePath);
+             GZIPInputStream gzipInputStream = new GZIPInputStream(fileInputStream);
+             InputStreamReader streamReader = new InputStreamReader(gzipInputStream, StandardCharsets.UTF_8);
+             BufferedReader reader = new BufferedReader(streamReader)) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                try {
+                    // Filter condition: Only process log lines that match the specified regex pattern
+                    String regex = "^(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}) \\[(\\w+)\\] (.*)";
+                    if (!line.matches(regex)) {
+                        // Skip non-matching lines
+                        continue;
+                    }
+                    parse(logToLogEntity(line));
+                } finally {
+
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+
+        }
+    }
+
+    public static LogEntity logToLogEntity(String line) {
+        LogEntity logEntity = new LogEntity();
+        try {
+            // Split the log line into individual components
+            String[] split = line.split(" +", 8);
+            logEntity.setTime(DateTimeUtils.stringToStamp(split[0] + " " + split[1]));
+            logEntity.setProcessId(split[2]);
+            logEntity.setType(split[5]);
+            logEntity.setInfo(split[7]);
+            // Set the current log parsing time
+            logTime = logEntity.getTime();
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.error("Failed to parse log {}: {}", line, e.getMessage());
+        }
+        return logEntity;
     }
 
 
@@ -184,7 +226,7 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
             System.out.println(info);
             // Extract work name and update work-related information
             workName = map.get("workName").toString() + "_" + map.get("startTime");
-            map.put("workName",workName);
+            map.put("workName", workName);
             map.put("hostName", hostName);
             map.put("pid", pid);
             map.put("bootDirectory", bootDirectory);
@@ -204,6 +246,7 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
         // Extract and set work name, and save data based on log type
         getWorkName(logEntity);
         judgeSave(logEntity);
+        saveLog(logEntity);
 
         // Process logs based on the process ID
         if (logEntity.getProcessId().endsWith("_full_execute]")) {
@@ -226,6 +269,14 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
         }
     }
 
+    @Autowired
+    LogService logService;
+
+    public void saveLog(LogEntity logEntity) {
+        if (logEntity.getType().equalsIgnoreCase("error") || logEntity.getType().equalsIgnoreCase("error")) {
+            logService.saveLog(logEntity);
+        }
+    }
 
     /**
      * Parses the main log message containing D2T Boot information and extracts relevant data.

@@ -1,2 +1,5 @@
 server:
   port: 58001
+
+logPath: logs/
+

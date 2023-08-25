@@ -6,6 +6,7 @@ import com.whaleal.ddt.monitor.service.MonitorDataService;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.nio.charset.StandardCharsets;
@@ -116,9 +117,18 @@ public class MonitorDataServiceImpl implements MonitorDataService {
 
     }
 
+    private static String monitorDataDir = "../monitorDataDir/";
     private static String hostInfoDataFile = "hostInfoDataFile.txt";
     private static String fullWorkDataFile = "fullWorkDataFile.txt";
     private static String realTimeWorkDataFile = "realTimeWorkDataFile.txt";
+
+    static {
+        File file = new File(monitorDataDir);
+        file.delete();
+        file.deleteOnExit();
+        file.mkdir();
+        file.mkdirs();
+    }
 
     @Override
     public void saveHostData(Map<Object, Object> map) {
@@ -138,6 +148,7 @@ public class MonitorDataServiceImpl implements MonitorDataService {
     }
 
     private static void saveData(String filePath, Map<Object, Object> map) {
+        filePath = monitorDataDir + filePath;
         if (map.size() < 10) {
             return;
         }
@@ -149,8 +160,8 @@ public class MonitorDataServiceImpl implements MonitorDataService {
 
 
     public static Map<String, List<Object>> getMonitor(String filePath, List<String> typeList, long startTime, long endTime) {
+        filePath = monitorDataDir + filePath;
         Map<String, List<Object>> resultMap = new HashMap<>();
-
         for (String type : typeList) {
             resultMap.put(type, new ArrayList<>());
         }
@@ -197,6 +208,7 @@ public class MonitorDataServiceImpl implements MonitorDataService {
             }
         } catch (Exception e) {
         }
+
         return resultMap;
     }
 

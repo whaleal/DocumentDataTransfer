@@ -31,7 +31,7 @@ export default defineConfig({
     // 是否开启 https
     https: false,
     // 端口号
-    port: 8080,
+    port: 58000,
     // 监听所有地址
     host: '127.0.0.1',
     // 服务启动时是否自动打开浏览器

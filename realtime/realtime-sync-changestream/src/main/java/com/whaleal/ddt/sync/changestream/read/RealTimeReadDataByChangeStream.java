@@ -68,6 +68,7 @@ public class RealTimeReadDataByChangeStream extends BaseRealTimeReadData<ChangeS
         BsonTimestamp docTime = new BsonTimestamp(startTimeOfOplog, 0);
         log.info("{} start reading event data", workName);
         BasicDBObject condition = new BasicDBObject();
+
         if (startTimeOfOplog != 0) {
             // 设置查询数据的时间范围
             condition.append("clusterTime", new Document().append("$gte", docTime));
@@ -80,17 +81,17 @@ public class RealTimeReadDataByChangeStream extends BaseRealTimeReadData<ChangeS
         //   A：增加正则表达式读取ns
         // 不为全部库表
         //todo 暂时没有表名单过滤
-//        if (!(".+").equals(dbTableWhite)) {
-//            condition.append("ns", new Document("$regex", dbTableWhite));
-//        }
+        if (!(".+").equals(dbTableWhite)) {
+            condition.append("ns", new Document("$regex", dbTableWhite));
+        }
 
         log.info("{} the conditions for reading event :{}", workName, condition.toJson());
 
-
+        final BsonTimestamp endOplogTimeBson = new BsonTimestamp(endTimeOfOplog, 0);
         int readNum = 1024000;
         try {
 
-            List<Bson> pipeline = singletonList(Aggregates.match(Filters.and(condition)));
+            List<Bson> pipeline = singletonList(Aggregates.match(Filters.and(new Document())));
             ChangeStreamIterable<Document> changeStream = mongoClient.watch(pipeline);
 
             if (String.valueOf(dbVersion.charAt(0)).compareTo("6") > 0) {
@@ -98,7 +99,7 @@ public class RealTimeReadDataByChangeStream extends BaseRealTimeReadData<ChangeS
             }
             // 可以改变这个值 建议可以计算得出
             changeStream.batchSize(8086);
-
+            changeStream.startAtOperationTime(docTime);
             MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = changeStream.cursor();
 
             while (cursor.hasNext()) {
@@ -107,9 +108,14 @@ public class RealTimeReadDataByChangeStream extends BaseRealTimeReadData<ChangeS
                 if (changeEvent.getNamespace() == null) {
                     continue;
                 }
+                int clusterTime = changeEvent.getClusterTime().getTime();
+                if (endTimeOfOplog != 0 && endOplogTimeBson.getTime() < clusterTime) {
+                    // 带有范围的oplog
+                    break;
+                }
                 String ns = changeEvent.getNamespace().getFullName();
                 // 10w条输出一次 或者10s输出一次
-                if (readNum++ > 102400 || (changeEvent.getClusterTime().getTime() - lastOplogTs.getTime() > 60)) {
+                if (readNum++ > 102400 || (clusterTime - lastOplogTs.getTime() > 60)) {
                     // 记录当前oplog的时间
                     lastOplogTs = changeEvent.getClusterTime();
                     docTime = changeEvent.getClusterTime();
@@ -134,6 +140,7 @@ public class RealTimeReadDataByChangeStream extends BaseRealTimeReadData<ChangeS
                     if (lastOplogTs.getTime() < startTimeOfOplog) {
                         log.error("{} failed to read oplog: missed sliding window time event is overwritten, this program is about to exit", workName);
                         WorkStatus.updateWorkStatus(workName, WorkStatus.WORK_STOP);
+                        break;
                     }
                 }
 

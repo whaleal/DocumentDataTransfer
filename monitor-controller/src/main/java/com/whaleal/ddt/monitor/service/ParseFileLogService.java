@@ -17,5 +17,7 @@ public interface ParseFileLogService {
      * @param filePath  文件路径
      * @param position  起始位置
      */
-    long readFile(String filePath, long position);
+    long readFile(String filePath, long position, long endPosition);
+
+    void readGZFile(String filePath);
 }

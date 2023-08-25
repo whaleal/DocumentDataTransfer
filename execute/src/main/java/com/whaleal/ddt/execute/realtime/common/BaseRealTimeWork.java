@@ -183,6 +183,7 @@ public abstract class BaseRealTimeWork {
      */
     public static void startRealTime(final WorkInfo workInfo, final String realTimeType) {
         Runnable runnable = () -> {
+            workInfo.setStartTime(System.currentTimeMillis());
             log.info("enable Start task :{}, task configuration information :{}", workInfo.getWorkName(), workInfo.toString());
             // 设置程序状态为运行中
             WorkStatus.updateWorkStatus(workInfo.getWorkName(), WorkStatus.WORK_RUN);
