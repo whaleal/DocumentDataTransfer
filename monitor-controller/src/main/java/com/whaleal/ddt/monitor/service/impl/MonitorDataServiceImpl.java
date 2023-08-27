@@ -20,6 +20,7 @@ import java.util.Map;
  */
 @Service
 public class MonitorDataServiceImpl implements MonitorDataService {
+
     private static final Map<String, Object> MESSAGE_MAP = new HashMap<>();
 
     static {
