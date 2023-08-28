@@ -202,12 +202,16 @@ public abstract class BaseRealTimeWork {
             // 创建写入任务
             baseRealTimeWork.submitTask(workInfo, workInfo.getNsBucketThreadNum(), workInfo.getWriteThreadNum());
             long executeCountOld = 0L;
+
+            long lastPrintTime = System.currentTimeMillis();
+
             while (true) {
                 try {
+                    lastPrintTime = System.currentTimeMillis();
                     // 每隔10秒输出一次信息
                     TimeUnit.SECONDS.sleep(10);
                     // 输出缓存区运行情况
-                    executeCountOld = metadataOplog.printCacheInfo(workInfo.getStartTime(), executeCountOld);
+                    executeCountOld = metadataOplog.printCacheInfo(workInfo.getStartTime(), lastPrintTime, executeCountOld);
                     // 输出线程运行情况
                     baseRealTimeWork.printThreadInfo();
                     // 判断任务是否结束，如果结束则等待1分钟后退出循环

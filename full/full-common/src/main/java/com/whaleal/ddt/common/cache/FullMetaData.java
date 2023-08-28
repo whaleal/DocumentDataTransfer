@@ -22,7 +22,6 @@ import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.bson.Document;
 
-import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -244,11 +243,10 @@ public class FullMetaData {
         partitionQueueMap.clear();
     }
 
-    public long printCacheInfo(long workStartTime, long writeCountOld) {
+    public long printCacheInfo(long workStartTime, long lastPrintTime, long writeCountOld) {
         try {
             // 当前时间
-            Date currentTime = new Date();
-            int diffTime = (int) ((currentTime.getTime() - workStartTime) / 1000);
+            int diffTime = (int) ((lastPrintTime - workStartTime) / 1000);
             // 当前缓存区批数量
             log.info("{} number of batches remaining in the current buffer:{}", workName, computeBatchCount());
             // 当前缓存区条数量
@@ -261,7 +259,8 @@ public class FullMetaData {
             long readCount = readDocCount.sum();
             log.info("{} number of bars read:{},time cost:{}s,average write speed:{} per/s",
                     workName, readCount, diffTime, (readCount / diffTime));
-            log.info("{} the average write speed of this round (10s):{} per/s", workName, Math.round((writeCount - writeCountOld) / 10));
+            log.info("{} the average write speed of this round (10s):{} per/s",
+                    workName, Math.round((writeCount - writeCountOld) / ((System.currentTimeMillis() - lastPrintTime) / 1000)));
             return writeCount;
         } catch (Exception e) {
             log.error("{} error getting full program execution,msg:{}", workName, e.getMessage());

@@ -50,8 +50,8 @@ public class RealTimeReadDataByOplog extends BaseRealTimeReadData<Document> {
     }
 
 
-    public RealTimeReadDataByOplog(String workName, String dsName, boolean captureDDL, String dbTableWhite, int startTimeOfOplog, int endTimeOfOplog, int delayTime) {
-        super(workName, dsName, captureDDL, dbTableWhite, startTimeOfOplog, endTimeOfOplog, delayTime);
+    public RealTimeReadDataByOplog(String workName, String dsName, boolean captureDDL, String dbTableWhite, int startTimeOfOplog, int endTimeOfOplog, int delayTime,int readBatchSize) {
+        super(workName, dsName, captureDDL, dbTableWhite, startTimeOfOplog, endTimeOfOplog, delayTime,readBatchSize);
     }
 
 
@@ -148,7 +148,7 @@ public class RealTimeReadDataByOplog extends BaseRealTimeReadData<Document> {
             MongoCursor<Document> cursor =
                     oplogCollection.find(generateCondition(docTime)).projection(PROJECT_FIELD).
                             sort(new Document("$natural", 1)).
-                            cursorType(CursorType.TailableAwait).noCursorTimeout(true).batchSize(8192).iterator();
+                            cursorType(CursorType.TailableAwait).noCursorTimeout(true).batchSize(readBatchSize).iterator();
             while (cursor.hasNext()) {
                 Document document = cursor.next();
                 String ns = document.get("ns").toString();

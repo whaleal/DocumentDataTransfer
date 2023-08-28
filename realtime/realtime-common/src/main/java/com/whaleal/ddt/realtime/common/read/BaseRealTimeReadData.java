@@ -17,8 +17,8 @@ package com.whaleal.ddt.realtime.common.read;
 
 
 import com.mongodb.client.MongoClient;
-import com.whaleal.ddt.realtime.common.cache.RealTimeMetaData;
 import com.whaleal.ddt.conection.sync.MongoDBConnectionSync;
+import com.whaleal.ddt.realtime.common.cache.RealTimeMetaData;
 import com.whaleal.ddt.task.CommonTask;
 import org.bson.BsonTimestamp;
 
@@ -72,6 +72,8 @@ public abstract class BaseRealTimeReadData<T> extends CommonTask {
      */
     protected BsonTimestamp lastOplogTs = new BsonTimestamp(0);
 
+    protected int readBatchSize = 8096;
+
     /**
      * 构造函数，用于初始化基本实时数据读取器。
      *
@@ -83,7 +85,9 @@ public abstract class BaseRealTimeReadData<T> extends CommonTask {
      * @param endTimeOfOplog   oplog数据读取的结束时间戳。
      * @param delayTime        数据处理的延迟时间（秒）。
      */
-    protected BaseRealTimeReadData(String workName, String dsName, boolean captureDDL, String dbTableWhite, int startTimeOfOplog, int endTimeOfOplog, int delayTime) {
+    protected BaseRealTimeReadData(String workName, String dsName, boolean captureDDL,
+                                   String dbTableWhite, int startTimeOfOplog,
+                                   int endTimeOfOplog, int delayTime,int readBatchSize) {
         super(workName, dsName);
         this.captureDDL = captureDDL;
         this.dbTableWhite = dbTableWhite;
@@ -94,6 +98,7 @@ public abstract class BaseRealTimeReadData<T> extends CommonTask {
         this.metadata = RealTimeMetaData.getRealTimeMetaData(workName);
         this.mongoClient = MongoDBConnectionSync.getMongoClient(dsName);
         this.dbVersion = MongoDBConnectionSync.getVersion(dsName);
+        this.readBatchSize=readBatchSize;
     }
 
     /**

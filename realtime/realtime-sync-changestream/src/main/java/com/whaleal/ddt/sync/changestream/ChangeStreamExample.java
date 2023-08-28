@@ -8,34 +8,30 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
-import org.bson.BsonTimestamp;
 import org.bson.Document;
-import org.bson.conversions.Bson;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class ChangeStreamExample {
     public static void main(String[] args) {
 
-        MongoClient mongoClient = MongoClients.create("mongodb://192.168.12.100:27600");
+        MongoClient mongoClient = MongoClients.create("mongodb://192.168.12.200:24578");
         // todo 是否可以条件筛选,fullDocument相关参数,
         // 1. 操作的类型如何筛选，筛选namespace，时间问题确认一下
 
-        List<Bson> pipeline = new ArrayList<>();
 
+        List<String> stringList = Arrays.asList("$ns.db", ".", "$ns.coll");
 
-        pipeline.add(Aggregates.match(Filters.and(new Document("clusterTime", new Document().append("$gte", new BsonTimestamp((int) (System.currentTimeMillis()/1000), 0))))));
+        List<Document> pipeline = new ArrayList<>();
+        pipeline.add(new Document("$addFields", new Document("nsStr", new Document("$concat", stringList))));
 
-        pipeline.add(new Document("$addFields", new Document("nsToString", new Document("$toString", "$ns"))));
-
-        pipeline.add(new Document("$match", new Document("nsToString", "doc.lhp")));
-
+        pipeline.add(new Document("$match",new Document("nsStr",new Document("$regex",".+"))));
         ChangeStreamIterable<Document> changeStream = mongoClient.watch(pipeline);
 
 
-        changeStream.showExpandedEvents(true);
-//        changeStream.startAtOperationTime();
+
 
         // 创建ChangeStream
         try (MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = changeStream.cursor()) {

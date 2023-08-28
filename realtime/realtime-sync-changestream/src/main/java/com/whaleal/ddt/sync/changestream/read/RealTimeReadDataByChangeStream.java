@@ -18,8 +18,6 @@ package com.whaleal.ddt.sync.changestream.read;
 import com.mongodb.BasicDBObject;
 import com.mongodb.client.ChangeStreamIterable;
 import com.mongodb.client.MongoChangeStreamCursor;
-import com.mongodb.client.model.Aggregates;
-import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import com.whaleal.ddt.realtime.common.read.BaseRealTimeReadData;
 import com.whaleal.ddt.status.WorkStatus;
@@ -28,10 +26,10 @@ import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
-import static java.util.Collections.singletonList;
 
 
 /**
@@ -44,8 +42,8 @@ import static java.util.Collections.singletonList;
 public class RealTimeReadDataByChangeStream extends BaseRealTimeReadData<ChangeStreamDocument<Document>> {
 
 
-    public RealTimeReadDataByChangeStream(String workName, String dsName, boolean captureDDL, String dbTableWhite, int startTimeOfOplog, int endTimeOfOplog, int delayTime) {
-        super(workName, dsName, captureDDL, dbTableWhite, startTimeOfOplog, endTimeOfOplog, delayTime);
+    public RealTimeReadDataByChangeStream(String workName, String dsName, boolean captureDDL, String dbTableWhite, int startTimeOfOplog, int endTimeOfOplog, int delayTime, int readBatchSize) {
+        super(workName, dsName, captureDDL, dbTableWhite, startTimeOfOplog, endTimeOfOplog, delayTime, readBatchSize);
     }
 
 
@@ -79,27 +77,32 @@ public class RealTimeReadDataByChangeStream extends BaseRealTimeReadData<ChangeS
         }
         //   Q：读取全部数据，会造成带宽浪费
         //   A：增加正则表达式读取ns
-        // 不为全部库表
-        //todo 暂时没有表名单过滤
         if (!(".+").equals(dbTableWhite)) {
             condition.append("ns", new Document("$regex", dbTableWhite));
         }
-
+        // condition仅做输出作业
         log.info("{} the conditions for reading event :{}", workName, condition.toJson());
-
-        final BsonTimestamp endOplogTimeBson = new BsonTimestamp(endTimeOfOplog, 0);
-        int readNum = 1024000;
+        BsonTimestamp endOplogTimeBson = new BsonTimestamp(endTimeOfOplog, 0);
+        int readNum = 102400000;
         try {
             // 过滤条件 没有加上
-            List<Bson> pipeline = singletonList(Aggregates.match(Filters.and(new Document())));
-            ChangeStreamIterable<Document> changeStream = mongoClient.watch(pipeline);
-
+            ChangeStreamIterable<Document> changeStream = null;
+            if (!(".+").equals(dbTableWhite)) {
+                // 正则表达式查询数据范围
+                List<Bson> pipeline = new ArrayList<>();
+                pipeline.add(new Document("$addFields", new Document("nsStr", new Document("$concat", Arrays.asList("$ns.db", ".", "$ns.coll")))));
+                pipeline.add(new Document("$match", new Document("nsStr", new Document("$regex", dbTableWhite))));
+                changeStream = mongoClient.watch(pipeline);
+            } else {
+                changeStream = mongoClient.watch();
+            }
             if (String.valueOf(dbVersion.charAt(0)).compareTo("6") > 0) {
                 changeStream.showExpandedEvents(true);
             }
+
             // 可以改变这个值 建议可以计算得出
-            // todo 计算而来
-            changeStream.batchSize(100000);
+            changeStream.batchSize(readBatchSize);
+            // 设置开始时间
             changeStream.startAtOperationTime(docTime);
             MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = changeStream.cursor();
 

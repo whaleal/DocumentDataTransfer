@@ -336,15 +336,16 @@ public abstract class BaseFullWork {
             fullSync.generateSource(workInfo.getSourceThreadNum(), taskQueue, isGenerateSourceTaskInfoOverNum, workInfo.getBatchSize());
 
             long writeCountOld = 0L;
+            long lastPrintTime = System.currentTimeMillis();
             while (true) {
                 try {
+                    lastPrintTime = System.currentTimeMillis();
                     // 计算一共要同步数据量
                     log.info("{} this full task is expected to transfer {} bars of data", workInfo.getWorkName(), fullSync.estimatedAllNsDocumentCount(workInfo.getDbTableWhite()));
                     log.info("{} current task queue cache status:{}", workInfo.getWorkName(), taskQueue.size());
-                    // 每隔10秒输出一次信息 todo
                     TimeUnit.SECONDS.sleep(10);
                     // 输出缓存区运行情况
-                    writeCountOld = fullMetaData.printCacheInfo(workInfo.getStartTime(), writeCountOld);
+                    writeCountOld = fullMetaData.printCacheInfo(workInfo.getStartTime(), lastPrintTime, writeCountOld);
                     // 输出任务各线程运行情况
                     fullSync.printThreadInfo();
                     // 输出缓存区中的信息

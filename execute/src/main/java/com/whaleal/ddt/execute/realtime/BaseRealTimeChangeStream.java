@@ -58,15 +58,16 @@ public class BaseRealTimeChangeStream extends BaseRealTimeWork {
         }
         // 分桶线程
         for (int i = 0; i < nsBucketThreadNum; i++) {
-            createTask(nsBucketEventThreadPoolName, new DistributeBucket(workName, sourceDsName,targetDsName, workInfo.getBucketNum(), workInfo.getDdlFilterSet(), workInfo.getDdlWait()));
+            createTask(nsBucketEventThreadPoolName, new DistributeBucket(workName, sourceDsName, targetDsName, workInfo.getBucketNum(), workInfo.getDdlFilterSet(), workInfo.getDdlWait()));
         }
         // 解析ns线程
         ParseNs distributeNs = new ParseNs(workName, workInfo.getDbTableWhite(),
-                targetDsName, workInfo.getBatchSize() * workInfo.getBucketSize(),workInfo.getDdlFilterSet());
+                targetDsName, workInfo.getBatchSize() * workInfo.getBucketSize(), workInfo.getDdlFilterSet());
 
         createTask(parseNSThreadPoolName, distributeNs);
         // 读取线程
-        RealTimeReadDataByChangeStream realTimeReadDataByChangeStream = new RealTimeReadDataByChangeStream(workName, sourceDsName, workInfo.getDdlFilterSet().size() > 0, workInfo.getDbTableWhite(), workInfo.getStartOplogTime(), workInfo.getEndOplogTime(), workInfo.getDelayTime());
+        RealTimeReadDataByChangeStream realTimeReadDataByChangeStream = new RealTimeReadDataByChangeStream(workName, sourceDsName, workInfo.getDdlFilterSet().size() > 0, workInfo.getDbTableWhite(),
+                workInfo.getStartOplogTime(), workInfo.getEndOplogTime(), workInfo.getDelayTime(), workInfo.getBucketNum() * workInfo.getBucketSize() * workInfo.getBucketSize());
         createTask(readEventThreadPoolName, realTimeReadDataByChangeStream);
     }
 

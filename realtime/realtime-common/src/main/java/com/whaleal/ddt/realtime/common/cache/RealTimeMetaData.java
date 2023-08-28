@@ -355,7 +355,7 @@ public final class RealTimeMetaData<T> {
      * @param executeCountOld 上一次执行操作的次数
      * @return 执行的操作次数
      */
-    public long printCacheInfo(long workStartTime, long executeCountOld) {
+    public long printCacheInfo(long workStartTime, long lastPrintTime, long executeCountOld) {
         try {
             log.info("{} the total number of event read currently:{}", workName, readNum.sum());
 
@@ -377,9 +377,10 @@ public final class RealTimeMetaData<T> {
 
             long exeCount = sumBulkWriteInfo();
             log.info("{} total number of execution items:{},average write speed:{} per/s",
-                    workName, exeCount, exeCount / ((System.currentTimeMillis() - workStartTime) / 1000));
+                    workName, exeCount, exeCount / ((lastPrintTime - workStartTime) / 1000));
 
-            log.info("{} current round (10s) execution:{} per/s", workName, Math.round((exeCount - executeCountOld) / 10.0F));
+            log.info("{} current round (10s) execution:{} per/s", workName, Math.round((exeCount - executeCountOld) /
+                    ((System.currentTimeMillis() - lastPrintTime) / 1000)));
 
             // 输出ns正在处理那个ddl oplog呢
             for (Map.Entry<String, T> documentEntry : currentNsDealEventInfo.entrySet()) {

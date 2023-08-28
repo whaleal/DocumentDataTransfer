@@ -24,11 +24,14 @@ import com.whaleal.ddt.common.cache.FullMetaData;
 import com.whaleal.ddt.common.write.BaseFullWriteTask;
 import com.whaleal.ddt.conection.reactive.MongoDBConnectionReactive;
 import com.whaleal.ddt.task.CommonTask;
+import io.reactivex.rxjava3.internal.schedulers.ExecutorScheduler;
 import lombok.extern.log4j.Log4j2;
 import org.bson.Document;
 import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
+import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * 写入数据任务类
@@ -72,26 +75,7 @@ public class FullReactiveWriteTask extends BaseFullWriteTask {
         BulkWriteSubscriber subscriber = new BulkWriteSubscriber(FullMetaData.getFullMetaData(workName), writeModelList, ns, workName);
         publisher.subscribe(subscriber);
 
-
-//        ExecutorScheduler executorScheduler = new ExecutorScheduler(ThreadPoolManager.getPool(workName + "_writeOfBulkThreadPoolName").getExecutorService(), false, true);
-//        //Mono
-//        new ExecutorScheduler(new ThreadPoolExecutor(),false,true)
-//        Flux.from(collection.bulkWrite(writeModelList, BULK_WRITE_OPTIONS)).subscribeOn(executorScheduler).subscribe(subscriber);
-////
-//        final ExecutorScheduler executorScheduler = new ExecutorScheduler(ThreadPoolManager.getPool(workName + "_writeOfBulkThreadPoolName").getExecutorService(), true);
-//
-//        Flux.from(collection.bulkWrite(writeModelList, BULK_WRITE_OPTIONS)).subscribeOn(new ExecutorScheduler(new ThreadPoolExecutor(),false,true)).subscribe(subscriber);
-//
-
-
         return 0;
     }
-
-
-//    public void createTask(Runnable runnable) {
-//        // 提交任何类型的任务
-//
-//        ThreadPoolManager.submit(, runnable);
-//    }
 
 }
