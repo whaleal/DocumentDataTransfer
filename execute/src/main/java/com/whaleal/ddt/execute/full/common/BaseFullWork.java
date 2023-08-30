@@ -132,7 +132,7 @@ public abstract class BaseFullWork {
                                        BlockingQueue<Range> taskQueue, boolean parallelSync) {
 
         LinkedBlockingQueue<String> nsQueue = new LinkedBlockingQueue<>(new MongoDBMetadata(sourceDsName).getNSList(dbTableWhite));
-        // 3个线程去切分 暂时3线程切分 性能尚可
+
         for (int i = 0; i < HostInfoUtil.computeTotalCpuCore() / 2; i++) {
             GenerateSourceTask generateSourceTask = new GenerateSourceTask(workName, sourceDsName,
                     isGenerateSourceTaskInfoOverNum, taskQueue, parallelSync,
@@ -337,13 +337,21 @@ public abstract class BaseFullWork {
 
             long writeCountOld = 0L;
             long lastPrintTime = System.currentTimeMillis();
+            int loopNum = Integer.MAX_VALUE;
+            long allNsDocumentCount = fullSync.estimatedAllNsDocumentCount(workInfo.getDbTableWhite());
             while (true) {
                 try {
+                    TimeUnit.SECONDS.sleep(10);
+                    loopNum++;
+                    if (loopNum >= 60) {
+                        // 10分钟 计算一次信息
+                        allNsDocumentCount = fullSync.estimatedAllNsDocumentCount(workInfo.getDbTableWhite());
+                        loopNum = 0;
+                    }
                     lastPrintTime = System.currentTimeMillis();
                     // 计算一共要同步数据量
-                    log.info("{} this full task is expected to transfer {} bars of data", workInfo.getWorkName(), fullSync.estimatedAllNsDocumentCount(workInfo.getDbTableWhite()));
+                    log.info("{} this full task is expected to transfer {} bars of data", workInfo.getWorkName(), allNsDocumentCount);
                     log.info("{} current task queue cache status:{}", workInfo.getWorkName(), taskQueue.size());
-                    TimeUnit.SECONDS.sleep(10);
                     // 输出缓存区运行情况
                     writeCountOld = fullMetaData.printCacheInfo(workInfo.getStartTime(), lastPrintTime, writeCountOld);
                     // 输出任务各线程运行情况

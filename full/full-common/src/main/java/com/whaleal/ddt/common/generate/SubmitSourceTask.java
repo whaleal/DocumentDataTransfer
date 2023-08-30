@@ -108,7 +108,7 @@ public class SubmitSourceTask extends CommonTask {
                 Range poll = taskQueue.poll();
                 if (poll == null) {
                     // 如果取出的任务范围为空，则休眠一段时间继续检查
-                    TimeUnit.SECONDS.sleep(1);
+                    TimeUnit.MILLISECONDS.sleep(100);
                     continue;
                 }
                 // 提交源任务到线程池中执行

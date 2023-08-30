@@ -78,7 +78,7 @@ public class WorkInfo implements Cloneable, Serializable {
      * targetThreadNum 写入任务线程个数
      * createIndexThreadNum 建立索引线程个数
      */
-    private int sourceThreadNum = Math.round(HostInfoUtil.computeTotalCpuCore() * 0.25F);
+    private int sourceThreadNum = Math.round(HostInfoUtil.computeTotalCpuCore() * 0.5F);
     private int targetThreadNum = Math.round(HostInfoUtil.computeTotalCpuCore() * 0.75F);
     private int createIndexThreadNum = Math.round(HostInfoUtil.computeTotalCpuCore());
     private String fullType = "sync";

@@ -119,15 +119,18 @@ public class WorkInfoGenerator {
             workInfo.setDdlWait(Integer.parseInt(ddlWait));
         }
 
+        String mode = workInfo.getSyncMode();
         // Configure thread numbers based on sync mode
-        if (workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_REAL_TIME) ||
-                workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL_AND_INCREMENT) ||
-                workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL_AND_REAL_TIME)) {
+        if (mode.equalsIgnoreCase(WorkInfo.SYNC_MODE_REAL_TIME) ||
+                mode.equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL_AND_INCREMENT) ||
+                mode.equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL_AND_REAL_TIME)) {
+
             // Configure thread numbers for real-time sync
             configureRealTimeThreadNumbers(workInfo);
-        } else if (workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL) ||
-                workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL_AND_INCREMENT) ||
-                workInfo.getSyncMode().equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL_AND_REAL_TIME)) {
+        }
+        if (mode.equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL) ||
+                mode.equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL_AND_INCREMENT) ||
+                mode.equalsIgnoreCase(WorkInfo.SYNC_MODE_ALL_AND_REAL_TIME)) {
             // Configure thread numbers for full sync
             configureFullSyncThreadNumbers(workInfo);
         }
@@ -239,7 +242,7 @@ public class WorkInfoGenerator {
     // Configure thread numbers for full sync
     private static void configureFullSyncThreadNumbers(WorkInfo workInfo) {
         // Configure thread numbers for source-side tasks in full sync
-        int sourceThreadNum = configureThreadNumber("sourceThreadNum", Math.round(HostInfoUtil.computeTotalCpuCore() * 0.25F), 2, 100);
+        int sourceThreadNum = configureThreadNumber("sourceThreadNum", Math.round(HostInfoUtil.computeTotalCpuCore() * 0.5F), 2, 100);
         workInfo.setSourceThreadNum(sourceThreadNum);
 
         // Configure thread numbers for writing to target tasks in full sync
@@ -279,6 +282,7 @@ public class WorkInfoGenerator {
                 threadNum = maxLimit;
             }
         }
+
         return threadNum;
     }
 }

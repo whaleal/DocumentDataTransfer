@@ -12,15 +12,7 @@
 //import java.util.ArrayList;
 //import java.util.List;
 //
-///**
-// * @projectName: full-common
-// * @package: com.whaleal.ddt.sync.task.read
-// * @className: ReadSubscriber
-// * @author: Eric
-// * @description: TODO
-// * @date: 18/08/2023 11:42
-// * @version: 1.0
-// */
+//
 //@Log4j2
 //public class ReadSubscriber implements Subscriber<Document> {
 //
@@ -50,22 +42,8 @@
 //            dataList = new ArrayList<>();
 //            fullMetaData.putData();
 //        }
-//
 //    }
-////
-////    public void putDataToCache() {
-////        BatchDataEntity batchDataEntity = new BatchDataEntity();
-////        batchDataEntity.setDataList(this.dataList);
-////        batchDataEntity.setNs(this.taskMetadata.getNs());
-////        batchDataEntity.setSourceDsName(this.taskMetadata.getSourceDsName());
-////        batchDataEntity.setBatchNo(System.currentTimeMillis());
-////        // 推送数据到缓存区中
-////        this.fullMetaData.putData(batchDataEntity);
-////        // 设置读取条数
-////        this.fullMetaData.getReadDocCount().add(this.dataList.size());
-////        this.dataList = new ArrayList<>();
-////        this.cacheTemp = 0;
-////    }
+//
 //
 //    @Override
 //    public void onError(Throwable t) {
