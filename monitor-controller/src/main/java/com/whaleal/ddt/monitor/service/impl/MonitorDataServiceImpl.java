@@ -54,7 +54,7 @@ public class MonitorDataServiceImpl implements MonitorDataService {
 // Create a map to store full synchronization rate metrics and their descriptions
         Map<String, Object> fullRate = new HashMap<>();
         fullRate.put("avgWriteSpeed", "Average Write Speed");
-        fullRate.put("realTimeWriteSpeed", "Instantaneous Write Speed");
+        fullRate.put("realTimeWriteSpeed", "RealTime write Speed");
         MESSAGE_MAP.put("fullRate", fullRate);
 
 // Create a map to store thread count metrics for full synchronization and their descriptions
@@ -82,7 +82,7 @@ public class MonitorDataServiceImpl implements MonitorDataService {
 // Create a map to store real-time synchronization rate metrics and their descriptions
         Map<String, Object> realTimeRate = new HashMap<>();
         realTimeRate.put("avgWriteSpeed", "Average Write Speed");
-        realTimeRate.put("realTimeWriteSpeed", "Instantaneous Write Speed");
+        realTimeRate.put("realTimeWriteSpeed", "RealTime Write Speed");
         MESSAGE_MAP.put("realTimeRate", realTimeRate);
 
 // Create a map to store caching metrics for real-time synchronization and their descriptions
@@ -176,6 +176,7 @@ public class MonitorDataServiceImpl implements MonitorDataService {
             String line;
             while ((line = reader.readLine()) != null) {
                 Map<String, Object> map = JSON.parseObject(line, Map.class);
+
                 double createTime = Double.parseDouble(map.get("createTime").toString());
                 if (createTime <= endTime && createTime >= startTime) {
                     if (typeList.contains("netIO")) {

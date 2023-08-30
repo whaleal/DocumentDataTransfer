@@ -22,6 +22,7 @@ import com.whaleal.ddt.common.cache.FullMetaData;
 import com.whaleal.ddt.status.WorkStatus;
 import com.whaleal.ddt.task.CommonTask;
 import lombok.extern.log4j.Log4j2;
+import org.bson.BsonDocument;
 import org.bson.Document;
 
 import java.util.List;
@@ -60,7 +61,7 @@ public abstract class BaseFullWriteTask extends CommonTask {
         while (true) {
             try {
                 // 从缓存中获取一批数据
-                BatchDataEntity<WriteModel<Document>> batchDataEntity = fullMetaData.getData();
+                BatchDataEntity<WriteModel<BsonDocument>> batchDataEntity = fullMetaData.getData();
                 if (batchDataEntity != null) {
                     // 当前任务拉取的dbTableName
                     int successWriteNum = bulkExecute(batchDataEntity.getNs(), batchDataEntity.getDataList());
@@ -91,6 +92,6 @@ public abstract class BaseFullWriteTask extends CommonTask {
      * @param writeModelList 待写入的数据模型列表
      * @return 成功写入的数据条数
      */
-    public abstract int bulkExecute(String ns, List<WriteModel<Document>> writeModelList);
+    public abstract int bulkExecute(String ns, List<WriteModel<BsonDocument>> writeModelList);
 
 }

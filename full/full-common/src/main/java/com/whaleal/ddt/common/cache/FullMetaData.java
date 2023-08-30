@@ -20,6 +20,7 @@ import com.mongodb.client.model.WriteModel;
 import com.whaleal.ddt.cache.BatchDataEntity;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
+import org.bson.BsonDocument;
 import org.bson.Document;
 
 import java.util.Map;
@@ -135,9 +136,9 @@ public class FullMetaData {
      * @return BatchDataEntity
      * @desc 塞入数据
      */
-    public BatchDataEntity<WriteModel<Document>> getData() {
+    public BatchDataEntity<WriteModel<BsonDocument>> getData() {
         // 返回的数据
-        BatchDataEntity<WriteModel<Document>> returnValue = null;
+        BatchDataEntity<WriteModel<BsonDocument>> returnValue = null;
         // 没有获取对缓存区的次数。即空跑次数
         // todo 空跑次数 可以来用做动态平衡读写
         int idlingTime = 0;

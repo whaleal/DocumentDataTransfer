@@ -9,6 +9,7 @@ import com.whaleal.ddt.common.cache.FullMetaData;
 import com.whaleal.ddt.util.WriteModelUtil;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.bson.BsonDocument;
 import org.bson.Document;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -24,13 +25,13 @@ public class BulkWriteSubscriber implements Subscriber<BulkWriteResult> {
 
     private FullMetaData fullMetaData;
 
-    private List<WriteModel<Document>> writeModelList;
+    private List<WriteModel<BsonDocument>> writeModelList;
 
     private String ns;
 
     private String workName;
 
-    public BulkWriteSubscriber(FullMetaData fullMetaData, List<WriteModel<Document>> writeModelList, String ns, String workName) {
+    public BulkWriteSubscriber(FullMetaData fullMetaData, List<WriteModel<BsonDocument>> writeModelList, String ns, String workName) {
         this.fullMetaData = fullMetaData;
         this.writeModelList = writeModelList;
         this.ns = ns;
@@ -65,14 +66,14 @@ public class BulkWriteSubscriber implements Subscriber<BulkWriteResult> {
                 // 如果写入出现其他异常，打印错误信息
                 log.error("ns:{},data write failure:{}", ns, throwable.getMessage());
             }
-            for (WriteModel<Document> writeModel : writeModelList) {
+            for (WriteModel<BsonDocument> writeModel : writeModelList) {
                 log.error("ns:{},data write failure:{}", ns, WriteModelUtil.writeModelToString(writeModel));
             }
         } else {
-            for (WriteModel<Document> writeModel : writeModelList) {
+            for (WriteModel<BsonDocument> writeModel : writeModelList) {
                 // 当发生异常 把数据重新放回队列 重新写入
-                BatchDataEntity<WriteModel<Document>> batchDataEntity = new BatchDataEntity();
-                ArrayList<WriteModel<Document>> arrayList = new ArrayList<>();
+                BatchDataEntity<WriteModel<BsonDocument>> batchDataEntity = new BatchDataEntity();
+                ArrayList<WriteModel<BsonDocument>> arrayList = new ArrayList<>();
                 arrayList.add(writeModel);
                 batchDataEntity.setDataList(arrayList);
                 batchDataEntity.setNs(ns);

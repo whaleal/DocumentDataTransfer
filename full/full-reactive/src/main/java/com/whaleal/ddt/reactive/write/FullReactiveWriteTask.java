@@ -26,6 +26,7 @@ import com.whaleal.ddt.conection.reactive.MongoDBConnectionReactive;
 import com.whaleal.ddt.task.CommonTask;
 import io.reactivex.rxjava3.internal.schedulers.ExecutorScheduler;
 import lombok.extern.log4j.Log4j2;
+import org.bson.BsonDocument;
 import org.bson.Document;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
@@ -62,7 +63,7 @@ public class FullReactiveWriteTask extends BaseFullWriteTask {
 
 
     @Override
-    public int bulkExecute(String ns, List<WriteModel<Document>> writeModelList) {
+    public int bulkExecute(String ns, List<WriteModel<BsonDocument>> writeModelList) {
         if (writeModelList.isEmpty()) {
             return 0;
         }
@@ -70,11 +71,10 @@ public class FullReactiveWriteTask extends BaseFullWriteTask {
         // 此处放入另一个另外一个线程池
         // 注意区分 多线程的异步情况
         MongoNamespace mongoNamespace = new MongoNamespace(ns);
-        MongoCollection<Document> collection = mongoClient.getDatabase(mongoNamespace.getDatabaseName()).getCollection(mongoNamespace.getCollectionName());
+        MongoCollection<BsonDocument> collection = mongoClient.getDatabase(mongoNamespace.getDatabaseName()).getCollection(mongoNamespace.getCollectionName(),BsonDocument.class);
         Publisher<BulkWriteResult> publisher = collection.bulkWrite(writeModelList, BULK_WRITE_OPTIONS);
         BulkWriteSubscriber subscriber = new BulkWriteSubscriber(FullMetaData.getFullMetaData(workName), writeModelList, ns, workName);
         publisher.subscribe(subscriber);
-
         return 0;
     }
 

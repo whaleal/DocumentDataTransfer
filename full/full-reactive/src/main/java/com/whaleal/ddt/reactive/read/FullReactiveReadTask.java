@@ -1,4 +1,4 @@
-package com.whaleal.ddt.reactive.read;/*
+/*
  * Document Data Transfer - An open-source project licensed under GPL+SSPL
  *
  * Copyright (C) [2023 - present ] [Whaleal]
@@ -13,7 +13,7 @@ package com.whaleal.ddt.reactive.read;/*
  *
  * For more information, visit the official website: [www.whaleal.com]
  */
-
+package com.whaleal.ddt.reactive.read;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.MongoNamespace;
@@ -27,6 +27,7 @@ import com.whaleal.ddt.conection.sync.MongoDBConnectionSync;
 import com.whaleal.ddt.status.WorkStatus;
 import com.whaleal.ddt.task.CommonTask;
 import lombok.extern.log4j.Log4j2;
+import org.bson.BsonDocument;
 import org.bson.Document;
 
 import java.util.ArrayList;
@@ -88,11 +89,12 @@ public class FullReactiveReadTask extends BaseFullReadTask {
             // 读取collection中的数据
             // Q: 考虑$natural排序 bson读取
             // A: $natural会加快查询速度。$natural排序排序后 就不能再次断点重传
-            MongoCursor<Document> mongoCursor = this.mongoClient.getDatabase(mongoNamespace.getDatabaseName()).getCollection(mongoNamespace.getCollectionName()).
-                    find(condition).sort(new BasicDBObject().append("_id", 1)).iterator();
+            MongoCursor<BsonDocument> mongoCursor = this.mongoClient.getDatabase(mongoNamespace.getDatabaseName()).getCollection(mongoNamespace.getCollectionName()).
+                    find(condition, BsonDocument.class).sort(new BasicDBObject().append("_id", 1)).iterator();
+
             while (mongoCursor.hasNext()) {
                 this.readNum++;
-                Document document = mongoCursor.next();
+                BsonDocument document = mongoCursor.next();
                 this.dataList.add(new InsertOneModel<>(document));
                 // 满一批数据时
                 if (this.cacheTemp++ > this.dataBatchSize) {

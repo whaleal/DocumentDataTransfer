@@ -226,15 +226,19 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
             log.info(info);
             // Extract work name and update work-related information
             workName = map.get("workName").toString() + "_" + map.get("startTime");
+
             map.put("workName", workName);
             map.put("hostName", hostName);
             map.put("pid", pid);
             map.put("bootDirectory", bootDirectory);
             map.put("JVMArg", JVMArg);
-            // Update work information using the service
-            workService.upsertWorkInfo(workName, map);
+
+
             fullMap.clear();
             realTimeMap.clear();
+            // Update work information using the service
+            workService.upsertWorkInfo(workName, map);
+
 
             eventTime = 0;
             delayTime = 0;

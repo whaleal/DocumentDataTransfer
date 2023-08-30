@@ -22,6 +22,7 @@ import com.whaleal.ddt.common.generate.SourceTaskInfo;
 import com.whaleal.ddt.status.WorkStatus;
 import com.whaleal.ddt.task.CommonTask;
 import lombok.extern.log4j.Log4j2;
+import org.bson.BsonDocument;
 import org.bson.Document;
 
 import java.util.ArrayList;
@@ -40,7 +41,7 @@ public abstract class BaseFullReadTask extends CommonTask {
     /**
      * 缓存数据集合
      */
-    protected List<WriteModel<Document>> dataList = new ArrayList<>();
+    protected List<WriteModel<BsonDocument>> dataList = new ArrayList<>();
     /**
      * 是否读取完毕的标志
      */
@@ -132,7 +133,7 @@ public abstract class BaseFullReadTask extends CommonTask {
         if (this.cacheTemp == 0) {
             return;
         }
-        BatchDataEntity<WriteModel<Document>> batchDataEntity = new BatchDataEntity();
+        BatchDataEntity<WriteModel<BsonDocument>> batchDataEntity = new BatchDataEntity();
         batchDataEntity.setDataList(this.dataList);
         batchDataEntity.setNs(this.taskMetadata.getNs());
         batchDataEntity.setSourceDsName(this.taskMetadata.getSourceDsName());
