@@ -334,13 +334,19 @@ public abstract class BaseFullWork {
             fullSync.submitTargetTask(workInfo.getTargetThreadNum());
             // 生成源数据库数据读取任务
             fullSync.generateSource(workInfo.getSourceThreadNum(), taskQueue, isGenerateSourceTaskInfoOverNum, workInfo.getBatchSize());
-
+            try {
+                TimeUnit.SECONDS.sleep(10);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             long writeCountOld = 0L;
             long lastPrintTime = System.currentTimeMillis();
-            int loopNum = Integer.MAX_VALUE;
+            int loopNum = 0;
             long allNsDocumentCount = fullSync.estimatedAllNsDocumentCount(workInfo.getDbTableWhite());
+
             while (true) {
                 try {
+                    lastPrintTime = System.currentTimeMillis();
                     TimeUnit.SECONDS.sleep(10);
                     loopNum++;
                     if (loopNum >= 60) {
@@ -348,7 +354,6 @@ public abstract class BaseFullWork {
                         allNsDocumentCount = fullSync.estimatedAllNsDocumentCount(workInfo.getDbTableWhite());
                         loopNum = 0;
                     }
-                    lastPrintTime = System.currentTimeMillis();
                     // 计算一共要同步数据量
                     log.info("{} this full task is expected to transfer {} bars of data", workInfo.getWorkName(), allNsDocumentCount);
                     log.info("{} current task queue cache status:{}", workInfo.getWorkName(), taskQueue.size());

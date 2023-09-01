@@ -24,12 +24,14 @@ import com.whaleal.ddt.common.cache.FullMetaData;
 import com.whaleal.ddt.common.write.BaseFullWriteTask;
 import com.whaleal.ddt.conection.reactive.MongoDBConnectionReactive;
 import com.whaleal.ddt.task.CommonTask;
+import com.whaleal.ddt.thread.pool.ThreadPoolManager;
 import io.reactivex.rxjava3.internal.schedulers.ExecutorScheduler;
 import lombok.extern.log4j.Log4j2;
 import org.bson.BsonDocument;
 import org.bson.Document;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.List;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -67,14 +69,21 @@ public class FullReactiveWriteTask extends BaseFullWriteTask {
         if (writeModelList.isEmpty()) {
             return 0;
         }
+
         // 没加上队列限制
         // 此处放入另一个另外一个线程池
         // 注意区分 多线程的异步情况
         MongoNamespace mongoNamespace = new MongoNamespace(ns);
         MongoCollection<BsonDocument> collection = mongoClient.getDatabase(mongoNamespace.getDatabaseName()).getCollection(mongoNamespace.getCollectionName(),BsonDocument.class);
+
         Publisher<BulkWriteResult> publisher = collection.bulkWrite(writeModelList, BULK_WRITE_OPTIONS);
+
         BulkWriteSubscriber subscriber = new BulkWriteSubscriber(FullMetaData.getFullMetaData(workName), writeModelList, ns, workName);
         publisher.subscribe(subscriber);
+
+        Flux.from(publisher).
+                subscribeOn(Schedulers.fromExecutor(ThreadPoolManager.getPool(workName + "_writeOfBulkThreadPoolName").getExecutorService()));
+
         return 0;
     }
 

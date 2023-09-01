@@ -48,7 +48,7 @@ public class FullReactive extends BaseFullWork {
 
     @Override
     public void submitTargetTask(int writeThreadNum) {
-        for (int i = 0; i < writeThreadNum; i++) {
+        for (int i = 0; i < writeThreadNum/2; i++) {
             createTask(writeThreadPoolName, new FullReactiveWriteTask(workName, targetDsName));
         }
     }

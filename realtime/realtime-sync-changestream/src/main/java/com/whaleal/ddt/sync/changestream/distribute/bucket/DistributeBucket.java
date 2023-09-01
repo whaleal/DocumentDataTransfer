@@ -239,7 +239,7 @@ public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<
             update.append("$set", set);
         }
         if (unset.size() > 0) {
-            update.append("$unset", set);
+            update.append("$unset", unset);
         }
         // 一定会出现$set||$unset
         bucketWriteModelListMap.get(bucketNum).add(new UpdateOneModel<Document>(changeStreamEvent.getDocumentKey(), update));

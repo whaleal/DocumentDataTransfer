@@ -10,7 +10,6 @@ import com.whaleal.ddt.util.WriteModelUtil;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.bson.BsonDocument;
-import org.bson.Document;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
@@ -46,12 +45,14 @@ public class BulkWriteSubscriber implements Subscriber<BulkWriteResult> {
 
     @Override
     public void onNext(BulkWriteResult bulkWriteResult) {
+        System.out.println(Thread.currentThread().getName());
         int insertedCount = bulkWriteResult.getInsertedCount();
         fullMetaData.getWriteDocCount().add(insertedCount);
     }
 
     @Override
     public void onError(Throwable throwable) {
+
         if (this.writeModelList.isEmpty()) {
             return;
         }

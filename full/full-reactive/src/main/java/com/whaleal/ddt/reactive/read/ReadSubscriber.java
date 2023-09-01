@@ -1,4 +1,4 @@
-//package com.whaleal.ddt.sync.task.read;
+//package com.whaleal.ddt.reactive.read;
 //
 //import com.mongodb.client.model.InsertOneModel;
 //import com.mongodb.client.model.WriteModel;
@@ -29,7 +29,7 @@
 //    private
 //
 //    @Override
-//    public void onSubscribe(Subscription subscription) {
+//    p void onSubscribe(Subscription subscription) {
 //        this.subscription = subscription;
 //        subscription.request(batchSize);
 //    }
