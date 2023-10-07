@@ -1,6 +1,6 @@
-# Contributing to [Your Project Name]
+# Contributing to [DDT]
 
-Welcome to the [Your Project Name] repository! We appreciate your interest in contributing to our project. Before you start contributing, please take a moment to read this guide to understand how you can contribute effectively.
+Welcome to the [DDT] repository! We appreciate your interest in contributing to our project. Before you start contributing, please take a moment to read this guide to understand how you can contribute effectively.
 
 ## Table of Contents
 
