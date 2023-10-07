@@ -32,7 +32,7 @@ There are several ways you can contribute to this project:
 
 If you find a bug or issue, please follow these steps:
 
-1. Check the [existing issues](https://github.com/yourusername/yourproject/issues) to see if the bug has already been reported.
+1. Check the [existing issues](https://github.com/whaleal/DocumentDataTransfer/issues) to see if the bug has already been reported.
 
 2. If not, create a new issue and provide a clear and detailed description of the bug, including steps to reproduce it.
 
@@ -44,7 +44,7 @@ If you find a bug or issue, please follow these steps:
 
 If you have an idea for an enhancement or a new feature, please follow these steps:
 
-1. Check the [existing issues](https://github.com/yourusername/yourproject/issues) to see if the enhancement has already been suggested.
+1. Check the [existing issues](https://github.com/whaleal/DocumentDataTransfer/issues) to see if the enhancement has already been suggested.
 
 2. If not, create a new issue and provide a clear description of the enhancement you propose, including the problem it solves and how it should work.
 
@@ -62,7 +62,7 @@ If you plan to contribute code, please ensure you follow these guidelines:
 
 4. Test your changes thoroughly.
 
-5. Create a [pull request](https://github.com/yourusername/yourproject/pulls) with a clear description of your changes and reference any related issues.
+5. Create a [pull request](https://github.com/whaleal/DocumentDataTransfer/pulls) with a clear description of your changes and reference any related issues.
 
 ## Commit Message Guidelines
 
@@ -74,8 +74,8 @@ Please follow these guidelines for commit messages:
 
 ## Getting Started
 
-To get started, [fork the repository](https://github.com/yourusername/yourproject) and clone your fork to your local machine. Then follow the instructions in the project's README for setup and development.
+To get started, [fork the repository](https://github.com/whaleal/DocumentDataTransfer) and clone your fork to your local machine. Then follow the instructions in the project's README for setup and development.
 
 ## License
 
-By contributing to this project, you agree to adhere to the project's [license](LICENSE.md). All contributions will be licensed under the same terms.
+By contributing to this project, you agree to adhere to the project's [license](LICENSE). All contributions will be licensed under the same terms.
