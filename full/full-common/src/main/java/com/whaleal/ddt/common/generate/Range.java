@@ -57,5 +57,9 @@ public class Range {
      * 查询范围条数
      */
     private int rangeSize;
+    /**
+     * 每条文档的平均大小
+     */
+    private long avgObjSize;
 
 }

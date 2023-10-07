@@ -63,6 +63,8 @@ public abstract class BaseFullWriteTask extends CommonTask {
                 // 从缓存中获取一批数据
                 BatchDataEntity<WriteModel<BsonDocument>> batchDataEntity = fullMetaData.getData();
                 if (batchDataEntity != null) {
+                    // todo test
+                   // batchDataEntity.setNs(batchDataEntity.getNs()+"_ByDDT");
                     // 当前任务拉取的dbTableName
                     int successWriteNum = bulkExecute(batchDataEntity.getNs(), batchDataEntity.getDataList());
                     // 更新写入条数

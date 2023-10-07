@@ -15,7 +15,21 @@
  */
 package com.whaleal.ddt.reactive.write;
 
-
+/*
+ * Document Data Transfer - An open-source project licensed under GPL+SSPL
+ *
+ * Copyright (C) [2023 - present ] [Whaleal]
+ *
+ * This program is free software; you can redistribute it and/or modify it under the terms
+ * of the GNU General Public License and Server Side Public License (SSPL) as published by
+ * the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License and SSPL for more details.
+ *
+ * For more information, visit the official website: [www.whaleal.com]
+ */
 import com.mongodb.MongoNamespace;
 import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.model.WriteModel;
@@ -73,7 +87,9 @@ public class FullReactiveWriteTask extends BaseFullWriteTask {
         // 没加上队列限制
         // 此处放入另一个另外一个线程池
         // 注意区分 多线程的异步情况
+
         MongoNamespace mongoNamespace = new MongoNamespace(ns);
+
         MongoCollection<BsonDocument> collection = mongoClient.getDatabase(mongoNamespace.getDatabaseName()).getCollection(mongoNamespace.getCollectionName(),BsonDocument.class);
 
         Publisher<BulkWriteResult> publisher = collection.bulkWrite(writeModelList, BULK_WRITE_OPTIONS);
@@ -81,8 +97,11 @@ public class FullReactiveWriteTask extends BaseFullWriteTask {
         BulkWriteSubscriber subscriber = new BulkWriteSubscriber(FullMetaData.getFullMetaData(workName), writeModelList, ns, workName);
         publisher.subscribe(subscriber);
 
-        Flux.from(publisher).
-                subscribeOn(Schedulers.fromExecutor(ThreadPoolManager.getPool(workName + "_writeOfBulkThreadPoolName").getExecutorService()));
+
+        Flux.from(publisher).subscribeOn(
+                Schedulers.fromExecutor(ThreadPoolManager.getPool(workName + "_writeOfBulkThreadPoolName").getExecutorService())
+        );
+
 
         return 0;
     }

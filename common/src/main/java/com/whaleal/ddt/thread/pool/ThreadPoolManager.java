@@ -58,7 +58,7 @@ public final class ThreadPoolManager extends AbstractThreadPoolManager {
      */
     public static int updateActiveThreadNum(String threadPoolName, int num, boolean isPrint) {
         if (!THREAD_POOL_MANAGER.containsKey(threadPoolName)) {
-            log.warn("threadPoolName:{},更新线程数失败:线程池不存在", threadPoolName);
+            log.warn("threadPoolName:{},failed to update thread count: thread pool does not exist", threadPoolName);
             return -1;
         }
         if (isPrint) {

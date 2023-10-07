@@ -52,6 +52,7 @@ public class SpliceNsData {
      */
     private int mbSize = 32;
 
+
     /**
      * 构造函数，初始化数据源名称和任务读取大小
      *
@@ -234,12 +235,14 @@ public class SpliceNsData {
         Document collStats = mongoClient.getDatabase(mongoNamespace.getDatabaseName()).runCommand(new Document("collStats", mongoNamespace.getCollectionName()));
         collStats.remove("wiredTiger");
         log.info("{} ns collection status information:{}", dsName, collStats.toJson());
+
         // 可以任务没有数据
         if (!collStats.containsKey("avgObjSize")) {
             return 10240;
         }
         // 每条数据的byte数
         long avgObjSize = Long.parseLong(collStats.get("avgObjSize").toString());
+
         try {
             // 最大一批数据 一百万一批数据
             int batchSize = Math.round(mbSize * 1024L * 1024L / (avgObjSize + 0.0F));
@@ -258,6 +261,26 @@ public class SpliceNsData {
     }
 
     /**
+     * 获取库表每条数据的avg大小
+     *
+     * @param ns 库表名
+     * @return int
+     */
+    public long getAvgObjSize(String ns) {
+        MongoNamespace mongoNamespace = new MongoNamespace(ns);
+        // 查询改表的collStats
+        Document collStats = mongoClient.getDatabase(mongoNamespace.getDatabaseName()).runCommand(new Document("collStats", mongoNamespace.getCollectionName()));
+        collStats.remove("wiredTiger");
+        // 压缩前的大小
+        if (!collStats.containsKey("avgObjSize")) {
+            return 1024;
+        }
+        // 每条数据的byte数
+        long avgObjSize = Long.parseLong(collStats.get("avgObjSize").toString());
+        return avgObjSize;
+    }
+
+    /**
      * 获取库表的范围列表
      *
      * @param ns 库表名
@@ -269,6 +292,7 @@ public class SpliceNsData {
         MongoNamespace mongoNamespace = new MongoNamespace(ns);
         long count = mongoClient.getDatabase(mongoNamespace.getDatabaseName()).getCollection(mongoNamespace.getCollectionName()).estimatedDocumentCount();
         int batchSize = computeBatchSize(ns);
+        final long avgObjSize = getAvgObjSize(ns);
         log.info("{} estimated amount of data in ns :{}, each batch of data is expected to {}", dsName, count, batchSize);
         if (count > 0) {
             Map<Integer, Range> map = getIdTypes(ns);
@@ -276,6 +300,8 @@ public class SpliceNsData {
                 Range rangeOfTable = next.getValue();
                 while (rangeOfTable.getMinValue() != null) {
                     Range range = splitRange(ns, rangeOfTable, next.getKey(), batchSize);
+                    // 设置文档大小
+                    range.setAvgObjSize(avgObjSize);
                     rangeList.add(range);
                 }
             }

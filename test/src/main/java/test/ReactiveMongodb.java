@@ -71,16 +71,31 @@ public class ReactiveMongodb {
             }
 
             for (String collectionName : MongoDBConnectionSync.getMongoClient(sourceName).getDatabase(databaseName).listCollectionNames()) {
-                if (databaseName.equals("source")) {
+//                if (databaseName.equals("source"))
+                {
                     MongoDBConnectionSync.getMongoClient(targetName).getDatabase(databaseName).getCollection(collectionName, BsonDocument.class).drop();
-                    readAndPublishFromCollection(MongoDBConnectionReactive.getMongoClient(sourceName).getDatabase(databaseName).getCollection(collectionName, BsonDocument.class));
+                    readAndPublishFromCollection(
+                            MongoDBConnectionReactive.getMongoClient(sourceName).getDatabase(databaseName).getCollection(collectionName, BsonDocument.class)
+
+                    );
                 }
             }
         }
 
         // Add more collections as needed
-
         consumeFromBuffer();
+//        consumeFromBuffer();
+//        consumeFromBuffer();
+//        consumeFromBuffer();
+//        consumeFromBuffer();
+//        consumeFromBuffer();
+//        consumeFromBuffer();
+//        consumeFromBuffer();
+//        consumeFromBuffer();
+//        consumeFromBuffer();
+//        consumeFromBuffer();
+//        consumeFromBuffer();
+//        consumeFromBuffer();
         long old = longAdder.sum();
         while (true) {
             try {
@@ -94,14 +109,21 @@ public class ReactiveMongodb {
         }
     }
 
+    private static Flux<BsonDocument> source(FindPublisher<BsonDocument> documentFindPublisher) {
+        return Flux.defer(() -> {
+            // 在这里指定线程池名称，并在该线程池中执行订阅的代码块
+            return Flux.merge(documentFindPublisher)
+                    .subscribeOn(Schedulers.fromExecutor(ThreadPoolManager.getPool("test_source").getExecutorService()));
+        });
+    }
+
     private static void readAndPublishFromCollection(MongoCollection<BsonDocument> collection) {
 
         FindPublisher<BsonDocument> documentFindPublisher = collection.find();
+        final Flux<BsonDocument> source = source(documentFindPublisher);
+        source.mergeWith(documentFindPublisher);
 
-        Flux<BsonDocument> documentFlux = Flux.from(documentFindPublisher)
-                .subscribeOn(Schedulers.newParallel("reader-" + collection.getNamespace().getFullName(), 1));
-
-        documentFlux.subscribe(new Subscriber<BsonDocument>() {
+        Subscriber<BsonDocument> test = new Subscriber<BsonDocument>() {
 
             List<WriteModel<BsonDocument>> dataList = new ArrayList<>();
 
@@ -122,7 +144,6 @@ public class ReactiveMongodb {
                     pushData();
                     subscription.request(128);
                 }
-                subscription.request(128);
             }
 
             @Override
@@ -136,27 +157,26 @@ public class ReactiveMongodb {
             }
 
             public void pushData() {
-
+                //System.out.println(Thread.currentThread().getName());
                 BatchDataEntity<WriteModel<BsonDocument>> dataEntity = new BatchDataEntity<>();
                 dataEntity.setDataList(this.dataList);
                 dataEntity.setNs(collection.getNamespace().getFullName());
                 FullMetaData.getFullMetaData("test").putData(dataEntity);
                 this.dataList = new ArrayList<>();
             }
-        });
+        };
+        source.subscribe(test);
     }
 
-
     private static void consumeFromBuffer() {
-//        Flux<BatchDataEntity<WriteModel<BsonDocument>>> dataFlux = Flux.create(sink -> {
-//            while (true) {
-//                BatchDataEntity<WriteModel<BsonDocument>> data = FullMetaData.getFullMetaData("test").getData();
-//                if (data != null) {
-//                    sink.next(data);
-//                }
-//            }
-//        });
-
+        Flux<BatchDataEntity<WriteModel<BsonDocument>>> dataFlux = Flux.create(sink -> {
+            while (true) {
+                BatchDataEntity<WriteModel<BsonDocument>> data = FullMetaData.getFullMetaData("test").getData();
+                if (data != null) {
+                    sink.next(data);
+                }
+            }
+        });
 
         Consumer<BatchDataEntity<WriteModel<BsonDocument>>> target_test = batchDataEntity -> {
             if (batchDataEntity == null) {
@@ -164,8 +184,10 @@ public class ReactiveMongodb {
             } else {
                 MongoNamespace mongoNamespace = new MongoNamespace(batchDataEntity.getNs());
                 List<WriteModel<BsonDocument>> dataList = batchDataEntity.getDataList();
-                MongoCollection<BsonDocument> collection = MongoDBConnectionReactive.getMongoClient("target_test").
-                        getDatabase(mongoNamespace.getDatabaseName()).getCollection(mongoNamespace.getCollectionName(), BsonDocument.class);
+                MongoCollection<BsonDocument> collection = MongoDBConnectionReactive.getMongoClient("target_test")
+                        .getDatabase(mongoNamespace.getDatabaseName())
+                        .getCollection(mongoNamespace.getCollectionName(), BsonDocument.class);
+
                 collection.bulkWrite(dataList).subscribe(new Subscriber<BulkWriteResult>() {
                     @Override
                     public void onSubscribe(Subscription s) {
@@ -174,32 +196,31 @@ public class ReactiveMongodb {
 
                     @Override
                     public void onNext(BulkWriteResult bulkWriteResult) {
+                        System.out.println(Thread.currentThread().getName());
                         int insertedCount = bulkWriteResult.getInsertedCount();
                         longAdder.add(insertedCount);
                     }
 
                     @Override
                     public void onError(Throwable t) {
-
+                        // Handle error
+                        t.printStackTrace();
                     }
 
                     @Override
                     public void onComplete() {
-
+                        // Handle completion
                     }
                 });
             }
         };
-        Flux<BatchDataEntity<WriteModel<BsonDocument>>> dataFlux=Flux.empty();
-        final Flux<BatchDataEntity<WriteModel<BsonDocument>>> consumer = dataFlux.subscribeOn(Schedulers.newParallel("consumer", 50));
+
+        final Flux<BatchDataEntity<WriteModel<BsonDocument>>> consumer = dataFlux.subscribeOn(Schedulers.fromExecutor(ThreadPoolManager.getPool("test_target").getExecutorService()));
 
         consumer.subscribe(target_test);
         consumer.subscribe(target_test);
-
-        consumer.subscribe(target_test);
-        consumer.subscribe(target_test);
-
         consumer.subscribe(target_test);
         consumer.subscribe(target_test);
     }
+
 }

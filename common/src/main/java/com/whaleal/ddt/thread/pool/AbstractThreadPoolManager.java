@@ -60,6 +60,7 @@ public class AbstractThreadPoolManager {
 
             @Override
             public Thread newThread(Runnable r) {
+                System.out.println(threadFactoryName+"_"+threadId.get());
                 // 设置线程数+1
                 return new Thread(r, threadFactoryName + "_" + threadId.addAndGet(1));
             }

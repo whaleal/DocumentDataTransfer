@@ -138,10 +138,13 @@ public abstract class BaseRealTimeWriteData<T> extends CommonTask {
         int parseSize = 0;
         while (true) {
             BatchDataEntity batchDataEntity = documentQueue.poll();
+
             // batchDataEntity为null或已经写入了20批数据，则退出
             if (batchDataEntity == null) {
                 break;
             }
+            // todo test
+            // batchDataEntity.setNs(batchDataEntity.getNs()+"_ByDDT");
             bulkExecute(batchDataEntity);
             // 有数据就一直写入
             // 一直有数据 就一直追加 此时大表中大幅度占有的时候 会阻塞其他线程的处理

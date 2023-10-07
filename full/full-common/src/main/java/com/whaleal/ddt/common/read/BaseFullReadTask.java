@@ -1,4 +1,4 @@
-package com.whaleal.ddt.common.read;/*
+/*
  * Document Data Transfer - An open-source project licensed under GPL+SSPL
  *
  * Copyright (C) [2023 - present ] [Whaleal]
@@ -13,6 +13,7 @@ package com.whaleal.ddt.common.read;/*
  *
  * For more information, visit the official website: [www.whaleal.com]
  */
+package com.whaleal.ddt.common.read;
 
 
 import com.mongodb.client.model.WriteModel;
@@ -23,10 +24,10 @@ import com.whaleal.ddt.status.WorkStatus;
 import com.whaleal.ddt.task.CommonTask;
 import lombok.extern.log4j.Log4j2;
 import org.bson.BsonDocument;
-import org.bson.Document;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.LongAdder;
 
 /**
  * 读取数据任务类
@@ -37,6 +38,7 @@ import java.util.List;
  */
 @Log4j2
 public abstract class BaseFullReadTask extends CommonTask {
+
 
     /**
      * 缓存数据集合
@@ -132,6 +134,13 @@ public abstract class BaseFullReadTask extends CommonTask {
     public void putDataToCache() {
         if (this.cacheTemp == 0) {
             return;
+        }
+        {
+            // 全局使用吧
+
+            // 判断是否符合限速情况
+            fullMetaData.getTotalReadSize().add(this.dataList.size()*this.taskMetadata.getRange().getAvgObjSize());
+
         }
         BatchDataEntity<WriteModel<BsonDocument>> batchDataEntity = new BatchDataEntity();
         batchDataEntity.setDataList(this.dataList);

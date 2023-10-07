@@ -21,7 +21,6 @@ import com.whaleal.ddt.cache.BatchDataEntity;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.bson.BsonDocument;
-import org.bson.Document;
 
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -80,6 +79,10 @@ public class FullMetaData {
      */
     private final LongAdder writeIdlingCount = new LongAdder();
 
+    /**
+     * 单位字节
+     */
+    private final LongAdder totalReadSize = new LongAdder();
 
     /**
      * 存储每个工作名称对应的内存缓存的映射。
