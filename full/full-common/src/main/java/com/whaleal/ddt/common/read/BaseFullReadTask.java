@@ -131,16 +131,16 @@ public abstract class BaseFullReadTask extends CommonTask {
      *
      * @desc 推送数据到缓存区中
      */
+
     public void putDataToCache() {
         if (this.cacheTemp == 0) {
             return;
         }
         {
             // 全局使用吧
-
             // 判断是否符合限速情况
+            // 此处为读取的大小
             fullMetaData.getTotalReadSize().add(this.dataList.size()*this.taskMetadata.getRange().getAvgObjSize());
-
         }
         BatchDataEntity<WriteModel<BsonDocument>> batchDataEntity = new BatchDataEntity();
         batchDataEntity.setDataList(this.dataList);

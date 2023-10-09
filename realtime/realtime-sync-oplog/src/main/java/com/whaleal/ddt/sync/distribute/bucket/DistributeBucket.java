@@ -48,7 +48,7 @@ public abstract class DistributeBucket extends BaseDistributeBucket<Document> {
      * @param ddlWait      等待DDL的时间
      */
     protected DistributeBucket(String workName, String sourceDsName, String targetDsName, int maxBucketNum, Set<String> ddlSet, int ddlWait) {
-        super(workName, sourceDsName,targetDsName, maxBucketNum, ddlSet, ddlWait);
+        super(workName, sourceDsName, targetDsName, maxBucketNum, ddlSet, ddlWait);
     }
 
 
@@ -174,11 +174,18 @@ public abstract class DistributeBucket extends BaseDistributeBucket<Document> {
      * @desc 解析建立索引
      */
     private void createIndex(Document document) {
+
         String ns = document.get("ns").toString();
         String[] nsSplit = ns.split("\\.", 2);
         String dbName = nsSplit[0];
         Document o = (Document) document.get("o");
         String tableName = o.get("createIndexes").toString();
+
+        //    忽略建立ttl索引
+        if (o.containsKey("expireAfterSeconds") && document.toJson().contains("expireAfterSeconds")) {
+            log.warn("{} ns:{},skip build index:{}", workName, ns, document.toJson());
+            return;
+        }
 
         BasicDBObject index = new BasicDBObject();
         Document key = (Document) o.get("key");

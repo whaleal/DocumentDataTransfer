@@ -23,7 +23,6 @@ import com.mongodb.client.model.CreateCollectionOptions;
 import com.mongodb.client.model.CreateViewOptions;
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.UpdateOptions;
-
 import com.whaleal.ddt.conection.sync.MongoDBConnectionSync;
 import com.whaleal.ddt.util.ParserMongoStructureUtil;
 import lombok.Data;
@@ -148,6 +147,12 @@ public class ApplyMongoDBMetadata {
                     if (document == null) {
                         break;
                     }
+                    String ns = document.get("ns").toString();
+                    // 忽略建立ttl索引
+                    if (document.containsKey("expireAfterSeconds")) {
+                        log.warn("{} ns:{},skip build index:{}", dsName, ns, document.toJson());
+                        continue;
+                    }
                     String indexName = document.get("name").toString();
                     if ("_id_".equals(indexName)) {
                         continue;
@@ -158,10 +163,10 @@ public class ApplyMongoDBMetadata {
                         index.append(indexTemp.getKey(), indexTemp.getValue());
                     }
                     IndexOptions indexOptions = ParserMongoStructureUtil.parseIndexOptions(document);
-                    MongoNamespace mongoNamespace = new MongoNamespace(document.get("ns").toString());
+                    MongoNamespace mongoNamespace = new MongoNamespace(ns);
                     // 一定要设计true
                     indexOptions.background(true);
-                    log.warn("{} ns:{},creating index:{}", dsName, document.get("ns").toString(), document.toJson());
+                    log.warn("{} ns:{},creating index:{}", dsName, ns, document.toJson());
                     client.getDatabase(mongoNamespace.getDatabaseName()).getCollection(mongoNamespace.getCollectionName()).createIndex(index, indexOptions);
                 } catch (Exception e) {
                     log.error("{} failed to create index:{},msg:{}", dsName, document.toJson(), e.getMessage());
