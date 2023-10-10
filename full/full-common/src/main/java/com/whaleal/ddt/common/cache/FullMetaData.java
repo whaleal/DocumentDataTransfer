@@ -83,6 +83,13 @@ public class FullMetaData {
      * 单位字节
      */
     private final LongAdder totalReadSize = new LongAdder();
+    private final LongAdder totalWriteSize = new LongAdder();
+
+
+    /**
+     * 是否限制带宽的状态占位符
+     */
+    private volatile boolean isLimitBandwidth = false;
 
     /**
      * 存储每个工作名称对应的内存缓存的映射。
