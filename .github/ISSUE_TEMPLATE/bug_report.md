@@ -7,32 +7,39 @@ assignees: ''
 
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+Name	About	Labels	Assignees
+Request Feature	Suggest exciting and meaning features to Whealeal	feature	
+Please describe what you want in English, thanks!
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
+Already searched before asking?
+Please make sure to search in the feature first to see whether the same feature was requested already.
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
 
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
+I had searched in the [feature]() and found no similar feature requirement.
+*
+Usage Scenario
+*
+Please describe usage scenario of this feature.
 
-**Additional context**
-Add any other context about the problem here.
+Description
+*
+describe what you are trying to achieve and why, rather than telling how you might implement this feature if you are willing to submit pull request.
+Please describe feature as much detail as possible
+
+
+Are you willing to submit a PR?
+Whaleal appreciates community-driven contribution and we love to bring new contributors in.
+
+
+Yes, I am willing to submit a PR!
+
+Code of Conduct
+The Code of Conduct helps create a safe space for everyone. We require that everyone agrees to it.
+
+
+I agree to follow this project's [Code of Conduct](https://www.contributor-covenant.org/version/2/1/code_of_conduct/)
+*
+Thanks for completing our form, and we will reply you as soon as possible.
+
