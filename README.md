@@ -1,2 +1,2 @@
 
-请访问：https://docs.whaleal.com/guide/documentDataTransfer/
+请访问：https://www.whaleal.com/
