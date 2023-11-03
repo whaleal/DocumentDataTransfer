@@ -27,7 +27,7 @@ import org.bson.BsonDocument;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.LongAdder;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 读取数据任务类
@@ -136,22 +136,35 @@ public abstract class BaseFullReadTask extends CommonTask {
         if (this.cacheTemp == 0) {
             return;
         }
-        {
-            // 全局使用吧
-            // 判断是否符合限速情况
-            // 此处为读取的大小
-            fullMetaData.getTotalReadSize().add(this.dataList.size()*this.taskMetadata.getRange().getAvgObjSize());
-        }
+        // 全局使用吧
+        // 判断是否符合限速情况
+        // 此处为读取的大小
+        final long totalSize = this.dataList.size() * this.taskMetadata.getRange().getAvgObjSize();
+        fullMetaData.getTotalReadSize().add(totalSize);
+        // 再判断当前是否限速 是否要往缓存区插入数据
+        judgeLimit();
         BatchDataEntity<WriteModel<BsonDocument>> batchDataEntity = new BatchDataEntity();
         batchDataEntity.setDataList(this.dataList);
         batchDataEntity.setNs(this.taskMetadata.getNs());
         batchDataEntity.setSourceDsName(this.taskMetadata.getSourceDsName());
         batchDataEntity.setBatchNo(System.currentTimeMillis());
+        batchDataEntity.setBatchNo(System.currentTimeMillis());
+        batchDataEntity.setTotalSize(totalSize);
         // 推送数据到缓存区中
         this.fullMetaData.putData(batchDataEntity);
         // 设置读取条数
         this.fullMetaData.getReadDocCount().add(this.dataList.size());
         this.dataList = new ArrayList<>();
         this.cacheTemp = 0;
+    }
+
+    public void judgeLimit() {
+        while (fullMetaData.isLimitBandwidth()) {
+            try {
+                TimeUnit.MILLISECONDS.sleep(100 * (Math.round(Math.random() * 10) + 1));
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

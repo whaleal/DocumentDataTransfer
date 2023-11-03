@@ -16,9 +16,9 @@
 package com.whaleal.ddt.realtime.common.parse.ns;
 
 import com.mongodb.client.MongoClient;
+import com.whaleal.ddt.conection.sync.MongoDBConnectionSync;
 import com.whaleal.ddt.realtime.common.cache.RealTimeMetaData;
 import com.whaleal.ddt.status.WorkStatus;
-import com.whaleal.ddt.conection.sync.MongoDBConnectionSync;
 import com.whaleal.ddt.task.CommonTask;
 import lombok.extern.log4j.Log4j2;
 
@@ -67,6 +67,7 @@ public abstract class BaseParseNs<T> extends CommonTask {
      * 要同步的DDL列表
      */
     protected final Set<String> ddlSet;
+
     /**
      * 构造函数，初始化基本参数和MongoClient
      *
@@ -75,16 +76,15 @@ public abstract class BaseParseNs<T> extends CommonTask {
      * @param dsName           数据源名称
      * @param maxQueueSizeOfNs 每个ns队列的最大缓存数量
      */
-    protected BaseParseNs(String workName, String dbTableWhite, String dsName, int maxQueueSizeOfNs,Set<String> ddlSet) {
+    protected BaseParseNs(String workName, String dbTableWhite, String dsName, int maxQueueSizeOfNs, Set<String> ddlSet) {
         super(workName, dsName);
         this.dbTableWhite = dbTableWhite;
         this.workName = workName;
         this.metadata = RealTimeMetaData.getRealTimeMetaData(workName);
         this.mongoClient = MongoDBConnectionSync.getMongoClient(dsName);
         this.maxQueueSizeOfNs = maxQueueSizeOfNs;
-        this.ddlSet=ddlSet;
+        this.ddlSet = ddlSet;
     }
-
 
 
     /**

@@ -97,6 +97,8 @@ public class WorkInfo implements Cloneable, Serializable {
      */
     private int ddlWait = 1200;
 
+    private int maxBandwidth = 10;
+
     /**
      * 每个缓存区缓存批次数量
      */

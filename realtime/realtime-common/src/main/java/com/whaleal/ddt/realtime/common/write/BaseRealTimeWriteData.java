@@ -163,6 +163,7 @@ public abstract class BaseRealTimeWriteData<T> extends CommonTask {
     public void bulkExecute(BatchDataEntity batchDataEntity) {
         String dbTableName = batchDataEntity.getNs();
         List<WriteModel<Document>> list = batchDataEntity.getDataList();
+
         try {
             if (list.isEmpty()) {
                 return;

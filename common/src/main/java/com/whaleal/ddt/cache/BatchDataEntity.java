@@ -22,7 +22,6 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.extern.log4j.Log4j2;
 
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -74,4 +73,9 @@ public class BatchDataEntity<T> implements Serializable {
         this.targetDsName = targetDsName;
         this.dataList = new ArrayList(initialCapacity);
     }
+
+    /**
+     * 数据总大小
+     */
+    public long totalSize = 0L;
 }

@@ -134,6 +134,14 @@ public class WorkInfoGenerator {
             workInfo.setDdlWait(Integer.parseInt(ddlWait));
         }
 
+
+        String maxBandwidth = Property.getPropertiesByKey("maxBandwidth");
+        if (CharSequenceUtil.isBlank(maxBandwidth) || !maxBandwidth.matches("\\d+")) {
+            workInfo.setMaxBandwidth(10);
+        } else {
+            workInfo.setMaxBandwidth(Integer.parseInt(maxBandwidth));
+        }
+
         String mode = workInfo.getSyncMode();
         // Configure thread numbers based on sync mode
         if (mode.equalsIgnoreCase(WorkInfo.SYNC_MODE_REAL_TIME) ||

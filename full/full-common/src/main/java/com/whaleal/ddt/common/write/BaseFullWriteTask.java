@@ -23,7 +23,6 @@ import com.whaleal.ddt.status.WorkStatus;
 import com.whaleal.ddt.task.CommonTask;
 import lombok.extern.log4j.Log4j2;
 import org.bson.BsonDocument;
-import org.bson.Document;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -32,12 +31,14 @@ import java.util.concurrent.TimeUnit;
  * 写入数据任务类
  * 继承自通用任务类{@link CommonTask}
  * 用于将缓存中的批量数据写入到MongoDB数据库中
+ *
  * @author liheping
  */
 @Log4j2
 public abstract class BaseFullWriteTask extends CommonTask {
 
     protected static final BulkWriteOptions BULK_WRITE_OPTIONS = new BulkWriteOptions().ordered(true);
+
     /**
      * 构造函数
      *
@@ -60,15 +61,21 @@ public abstract class BaseFullWriteTask extends CommonTask {
         // 循环执行数据写入任务
         while (true) {
             try {
+                if (fullMetaData.isLimitBandwidth()) {
+                    // 此时写入线程也进行短暂的睡眠
+                    TimeUnit.MILLISECONDS.sleep(100 * (Math.round(Math.random() * 10) + 1));
+                }
                 // 从缓存中获取一批数据
                 BatchDataEntity<WriteModel<BsonDocument>> batchDataEntity = fullMetaData.getData();
                 if (batchDataEntity != null) {
                     // todo test
-                   // batchDataEntity.setNs(batchDataEntity.getNs()+"_ByDDT");
+                    // batchDataEntity.setNs(batchDataEntity.getNs()+"_ByDDT");
                     // 当前任务拉取的dbTableName
                     int successWriteNum = bulkExecute(batchDataEntity.getNs(), batchDataEntity.getDataList());
                     // 更新写入条数
                     fullMetaData.getWriteDocCount().add(successWriteNum);
+                    // 设置写入数据大小情况
+                    fullMetaData.getTotalWriteSize().add(batchDataEntity.getTotalSize());
                 } else {
                     // 缓存中没有数据，则可以进行睡眠一段时间，等待数据生成
                     TimeUnit.SECONDS.sleep(1);
@@ -83,8 +90,8 @@ public abstract class BaseFullWriteTask extends CommonTask {
                 log.error("{} an error occurred while writing data. Error message:{}", workName, e.getMessage());
             }
         }
-    }
 
+    }
 
 
     /**
