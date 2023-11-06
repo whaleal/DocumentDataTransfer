@@ -16,6 +16,7 @@
         <module>execute</module>
         <module>test</module>
         <module>monitor-controller</module>
+        <module>backup</module>
 
 
     </modules>
