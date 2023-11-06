@@ -125,6 +125,10 @@ public class WorkInfo implements Cloneable, Serializable {
      * 延迟时间 单位秒
      */
     private int delayTime;
+
+    private String oplogNS;
+
+
     /**
      * 程序启动时间
      */
@@ -135,9 +139,11 @@ public class WorkInfo implements Cloneable, Serializable {
      */
     private Set<String> clusterInfoSet = new HashSet<>();
 
+
     public void setClusterInfoSet(Set<String> clusterInfoSet) {
         this.clusterInfoSet.addAll(clusterInfoSet);
     }
+
 
     @Override
     public String toString() {

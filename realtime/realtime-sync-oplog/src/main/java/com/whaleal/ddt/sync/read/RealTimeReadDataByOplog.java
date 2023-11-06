@@ -16,7 +16,7 @@
 package com.whaleal.ddt.sync.read;
 
 import com.mongodb.BasicDBObject;
-import com.mongodb.CursorType;
+import com.mongodb.MongoNamespace;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.whaleal.ddt.realtime.common.read.BaseRealTimeReadData;
@@ -49,9 +49,14 @@ public class RealTimeReadDataByOplog extends BaseRealTimeReadData<Document> {
         PROJECT_FIELD.put("fromMigrate", 1);
     }
 
+    private MongoNamespace oplogNS;
 
-    public RealTimeReadDataByOplog(String workName, String dsName, boolean captureDDL, String dbTableWhite, int startTimeOfOplog, int endTimeOfOplog, int delayTime,int readBatchSize) {
-        super(workName, dsName, captureDDL, dbTableWhite, startTimeOfOplog, endTimeOfOplog, delayTime,readBatchSize);
+
+    public RealTimeReadDataByOplog(String workName, String dsName, boolean captureDDL, String dbTableWhite,
+                                   int startTimeOfOplog, int endTimeOfOplog, int delayTime, int readBatchSize,
+                                   String oplogNS) {
+        super(workName, dsName, captureDDL, dbTableWhite, startTimeOfOplog, endTimeOfOplog, delayTime, readBatchSize);
+        this.oplogNS = new MongoNamespace(oplogNS);
     }
 
 
@@ -88,8 +93,8 @@ public class RealTimeReadDataByOplog extends BaseRealTimeReadData<Document> {
     private BsonTimestamp getStartTimeOfOplog() {
         for (int i = 0; i < 3; i++) {
             try {
-                MongoCollection topicCollection = mongoClient.getDatabase("local").getCollection("oplog.rs");
-                Document document = (Document) topicCollection.find().sort(new Document("$natural", 1)).first();
+                MongoCollection topicCollection = mongoClient.getDatabase(oplogNS.getDatabaseName()).getCollection(oplogNS.getCollectionName());
+                Document document = (Document) topicCollection.find().sort(new Document("ts", 1)).first();
                 BsonTimestamp bsonTimestamp = (BsonTimestamp) document.get("ts");
                 if (bsonTimestamp.getTime() > 0) {
                     return bsonTimestamp;
@@ -144,11 +149,14 @@ public class RealTimeReadDataByOplog extends BaseRealTimeReadData<Document> {
         log.info("{} start reading oplog data", workName);
         int readNum = 1024000;
         try {
-            MongoCollection oplogCollection = mongoClient.getDatabase("local").getCollection("oplog.rs");
+
+            MongoCollection oplogCollection = mongoClient.getDatabase(oplogNS.getDatabaseName()).getCollection(oplogNS.getCollectionName());
+
             MongoCursor<Document> cursor =
                     oplogCollection.find(generateCondition(docTime)).projection(PROJECT_FIELD).
-                            sort(new Document("$natural", 1)).
-                            cursorType(CursorType.TailableAwait).noCursorTimeout(true).batchSize(readBatchSize).iterator();
+                            sort(new Document("ts", 1)).
+                            noCursorTimeout(true).batchSize(readBatchSize).iterator();
+
             while (cursor.hasNext()) {
                 Document document = cursor.next();
                 String ns = document.get("ns").toString();
@@ -168,7 +176,7 @@ public class RealTimeReadDataByOplog extends BaseRealTimeReadData<Document> {
                     if (endTimeOfOplog != 0) {
                         // endTimeOfOplog- startTimeOfOplog 的总时间
                         // endTimeOfOplog -lastOplogTs 的总时间
-                        int percentage = (Math.round(100* ((0.0F + lastOplogTs.getTime() - startTimeOfOplog) / ((0.0F + endTimeOfOplog - startTimeOfOplog)))) );
+                        int percentage = (Math.round(100 * ((0.0F + lastOplogTs.getTime() - startTimeOfOplog) / ((0.0F + endTimeOfOplog - startTimeOfOplog)))));
                         if (percentage < 0) {
                             percentage = 0;
                         }

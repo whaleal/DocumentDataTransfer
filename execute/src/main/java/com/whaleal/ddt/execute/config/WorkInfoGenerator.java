@@ -142,6 +142,16 @@ public class WorkInfoGenerator {
             workInfo.setMaxBandwidth(Integer.parseInt(maxBandwidth));
         }
 
+
+        // 设置oplog的信息
+        String oplogNS = Property.getPropertiesByKey("oplogNS");
+        if (CharSequenceUtil.isBlank(oplogNS)) {
+            workInfo.setOplogNS("local.oplog.rs");
+        } else {
+            workInfo.setOplogNS(oplogNS);
+        }
+
+
         String mode = workInfo.getSyncMode();
         // Configure thread numbers based on sync mode
         if (mode.equalsIgnoreCase(WorkInfo.SYNC_MODE_REAL_TIME) ||

@@ -15,9 +15,9 @@
  */
 package com.whaleal.ddt.execute.realtime;
 
+import com.whaleal.ddt.conection.sync.MongoDBConnectionSync;
 import com.whaleal.ddt.execute.config.WorkInfo;
 import com.whaleal.ddt.execute.realtime.common.BaseRealTimeWork;
-import com.whaleal.ddt.conection.sync.MongoDBConnectionSync;
 import com.whaleal.ddt.sync.distribute.bucket.DistributeBucket;
 import com.whaleal.ddt.sync.distribute.bucket.DistributeBucketForGteMongoDB5;
 import com.whaleal.ddt.sync.distribute.bucket.DistributeBucketForLtMongoDB5;
@@ -65,12 +65,15 @@ public class BaseRealTimeOplog extends BaseRealTimeWork {
         }
         // 解析ns线程
         ParseNs parseNs = new ParseNs(workName, workInfo.getDbTableWhite(),
-                targetDsName, workInfo.getBatchSize() * workInfo.getBucketSize(),workInfo.getDdlFilterSet());
+                targetDsName, workInfo.getBatchSize() * workInfo.getBucketSize(), workInfo.getDdlFilterSet());
 
         createTask(parseNSThreadPoolName, parseNs);
+
         // 读取线程
         RealTimeReadDataByOplog realTimeReadDataByOplog = new RealTimeReadDataByOplog(workName, sourceDsName, workInfo.getDdlFilterSet().size() > 0, workInfo.getDbTableWhite(),
-                workInfo.getStartOplogTime(), workInfo.getEndOplogTime(), workInfo.getDelayTime(),workInfo.getBucketNum() * workInfo.getBucketSize() * workInfo.getBucketSize());
+                workInfo.getStartOplogTime(), workInfo.getEndOplogTime(), workInfo.getDelayTime(),
+                workInfo.getBucketNum() * workInfo.getBucketSize() * workInfo.getBucketSize()
+                , workInfo.getOplogNS());
         createTask(readEventThreadPoolName, realTimeReadDataByOplog);
     }
 
@@ -82,6 +85,7 @@ public class BaseRealTimeOplog extends BaseRealTimeWork {
      */
     private DistributeBucket generateOplogNsBucketTask(WorkInfo workInfo) {
         String version = MongoDBConnectionSync.getVersion(sourceDsName);
+        version="5.";
         // 高版本 要对update的oplog特殊处理
         if (version.startsWith("5") || version.startsWith("6") || version.startsWith("7") || version.startsWith("8")) {
             return new DistributeBucketForGteMongoDB5(workName, sourceDsName, targetDsName, workInfo.getBucketNum(), workInfo.getDdlFilterSet(), workInfo.getDdlWait());
