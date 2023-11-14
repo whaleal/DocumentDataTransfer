@@ -14,11 +14,11 @@ import java.util.concurrent.TimeUnit;
 public class WriteData {
     public static void main(String[] args) {
         log.info(args[0]);
-//        try {
-//            TimeUnit.SECONDS.sleep(10);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
+        try {
+            TimeUnit.SECONDS.sleep(10);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         MongoClient mongoClient = MongoClients.create(args[0]);
         MongoDatabase database = mongoClient.getDatabase("test");
         MongoCollection<Document> collection = database.getCollection("test");
@@ -29,13 +29,13 @@ public class WriteData {
                 if (loopy >= 10) {
                     loopy = 0;
                     TimeUnit.SECONDS.sleep(1);
-                    log.info("-----------------------------");
-                    log.info("开始打印集群信息");
-                    log.info("repl name" + mongoClient.getClusterDescription().getClusterSettings().getRequiredReplicaSetName());
+                    log.warn("-----------------------------");
+                    log.warn("开始打印集群信息");
+                    log.warn("repl name" + mongoClient.getClusterDescription().getClusterSettings().getRequiredReplicaSetName());
                     List<ServerDescription> serverDescriptions = mongoClient.getClusterDescription().getServerDescriptions();
                     ServerDescription serverDescription1 = serverDescriptions.get(0);
-                    log.info("hosts" + serverDescription1.getHosts());
-                    log.info("-----------------------------");
+                    log.warn("hosts" + serverDescription1.getHosts());
+                    log.warn("-----------------------------");
                 }
 
                 Document complexDocument = new Document("name", "John Doe")
@@ -61,7 +61,7 @@ public class WriteData {
                         .append("email", "john.doe@example.com");
                 // 插入数据
                 collection.insertOne(document);
-                System.out.println("Inserted document");
+                log.info("Inserted document");
                 // 查询数据
                 FindIterable<Document> documents = collection.find(new Document("name", "John Doe"));
                 for (Document doc : documents) {
@@ -69,10 +69,10 @@ public class WriteData {
                 }
                 // 更新数据
                 collection.updateOne(Filters.eq("name", "John Doe"), new Document("$set", new Document("age", 31)));
-                System.out.println("Updated document");
+                log.info("Updated document");
                 // 删除数据
                 collection.deleteOne(Filters.eq("name", "John Doe"));
-                System.out.println("Deleted document");
+                log.info("Deleted document");
                 // 模拟慢查询
                 Document aggregateList = new Document("$group", new Document("_id", "$host")
                         .append("int1_avg", new Document("$avg", "$int1"))
@@ -88,10 +88,10 @@ public class WriteData {
                 );
                 List<Document> documentList = Arrays.asList(aggregateList);
                 AggregateIterable<Document> aggregate = collection.aggregate(documentList).allowDiskUse(true);
-//                for (Document document1 : aggregate) {
-//                    String int1Avg = document1.get("int1_avg", "").toString();
-//                    String int2Avg = document1.get("int1_avg", "").toString();
-//                }
+                for (Document document1 : aggregate) {
+                    String int1Avg = document1.get("int1_avg").toString();
+                    String int2Avg = document1.get("int1_avg").toString();
+                }
             } catch (Exception e) {
                 e.printStackTrace();
 
