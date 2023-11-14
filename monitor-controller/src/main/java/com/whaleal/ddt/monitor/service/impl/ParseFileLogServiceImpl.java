@@ -457,7 +457,7 @@ public class ParseFileLogServiceImpl implements ParseFileLogService {
             int startIndex = message.indexOf("execution");
             if (startIndex != -1) {
                 String extracted = message.substring(startIndex);
-                parse.put("realTimeWriteSpeed", formStrGetNum(extracted));
+                parse.put("realTimeRate", formStrGetNum(extracted));
             }
         } else if (message.contains("current read event time")) {
             // Extract and store current event time
