@@ -273,7 +273,7 @@ public class FullMetaData {
 
 
             log.info("{} the average write speed of this round (10s):{} per/s",
-                    workName, Math.round((writeCount - writeCountOld) / diffTime));
+                    workName, Math.round((writeCount - writeCountOld) / 10));
 
             return writeCount;
         } catch (Exception e) {
