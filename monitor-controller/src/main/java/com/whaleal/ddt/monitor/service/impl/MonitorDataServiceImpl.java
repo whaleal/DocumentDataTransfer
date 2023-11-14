@@ -191,7 +191,6 @@ public class MonitorDataServiceImpl implements MonitorDataService {
             String line;
             while ((line = reader.readLine()) != null) {
                 Map<String, Object> map = JSON.parseObject(line, Map.class);
-
                 double createTime = Double.parseDouble(map.get("createTime").toString());
                 if (createTime <= endTime && createTime >= startTime) {
                     if (typeList.contains("netIO")) {
@@ -213,10 +212,15 @@ public class MonitorDataServiceImpl implements MonitorDataService {
                                 resultMap.get("createTime").add(Long.parseLong(entry.getValue().toString()));
                             }
                         }
-
                     } else {
+                        System.out.println(line);
                         for (String type : typeList) {
-                            String value = map.get(type).toString();
+                            String value = "";
+                            if (!map.containsKey(type)) {
+                                value = 0 + "";
+                            } else {
+                                value = map.get(type).toString();
+                            }
                             if (type.equals("createTime")) {
                                 resultMap.get(type).add(Long.parseLong(value));
                             } else {
@@ -227,6 +231,8 @@ public class MonitorDataServiceImpl implements MonitorDataService {
                 }
             }
         } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
 
         return resultMap;
@@ -358,7 +364,7 @@ public class MonitorDataServiceImpl implements MonitorDataService {
         if ("realTimeRate".equals(type)) {
             typeList.add("avgWriteSpeed");
             typeList.add("realTimeWriteSpeed");
-            unit = "%";
+            unit = "count";
         } else if ("realTimeCache".equals(type)) {
             typeList.add("bucketBatchNum");
             typeList.add("nsBatchNum");
