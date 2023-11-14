@@ -29,13 +29,12 @@ public class WriteData {
                 if (loopy >= 10) {
                     loopy = 0;
                     TimeUnit.SECONDS.sleep(1);
-                    log.warn("-----------------------------");
-                    log.warn("开始打印集群信息");
-                    log.warn("repl name" + mongoClient.getClusterDescription().getClusterSettings().getRequiredReplicaSetName());
-                    List<ServerDescription> serverDescriptions = mongoClient.getClusterDescription().getServerDescriptions();
+                    log.error("-----------------------------");
+                    log.error("开始打印集群信息");
+                     List<ServerDescription> serverDescriptions = mongoClient.getClusterDescription().getServerDescriptions();
                     ServerDescription serverDescription1 = serverDescriptions.get(0);
-                    log.warn("hosts" + serverDescription1.getHosts());
-                    log.warn("-----------------------------");
+                    log.error("hosts" + serverDescription1.getHosts());
+                    log.error("-----------------------------");
                 }
 
                 Document complexDocument = new Document("name", "John Doe")
