@@ -158,7 +158,8 @@ public abstract class BaseRealTimeWork {
         // 当不进行读取的时候 可以任务任务已经中断
         // Q: 但是当读取完成后 未写入的数据怎么办？ 增量情况会缺少数据
         // A：执行 MetadataOplog.getOplogMetadata(workName).waitCacheExe()
-        if (ThreadPoolManager.getActiveThreadNum(readEventThreadPoolName) == 0) {
+        if (ThreadPoolManager.getActiveThreadNum(readEventThreadPoolName) == 0
+                && RealTimeMetaData.getRealTimeMetaData(workName).getTotalCacheNum() == 0) {
             // 等待缓存中的数据写完
             RealTimeMetaData.getRealTimeMetaData(workName).waitCacheExe();
             // 等待缓存为空

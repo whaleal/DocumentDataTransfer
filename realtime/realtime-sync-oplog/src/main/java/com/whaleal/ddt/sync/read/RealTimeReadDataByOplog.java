@@ -73,11 +73,12 @@ public class RealTimeReadDataByOplog extends BaseRealTimeReadData<Document> {
                 // 如果oplog的开始时间小于startTimeOfReady，即全表同步期间oplog没有被覆盖
                 // startTimeOfReady=0时代表为增量抽取数据。抽取范围[minTs,正无穷)
                 // 程序开始时间要大小oplog的开始时间60s,但是此时还不能保证原子性问题,可能出现游标掉线的问题
-                if ((startTime.getTime() - oplogStartTime.getTime()) < 60 && startTimeOfOplog != 0) {
-                    log.error("{} failed to read oplog: missed sliding window time oplog is overwritten, this program is about to exit", workName);
-                    break;
-                }
+//                if ((startTime.getTime() - oplogStartTime.getTime()) <6 0 && startTimeOfOplog != 0) {
+//                    log.error("{} failed to read oplog: missed sliding window time oplog is overwritten, this program is about to exit", workName);
+//                    break;
+//                }
                 source();
+
             } catch (Exception e) {
                 log.error("{} error reading oplog failed,msg:{}", workName, e.getMessage());
             }
@@ -94,8 +95,16 @@ public class RealTimeReadDataByOplog extends BaseRealTimeReadData<Document> {
         for (int i = 0; i < 3; i++) {
             try {
                 MongoCollection topicCollection = mongoClient.getDatabase(oplogNS.getDatabaseName()).getCollection(oplogNS.getCollectionName());
+                if (topicCollection.countDocuments() == 0) {
+                    return new BsonTimestamp(0);
+                }
                 Document document = (Document) topicCollection.find().sort(new Document("ts", 1)).first();
+
+                if (document == null) {
+                    return new BsonTimestamp(0);
+                }
                 BsonTimestamp bsonTimestamp = (BsonTimestamp) document.get("ts");
+
                 if (bsonTimestamp.getTime() > 0) {
                     return bsonTimestamp;
                 }
@@ -184,10 +193,10 @@ public class RealTimeReadDataByOplog extends BaseRealTimeReadData<Document> {
                     }
                     // 读取的第一条数据，一定会进来
                     // 判断是否在窗口期范围内
-                    if (lastOplogTs.getTime() < startTimeOfOplog) {
-                        log.error("{} failed to read oplog: missed sliding window time oplog is overwritten, this program is about to exit", workName);
-                        WorkStatus.updateWorkStatus(workName, WorkStatus.WORK_STOP);
-                    }
+//                    if (lastOplogTs.getTime() < startTimeOfOplog) {
+//                        log.error("{} failed to read oplog: missed sliding window time oplog is overwritten, this program is about to exit", workName);
+//                        WorkStatus.updateWorkStatus(workName, WorkStatus.WORK_STOP);
+//                    }
                 }
 
 
@@ -244,6 +253,10 @@ public class RealTimeReadDataByOplog extends BaseRealTimeReadData<Document> {
                     metadata.getQueueOfEvent().put(document);
                     metadata.getReadNum().add(1);
                 }
+            }
+
+            while (metadata.getTotalCacheNum() > 0) {
+                TimeUnit.MINUTES.sleep(1);
             }
             // 如果程序能够正常走到这里 则代表查询完毕 更新程序的状态
             WorkStatus.updateWorkStatus(workName, WorkStatus.WORK_STOP);

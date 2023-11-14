@@ -378,7 +378,6 @@ public abstract class BaseFullWork {
                         //
                         fullMetaData.setLimitBandwidth(false);
 
-
                         if (currentReadSize > Integer.MAX_VALUE) {
                             // 重置 以防数据溢出
                             fullMetaData.getTotalReadSize().reset();
