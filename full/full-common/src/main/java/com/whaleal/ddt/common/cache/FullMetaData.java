@@ -274,6 +274,7 @@ public class FullMetaData {
                     workName, Math.round((writeCount - writeCountOld) / ((System.currentTimeMillis() - lastPrintTime) / 1000)));
             return writeCount;
         } catch (Exception e) {
+            e.printStackTrace();
             log.error("{} error getting full program execution,msg:{}", workName, e.getMessage());
         }
 
