@@ -268,12 +268,16 @@ public class FullMetaData {
                     workName, writeCount, diffTime, (writeCount / diffTime));
             // 已读取的条数
             long readCount = readDocCount.sum();
-            log.info("{} number of bars read:{},time cost:{}s,average write speed:{} per/s",
+            log.info("{} number of bars read:{},time cost:{}s,average read speed:{} per/s",
                     workName, readCount, diffTime, (readCount / diffTime));
+
+
             log.info("{} the average write speed of this round (10s):{} per/s",
-                    workName, Math.round((writeCount - writeCountOld) / ((System.currentTimeMillis() - lastPrintTime) / 1000)));
+                    workName, Math.round((writeCount - writeCountOld) / 10));
+
             return writeCount;
         } catch (Exception e) {
+            e.printStackTrace();
             log.error("{} error getting full program execution,msg:{}", workName, e.getMessage());
         }
 

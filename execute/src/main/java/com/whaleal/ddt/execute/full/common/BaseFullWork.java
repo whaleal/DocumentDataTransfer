@@ -338,60 +338,59 @@ public abstract class BaseFullWork {
             fullSync.submitTargetTask(workInfo.getTargetThreadNum());
             // 生成源数据库数据读取任务
             fullSync.generateSource(workInfo.getSourceThreadNum(), taskQueue, isGenerateSourceTaskInfoOverNum, workInfo.getBatchSize());
+
+            long writeCountOld = 0L;
+            long lastPrintTime = System.currentTimeMillis();
+            int loopNum = 0;
+            long allNsDocumentCount = fullSync.estimatedAllNsDocumentCount(workInfo.getDbTableWhite());
+//            long lastTotalReadSize = 0;
+//            Map<Integer, Long> readSizeMap = new HashMap<>();
+//            for (int i = 0; i < 30; i++) {
+//                readSizeMap.put(i, 0L);
+//            }
             try {
                 TimeUnit.SECONDS.sleep(10);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            long writeCountOld = 0L;
-            long lastPrintTime = System.currentTimeMillis();
-            int loopNum = 0;
-            long allNsDocumentCount = fullSync.estimatedAllNsDocumentCount(workInfo.getDbTableWhite());
-
-
-            long lastTotalReadSize = 0;
-            Map<Integer, Long> readSizeMap = new HashMap<>();
-            for (int i = 0; i < 30; i++) {
-                readSizeMap.put(i, 0L);
-            }
             while (true) {
                 try {
                     // 每次睡眠一s
                     TimeUnit.SECONDS.sleep(1);
-                    {
-                        boolean isLimit = false;
-                        long currentReadSize = fullMetaData.getTotalReadSize().sum();
-                        for (Map.Entry<Integer, Long> entry : readSizeMap.entrySet()) {
-                            long value = entry.getValue();
-                            int key = entry.getKey();
-                            int diffSecond = 0;
-                            if (loopNum % 30 > key) {
-                                diffSecond = loopNum % 30 - key;
-                            } else {
-                                diffSecond = loopNum % 30 + 30 - key;
-                            }
-                            if ((Math.abs(currentReadSize - value)) > Math.abs(diffSecond) * workInfo.getMaxBandwidth() * 1024L * 1024L) {
-                                isLimit = true;
-                                break;
-                            }
-                        }
-                        //
-                        fullMetaData.setLimitBandwidth(false);
-
-
-                        if (currentReadSize > Integer.MAX_VALUE) {
-                            // 重置 以防数据溢出
-                            fullMetaData.getTotalReadSize().reset();
-                            fullMetaData.getTotalWriteSize().reset();
-                        }
-                        log.info("{} bandwidth rate of the current read task:{} mb/s, limit the bandwidth rate:{}",
-                                workInfo.getWorkName(),
-                                (currentReadSize - lastTotalReadSize) / 1024L / 1024L,
-                                isLimit);
-                        readSizeMap.put(loopNum % 30, currentReadSize);
-
-                        lastTotalReadSize = currentReadSize;
-                    }
+//                    {
+//                        boolean isLimit = false;
+//                        long currentReadSize = fullMetaData.getTotalReadSize().sum();
+//                        for (Map.Entry<Integer, Long> entry : readSizeMap.entrySet()) {
+//                            long value = entry.getValue();
+//                            int key = entry.getKey();
+//                            int diffSecond = 0;
+//                            if (loopNum % 30 > key) {
+//                                diffSecond = loopNum % 30 - key;
+//                            } else {
+//                                diffSecond = loopNum % 30 + 30 - key;
+//                            }
+//                            if ((Math.abs(currentReadSize - value)) > Math.abs(diffSecond) * workInfo.getMaxBandwidth() * 1024L * 1024L) {
+//                                isLimit = true;
+//                                break;
+//                            }
+//                        }
+//                        //
+//                        fullMetaData.setLimitBandwidth(false);
+//
+//
+//                        if (currentReadSize > Integer.MAX_VALUE) {
+//                            // 重置 以防数据溢出
+//                            fullMetaData.getTotalReadSize().reset();
+//                            fullMetaData.getTotalWriteSize().reset();
+//                        }
+//                        log.info("{} bandwidth rate of the current read task:{} mb/s, limit the bandwidth rate:{}",
+//                                workInfo.getWorkName(),
+//                                (currentReadSize - lastTotalReadSize) / 1024L / 1024L,
+//                                isLimit);
+//                        readSizeMap.put(loopNum % 30, currentReadSize);
+//
+//                        lastTotalReadSize = currentReadSize;
+//                    }
 
                     lastPrintTime = System.currentTimeMillis();
                     loopNum++;

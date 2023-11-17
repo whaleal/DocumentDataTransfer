@@ -50,8 +50,8 @@ public class RealTimeReadDataByOplog extends BaseRealTimeReadData<Document> {
     }
 
 
-    public RealTimeReadDataByOplog(String workName, String dsName, boolean captureDDL, String dbTableWhite, int startTimeOfOplog, int endTimeOfOplog, int delayTime,int readBatchSize) {
-        super(workName, dsName, captureDDL, dbTableWhite, startTimeOfOplog, endTimeOfOplog, delayTime,readBatchSize);
+    public RealTimeReadDataByOplog(String workName, String dsName, boolean captureDDL, String dbTableWhite, int startTimeOfOplog, int endTimeOfOplog, int delayTime, int readBatchSize) {
+        super(workName, dsName, captureDDL, dbTableWhite, startTimeOfOplog, endTimeOfOplog, delayTime, readBatchSize);
     }
 
 
@@ -168,7 +168,7 @@ public class RealTimeReadDataByOplog extends BaseRealTimeReadData<Document> {
                     if (endTimeOfOplog != 0) {
                         // endTimeOfOplog- startTimeOfOplog 的总时间
                         // endTimeOfOplog -lastOplogTs 的总时间
-                        int percentage = (Math.round(100* ((0.0F + lastOplogTs.getTime() - startTimeOfOplog) / ((0.0F + endTimeOfOplog - startTimeOfOplog)))) );
+                        int percentage = (Math.round(100 * ((0.0F + lastOplogTs.getTime() - startTimeOfOplog) / ((0.0F + endTimeOfOplog - startTimeOfOplog)))));
                         if (percentage < 0) {
                             percentage = 0;
                         }
@@ -236,6 +236,11 @@ public class RealTimeReadDataByOplog extends BaseRealTimeReadData<Document> {
                     metadata.getQueueOfEvent().put(document);
                     metadata.getReadNum().add(1);
                 }
+            }
+            // q 如果增量快速读取完毕 会提前造成任务退出
+            // a 增加判断 当缓存无数据时 再修改状态
+            while (metadata.getTotalCacheNum() > 0) {
+                TimeUnit.SECONDS.sleep(10);
             }
             // 如果程序能够正常走到这里 则代表查询完毕 更新程序的状态
             WorkStatus.updateWorkStatus(workName, WorkStatus.WORK_STOP);

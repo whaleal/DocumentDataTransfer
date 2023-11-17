@@ -379,8 +379,7 @@ public final class RealTimeMetaData<T> {
             log.info("{} total number of execution items:{},average write speed:{} per/s",
                     workName, exeCount, exeCount / ((lastPrintTime - workStartTime) / 1000));
 
-            log.info("{} current round (10s) execution:{} per/s", workName, Math.round((exeCount - executeCountOld) /
-                    ((System.currentTimeMillis() - lastPrintTime) / 1000)));
+            log.info("{} current round (10s) execution:{} per/s", workName, Math.round((exeCount - executeCountOld) / 10));
 
             // 输出ns正在处理那个ddl oplog呢
             for (Map.Entry<String, T> documentEntry : currentNsDealEventInfo.entrySet()) {
