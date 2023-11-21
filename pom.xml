@@ -7,7 +7,7 @@
     <groupId>com.whaleal.ddt</groupId>
     <artifactId>DocumentDataTransfer</artifactId>
     <packaging>pom</packaging>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.1.0</version>
     <modules>
         <module>common</module>
         <module>mongodb-driver</module>
@@ -16,8 +16,6 @@
         <module>execute</module>
         <module>test</module>
         <module>monitor-controller</module>
-
-
     </modules>
 
     <properties>
