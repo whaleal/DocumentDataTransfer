@@ -324,9 +324,9 @@ public abstract class DistributeBucket extends BaseDistributeBucket<Document> {
             bucketNum = 1;
         }
         // 检查该桶bucketSetMap是否存在。若不存在 则添加
-        if (!this.bucketSetMap.get(bucketNum).add(_id)) {
+        if (this.bucketSetMap.get(bucketNum).containsKey(_id)) {
             putDataToCache(this.currentDbTable, bucketNum);
-            this.bucketSetMap.get(bucketNum).add(_id);
+            this.bucketSetMap.get(bucketNum).put(_id, this.bucketWriteModelListMap.get(bucketNum).size());
         }
         Document insertDocument = (Document) document.get("o");
         // fromMigrate要特殊处理      shared准备
@@ -350,9 +350,9 @@ public abstract class DistributeBucket extends BaseDistributeBucket<Document> {
             bucketNum = 1;
         }
         // 检查该桶bucketSetMap是否存在。若不存在 则添加
-        if (!bucketSetMap.get(bucketNum).add(_id)) {
-            putDataToCache(currentDbTable, bucketNum);
-            bucketSetMap.get(bucketNum).add(_id);
+        if (this.bucketSetMap.get(bucketNum).containsKey(_id)) {
+            putDataToCache(this.currentDbTable, bucketNum);
+            this.bucketSetMap.get(bucketNum).put(_id, this.bucketWriteModelListMap.get(bucketNum).size());
         }
         Document deleteDocument = (Document) document.get("o");
         DeleteOneModel<Document> deleteOneModel = new DeleteOneModel<Document>(deleteDocument);

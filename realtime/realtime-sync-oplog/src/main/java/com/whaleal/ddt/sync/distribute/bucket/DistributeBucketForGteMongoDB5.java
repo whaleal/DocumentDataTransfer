@@ -53,9 +53,9 @@ public class DistributeBucketForGteMongoDB5 extends DistributeBucket {
             bucketNum = 1;
         }
         // 检查该桶bucketSetMap是否存在，若不存在则添加
-        if (!bucketSetMap.get(bucketNum).add(_id)) {
-            putDataToCache(currentDbTable, bucketNum);
-            bucketSetMap.get(bucketNum).add(_id);
+        if (this.bucketSetMap.get(bucketNum).containsKey(_id)) {
+            putDataToCache(this.currentDbTable, bucketNum);
+            this.bucketSetMap.get(bucketNum).put(_id, this.bucketWriteModelListMap.get(bucketNum).size());
         }
         // 获取o2和o字段的值
         Document o2 = ((Document) document.get("o2"));

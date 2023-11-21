@@ -205,9 +205,9 @@ public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<
             bucketNum = 1;
         }
         // 检查该桶bucketSetMap是否存在。若不存在 则添加
-        if (!this.bucketSetMap.get(bucketNum).add(_id)) {
+        if (this.bucketSetMap.get(bucketNum).containsKey(_id)) {
             putDataToCache(this.currentDbTable, bucketNum);
-            this.bucketSetMap.get(bucketNum).add(_id);
+            this.bucketSetMap.get(bucketNum).put(_id, this.bucketWriteModelListMap.get(bucketNum).size());
         }
         Document insertDocument = changeStreamEvent.getFullDocument();
         this.bucketWriteModelListMap.get(bucketNum).add(new InsertOneModel<>(insertDocument));
@@ -221,9 +221,9 @@ public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<
             bucketNum = 1;
         }
         // 检查该桶bucketSetMap是否存在。若不存在 则添加
-        if (!bucketSetMap.get(bucketNum).add(_id)) {
-            putDataToCache(currentDbTable, bucketNum);
-            bucketSetMap.get(bucketNum).add(_id);
+        if (this.bucketSetMap.get(bucketNum).containsKey(_id)) {
+            putDataToCache(this.currentDbTable, bucketNum);
+            this.bucketSetMap.get(bucketNum).put(_id, this.bucketWriteModelListMap.get(bucketNum).size());
         }
         UpdateDescription updateDescription = changeStreamEvent.getUpdateDescription();
 
@@ -253,9 +253,9 @@ public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<
             bucketNum = 1;
         }
         // 检查该桶bucketSetMap是否存在。若不存在 则添加
-        if (!this.bucketSetMap.get(bucketNum).add(_id)) {
+        if (this.bucketSetMap.get(bucketNum).containsKey(_id)) {
             putDataToCache(this.currentDbTable, bucketNum);
-            this.bucketSetMap.get(bucketNum).add(_id);
+            this.bucketSetMap.get(bucketNum).put(_id, this.bucketWriteModelListMap.get(bucketNum).size());
         }
         BsonDocument filter = changeStreamEvent.getDocumentKey();
         Document fullDocument = changeStreamEvent.getFullDocument();
@@ -271,9 +271,9 @@ public class DistributeBucket extends BaseDistributeBucket<ChangeStreamDocument<
             bucketNum = 1;
         }
         // 检查该桶bucketSetMap是否存在。若不存在 则添加
-        if (!bucketSetMap.get(bucketNum).add(_id)) {
-            putDataToCache(currentDbTable, bucketNum);
-            bucketSetMap.get(bucketNum).add(_id);
+        if (this.bucketSetMap.get(bucketNum).containsKey(_id)) {
+            putDataToCache(this.currentDbTable, bucketNum);
+            this.bucketSetMap.get(bucketNum).put(_id, this.bucketWriteModelListMap.get(bucketNum).size());
         }
         BsonDocument deleteDocument = changeStreamEvent.getDocumentKey();
         DeleteOneModel<Document> deleteOneModel = new DeleteOneModel<>(deleteDocument);

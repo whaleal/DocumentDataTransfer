@@ -232,6 +232,8 @@ public class RealTimeReadDataByOplog extends BaseRealTimeReadData<Document> {
                         TimeUnit.SECONDS.sleep((System.currentTimeMillis() / 1000) - docTime.getTime());
                         TimeUnit.MINUTES.sleep(1);
                     }
+
+                    log.info(">>>>>>>>" + document.toJson());
                     // 保留本次oplog的ts读取时间
                     metadata.getQueueOfEvent().put(document);
                     metadata.getReadNum().add(1);
@@ -255,15 +257,11 @@ public class RealTimeReadDataByOplog extends BaseRealTimeReadData<Document> {
     }
 
     public static void main(String[] args) {
-        final BsonTimestamp bsonTimestamp = new BsonTimestamp(System.currentTimeMillis());
+        BsonTimestamp bsonTimestamp = new BsonTimestamp(System.currentTimeMillis());
         System.out.println(bsonTimestamp.getValue());
         System.out.println(bsonTimestamp.getTime());
-
-
         Document condition = new Document();
 //        condition.append("ts", new Document().append("$gte", 0).append("$lte", new BsonTimestamp(1691486720, 0)));
-
-
         condition.append("ns", new Document("$regex", "(lhp100.+)|(.+\\.\\$cmd)|(.+\\.system\\..+)"));
         System.out.println(condition.toJson());
     }

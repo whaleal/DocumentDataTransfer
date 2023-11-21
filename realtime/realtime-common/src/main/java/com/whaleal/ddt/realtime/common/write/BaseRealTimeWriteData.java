@@ -182,7 +182,7 @@ public abstract class BaseRealTimeWriteData<T> extends CommonTask {
         } catch (Exception e) {
             // 出现异常 就一条一条数据写入
             // todo 可以更加优化处理
-            singleExecute(batchDataEntity);
+           // singleExecute(batchDataEntity);
         }
     }
 

@@ -52,7 +52,7 @@ public abstract class BaseDistributeBucket<T> extends CommonTask implements Pars
      * k桶号 默认[0-16)
      * v为Set<id>
      */
-    protected final Map<Integer, Set<String>> bucketSetMap = new HashMap<>();
+    protected final Map<Integer, Map<String, Integer>> bucketSetMap = new HashMap<>();
     /**
      * k桶号 默认[0-16)
      * v为解析好的WriteModel数据集合
@@ -177,7 +177,7 @@ public abstract class BaseDistributeBucket<T> extends CommonTask implements Pars
      */
     public void init() {
         for (int i = 0; i < maxBucketNum; i++) {
-            bucketSetMap.put(i, new HashSet<>());
+            bucketSetMap.put(i, new HashMap<String,Integer>());
             bucketWriteModelListMap.put(i, new ArrayList());
         }
     }
@@ -191,6 +191,7 @@ public abstract class BaseDistributeBucket<T> extends CommonTask implements Pars
 
     @Override
     public void updateUniqueIndexCount(String ns) {
+
         String[] nsSplit = ns.split("\\.", 2);
         int count = 0;
         try {
@@ -237,7 +238,7 @@ public abstract class BaseDistributeBucket<T> extends CommonTask implements Pars
             batchDataEntity.setDataList(bucketWriteModelListMap.get(bucketNum));
             metadata.getQueueOfBucketMap().get(nsBucketNum).put(batchDataEntity);
             // 修改map中的信息
-            bucketSetMap.put(bucketNum, new HashSet<>());
+            bucketSetMap.put(bucketNum, new HashMap<String,Integer>());
             bucketWriteModelListMap.put(bucketNum, new ArrayList());
         } catch (Exception e) {
             log.error("{} an exception occurred when adding data to the event thread, the error message:{}", workName, e.getMessage());

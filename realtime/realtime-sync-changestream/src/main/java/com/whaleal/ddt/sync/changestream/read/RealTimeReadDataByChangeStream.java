@@ -19,6 +19,7 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.client.ChangeStreamIterable;
 import com.mongodb.client.MongoChangeStreamCursor;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
+import com.mongodb.client.model.changestream.FullDocument;
 import com.whaleal.ddt.realtime.common.read.BaseRealTimeReadData;
 import com.whaleal.ddt.status.WorkStatus;
 import lombok.extern.log4j.Log4j2;
@@ -80,6 +81,7 @@ public class RealTimeReadDataByChangeStream extends BaseRealTimeReadData<ChangeS
         if (!(".+").equals(dbTableWhite)) {
             condition.append("ns", new Document("$regex", dbTableWhite));
         }
+
         // condition仅做输出作业
         log.info("{} the conditions for reading event :{}", workName, condition.toJson());
         BsonTimestamp endOplogTimeBson = new BsonTimestamp(endTimeOfOplog, 0);
@@ -96,8 +98,10 @@ public class RealTimeReadDataByChangeStream extends BaseRealTimeReadData<ChangeS
             } else {
                 changeStream = mongoClient.watch();
             }
-            if (String.valueOf(dbVersion.charAt(0)).compareTo("6") > 0) {
+            if (String.valueOf(dbVersion.charAt(0)).compareTo("6") >= 0) {
                 changeStream.showExpandedEvents(true);
+                changeStream.fullDocument(FullDocument.UPDATE_LOOKUP);
+                log.info("enable fullDocument:{}",FullDocument.UPDATE_LOOKUP);
             }
 
             // 可以改变这个值 建议可以计算得出
@@ -183,6 +187,12 @@ public class RealTimeReadDataByChangeStream extends BaseRealTimeReadData<ChangeS
             // 重新更新查询的开始时间和结束时间
             this.startTimeOfOplog = docTime.getTime();
             log.error("{} read event exception,msg:{}", workName, e.getMessage());
+        }
+    }
+
+    public static void main(String[] args) {
+        if (String.valueOf("6.0.1".charAt(0)).compareTo("6") >= 0) {
+            System.out.println(true);
         }
     }
 }

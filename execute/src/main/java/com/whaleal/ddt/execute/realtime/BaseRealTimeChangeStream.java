@@ -18,6 +18,7 @@ package com.whaleal.ddt.execute.realtime;
 import com.whaleal.ddt.execute.config.WorkInfo;
 import com.whaleal.ddt.execute.realtime.common.BaseRealTimeWork;
 import com.whaleal.ddt.sync.changestream.distribute.bucket.DistributeBucket;
+import com.whaleal.ddt.sync.changestream.distribute.bucket.DistributeBucketOfDouble;
 import com.whaleal.ddt.sync.changestream.parse.ns.ParseNs;
 import com.whaleal.ddt.sync.changestream.read.RealTimeReadDataByChangeStream;
 import com.whaleal.ddt.sync.changestream.write.RealTimeWriteData;
@@ -58,7 +59,10 @@ public class BaseRealTimeChangeStream extends BaseRealTimeWork {
         }
         // 分桶线程
         for (int i = 0; i < nsBucketThreadNum; i++) {
+            // todo
             createTask(nsBucketEventThreadPoolName, new DistributeBucket(workName, sourceDsName, targetDsName, workInfo.getBucketNum(), workInfo.getDdlFilterSet(), workInfo.getDdlWait()));
+            //createTask(nsBucketEventThreadPoolName, new DistributeBucketOfDouble(workName, sourceDsName, targetDsName, workInfo.getBucketNum(), workInfo.getDdlFilterSet(), workInfo.getDdlWait()));
+
         }
         // 解析ns线程
         ParseNs distributeNs = new ParseNs(workName, workInfo.getDbTableWhite(),

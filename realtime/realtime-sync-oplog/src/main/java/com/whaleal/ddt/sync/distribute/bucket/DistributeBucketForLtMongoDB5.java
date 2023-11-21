@@ -49,9 +49,9 @@ public class DistributeBucketForLtMongoDB5 extends DistributeBucket {
             bucketNum = 1;
         }
         // 检查该桶bucketSetMap是否存在。若不存在 则添加
-        if (!bucketSetMap.get(bucketNum).add(_id)) {
-            putDataToCache(currentDbTable, bucketNum);
-            bucketSetMap.get(bucketNum).add(_id);
+        if (this.bucketSetMap.get(bucketNum).containsKey(_id)) {
+            putDataToCache(this.currentDbTable, bucketNum);
+            this.bucketSetMap.get(bucketNum).put(_id, this.bucketWriteModelListMap.get(bucketNum).size());
         }
         Document o2 = ((Document) document.get("o2"));
         Document o = (Document) document.get("o");
