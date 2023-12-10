@@ -232,8 +232,6 @@ public class RealTimeReadDataByOplog extends BaseRealTimeReadData<Document> {
                         TimeUnit.SECONDS.sleep((System.currentTimeMillis() / 1000) - docTime.getTime());
                         TimeUnit.MINUTES.sleep(1);
                     }
-
-                    log.info(">>>>>>>>" + document.toJson());
                     // 保留本次oplog的ts读取时间
                     metadata.getQueueOfEvent().put(document);
                     metadata.getReadNum().add(1);

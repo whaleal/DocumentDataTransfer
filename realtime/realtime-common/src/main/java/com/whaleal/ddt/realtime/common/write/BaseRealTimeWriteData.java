@@ -24,10 +24,9 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.BulkWriteOptions;
 import com.mongodb.client.model.WriteModel;
 import com.whaleal.ddt.cache.BatchDataEntity;
+import com.whaleal.ddt.conection.sync.MongoDBConnectionSync;
 import com.whaleal.ddt.realtime.common.cache.RealTimeMetaData;
 import com.whaleal.ddt.status.WorkStatus;
-
-import com.whaleal.ddt.conection.sync.MongoDBConnectionSync;
 import com.whaleal.ddt.task.CommonTask;
 import com.whaleal.ddt.util.WriteModelUtil;
 import lombok.extern.log4j.Log4j2;
@@ -44,8 +43,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * 基础实时写入数据抽象类，用于实现数据的写入逻辑。
  *
- * @author liheping
  * @param <T> 表示正在处理的数据类型的泛型参数。
+ * @author liheping
  */
 
 @Log4j2
@@ -91,7 +90,7 @@ public abstract class BaseRealTimeWriteData<T> extends CommonTask {
                 }
                 if (idlingTime++ > 10) {
                     // 10次都没有获取到event信息,则进行睡眠
-                    TimeUnit.SECONDS.sleep(1);
+                    TimeUnit.MILLISECONDS.sleep(100);
                     // 10次都没有获得锁 更有可能继续无法获得'锁'
                     idlingTime = 9;
                 }
@@ -182,7 +181,7 @@ public abstract class BaseRealTimeWriteData<T> extends CommonTask {
         } catch (Exception e) {
             // 出现异常 就一条一条数据写入
             // todo 可以更加优化处理
-           // singleExecute(batchDataEntity);
+            singleExecute(batchDataEntity);
         }
     }
 

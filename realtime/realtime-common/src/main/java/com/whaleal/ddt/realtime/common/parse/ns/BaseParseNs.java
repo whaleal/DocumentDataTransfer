@@ -105,7 +105,8 @@ public abstract class BaseParseNs<T> extends CommonTask {
                     count += 1000;
                     lastCleanNsTime -= 1000;
                     // 代表event队列为空 暂时休眠
-                    TimeUnit.SECONDS.sleep(1);
+                    // todo
+                    TimeUnit.MILLISECONDS.sleep(100);
                     if (WorkStatus.getWorkStatus(this.workName) == WorkStatus.WORK_STOP) {
                         break;
                     }

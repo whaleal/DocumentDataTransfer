@@ -125,7 +125,7 @@ public abstract class BaseDistributeBucket<T> extends CommonTask implements Pars
                  */
                 if (idlingTime++ > 10) {
                     // 10次都没有获取到oplog信息,则进行睡眠
-                    TimeUnit.SECONDS.sleep(1);
+                    TimeUnit.MILLISECONDS.sleep(100);
                     // 10次都没有获得锁 更有可能继续无法获得'锁'
                     idlingTime = 9;
                 }
