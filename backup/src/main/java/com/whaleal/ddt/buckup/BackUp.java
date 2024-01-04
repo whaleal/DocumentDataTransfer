@@ -1,12 +1,16 @@
 package com.whaleal.ddt.buckup;
 
 
+import com.alibaba.fastjson2.JSON;
 import com.mongodb.MongoNamespace;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
+import com.whaleal.ddt.util.HttpClientPost;
 import lombok.extern.log4j.Log4j2;
 import org.bson.Document;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -16,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 public class BackUp {
 
     private static MongoClient sourceMongoClient;
+
     private static MongoClient targetMongoClient;
 
     public static void main(String[] args) {
@@ -24,8 +29,9 @@ public class BackUp {
         targetMongoClient = MongoClients.create(args[1]);
         Cache<Document> documentCache = new Cache<>(10240);
         MongoNamespace ns = new MongoNamespace(args[2]);
+        documentCache.setWapURL(args[4]);
 
-        String workName="backUpOplog";
+        String workName = "backUpOplog";
         try {
             targetMongoClient.getDatabase(ns.getDatabaseName()).getCollection(ns.getCollectionName()).drop();
             targetMongoClient.getDatabase(ns.getDatabaseName()).getCollection(ns.getCollectionName()).createIndex(new Document().append("ts", 1));
@@ -57,13 +63,21 @@ public class BackUp {
             log.info("totalWriteNum rate:{} per second", writeRate);
             log.info("cache size: {}", documentCache.getQueueOfEvent().size());
             log.info("totalReadNum rate: {} per second", readRate);
+            log.info("oplog ts:{}" + documentCache.getOplogTs());
+
+            {
+                // 保存配置参数
+                Map<String, Object> ddtInfo = new HashMap<>();
+                ddtInfo.put("writeRate", writeRate);
+                ddtInfo.put("oplogTs", documentCache.getOplogTs());
+                ddtInfo.put("totalCount", Writer.getTotalWriteNum());
+                // 10s 保存一次
+                HttpClientPost.postJson(documentCache.getWapURL(), JSON.toJSONString(ddtInfo));
+            }
 
             // 更新前一个时间和值以便下一次计算速率
             previousTotalWriteNum = currentTotalWriteNum;
             previousTotalReadNum = currentTotalReadNum;
         }
-
     }
-
-
 }

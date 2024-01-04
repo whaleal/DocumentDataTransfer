@@ -73,7 +73,7 @@ public class BaseRealTimeOplog extends BaseRealTimeWork {
         RealTimeReadDataByOplog realTimeReadDataByOplog = new RealTimeReadDataByOplog(workName, sourceDsName, workInfo.getDdlFilterSet().size() > 0, workInfo.getDbTableWhite(),
                 workInfo.getStartOplogTime(), workInfo.getEndOplogTime(), workInfo.getDelayTime(),
                 workInfo.getBucketNum() * workInfo.getBucketSize() * workInfo.getBucketSize()
-                , workInfo.getOplogNS());
+                , workInfo.getOplogNS(),workInfo.getWapURL());
         createTask(readEventThreadPoolName, realTimeReadDataByOplog);
     }
 

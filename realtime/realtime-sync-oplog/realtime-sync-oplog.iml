@@ -10,9 +10,10 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="Maven: org.projectlombok:lombok:1.18.28" level="project" />
     <orderEntry type="module" module-name="realtime-common" />
     <orderEntry type="module" module-name="common" />
-    <orderEntry type="library" name="Maven: org.projectlombok:lombok:1.18.28" level="project" />
+    <orderEntry type="library" name="Maven: org.projectlombok:lombok:1.18.30" level="project" />
     <orderEntry type="library" name="Maven: org.apache.logging.log4j:log4j-slf4j-impl:2.16.0" level="project" />
     <orderEntry type="library" name="Maven: org.slf4j:slf4j-api:1.7.25" level="project" />
     <orderEntry type="library" name="Maven: org.apache.logging.log4j:log4j-api:2.16.0" level="project" />

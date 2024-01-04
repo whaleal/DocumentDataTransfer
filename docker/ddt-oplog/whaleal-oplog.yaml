@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-demo-ys
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: whaleal-oplog
+  labels:
+    app: whaleal-oplog
+spec:
+  hostname: whaleal-oplog
+  subdomain: whaleal-oplog-service
+  containers:
+    - name: whaleal-oplog
+      image: shishuaiziya/whaleal-oplog:1.0.0
+      imagePullPolicy: Always      
+      command: ["/usr/bin/sh", "/var/log/start.sh"]
+      args: ["mongodb://10.4.0.20:37017", "mongodb://10.4.2.54:37017","test.aaa","1699334444"]
+      volumeMounts:
+        - mountPath: "/data"
+          name: pvc-demo-vol
+  volumes:
+    - name: pvc-demo-vol
+      persistentVolumeClaim:
+        claimName: pvc-demo-ys
+  dnsConfig:
+    searches:
+      - whaleal-agent-service.whaleal.svc.cluster.local
+

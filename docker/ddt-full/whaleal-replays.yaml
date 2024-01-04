@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: whaleal-replays
+  labels:
+    app: whaleal-replays
+spec:
+  hostname: whaleal-replays
+  subdomain: whaleal-agent-service
+  containers:
+    - name: whaleal-replays
+      image: shishuaiziya/whaleal-replays:1.0.1
+      imagePullPolicy: Always
+      command: ["/usr/bin/sh", "/var/log/start.sh"]
+      args: ["mongodb://10.4.2.54:37017", "mongodb://10.4.0.20:37017","1699334594","1699352345","test.aaa"]
+  dnsConfig:
+    searches:
+      - whaleal-agent-service.whaleal.svc.cluster.local

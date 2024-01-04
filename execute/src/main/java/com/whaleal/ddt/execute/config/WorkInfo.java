@@ -128,6 +128,8 @@ public class WorkInfo implements Cloneable, Serializable {
 
     private String oplogNS;
 
+    private String wapURL;
+
 
     /**
      * 程序启动时间

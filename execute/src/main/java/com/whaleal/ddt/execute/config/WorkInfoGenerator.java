@@ -151,6 +151,14 @@ public class WorkInfoGenerator {
             workInfo.setOplogNS(oplogNS);
         }
 
+        // wapURL
+        String wapURL = Property.getPropertiesByKey("wapURL");
+        if (CharSequenceUtil.isBlank(wapURL)) {
+            workInfo.setWapURL("");
+        } else {
+            workInfo.setWapURL(wapURL);
+        }
+
 
         String mode = workInfo.getSyncMode();
         // Configure thread numbers based on sync mode

@@ -15,6 +15,7 @@
  */
 package com.whaleal.ddt.execute.full.common;
 
+import com.alibaba.fastjson2.JSON;
 import com.whaleal.ddt.common.cache.FullMetaData;
 import com.whaleal.ddt.common.generate.GenerateSourceTask;
 import com.whaleal.ddt.common.generate.Range;
@@ -28,7 +29,9 @@ import com.whaleal.ddt.sync.metadata.MongoDBClusterManager;
 import com.whaleal.ddt.sync.metadata.source.MongoDBMetadata;
 import com.whaleal.ddt.thread.pool.ThreadPoolManager;
 import com.whaleal.ddt.util.HostInfoUtil;
+import com.whaleal.ddt.util.HttpClientPost;
 import lombok.extern.log4j.Log4j2;
+import org.bson.Document;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -347,8 +350,6 @@ public abstract class BaseFullWork {
             long lastPrintTime = System.currentTimeMillis();
             int loopNum = 0;
             long allNsDocumentCount = fullSync.estimatedAllNsDocumentCount(workInfo.getDbTableWhite());
-
-
             long lastTotalReadSize = 0;
             Map<Integer, Long> readSizeMap = new HashMap<>();
             for (int i = 0; i < 30; i++) {
@@ -405,6 +406,8 @@ public abstract class BaseFullWork {
                         log.info("{} current task queue cache status:{}", workInfo.getWorkName(), taskQueue.size());
                         // 输出缓存区运行情况
                         writeCountOld = fullMetaData.printCacheInfo(workInfo.getStartTime(), lastPrintTime, writeCountOld);
+                        HttpClientPost.postJson(workInfo.getWapURL(), new Document().append("totalCount", writeCountOld).toJson());
+
                         // 输出任务各线程运行情况
                         fullSync.printThreadInfo();
                         // 输出缓存区中的信息
@@ -423,6 +426,22 @@ public abstract class BaseFullWork {
                     e.printStackTrace();
                 }
             }
+
+            {
+                // 保存配置参数
+                Map<String, Object> ddtInfo = new HashMap<>();
+                ddtInfo.put("status", "true");
+                // 10s 保存一次
+                HttpClientPost.postJson(workInfo.getWapURL(), JSON.toJSONString(ddtInfo));
+                HttpClientPost.postJson(workInfo.getWapURL(), JSON.toJSONString(ddtInfo));
+                try {
+                    TimeUnit.MINUTES.sleep(1);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                HttpClientPost.postJson(workInfo.getWapURL(), JSON.toJSONString(ddtInfo));
+                HttpClientPost.postJson(workInfo.getWapURL(), JSON.toJSONString(ddtInfo));
+            }
             // 回收资源
             fullSync.destroy(fullMetaData);
             workInfo.setEndTime(System.currentTimeMillis());
@@ -438,134 +457,5 @@ public abstract class BaseFullWork {
             e.printStackTrace();
         }
     }
-
-//    public static void startFull(final WorkInfo workInfo, final String fullType) {
-//        Runnable runnable = () -> {
-//            workInfo.setStartTime(System.currentTimeMillis());
-//            log.info("enable Start task :{}, task configuration information :{}", workInfo.getWorkName(), workInfo.toString());
-//            // 设置程序状态为运行中
-//            WorkStatus.updateWorkStatus(workInfo.getWorkName(), WorkStatus.WORK_RUN);
-//            // 生成缓存区数据
-//            FullMetaData fullMetaData = new FullMetaData(workInfo.getWorkName(), workInfo.getBucketNum(), workInfo.getBucketSize());
-//
-//            // 创建全量同步任务对象
-//            BaseFullWork fullSync = null;
-//            // 两个子类
-//            if ("sync".equals(fullType)) {
-//                fullSync = new FullSync(workInfo.getWorkName());
-//            } else {
-//                // 异步读取 性能更高
-//                fullSync = new FullReactive(workInfo.getWorkName());
-//            }
-//            // 开启任务执行，连接源数据库和目标数据库
-//            fullSync.init(workInfo.getSourceDsUrl(), workInfo.getTargetDsUrl(), workInfo.getSourceThreadNum(), workInfo.getTargetThreadNum());
-//            // 应用集群结构
-//            fullSync.applyClusterInfo(workInfo.getClusterInfoSet(), workInfo.getDbTableWhite(), workInfo.getCreateIndexThreadNum(), Integer.MAX_VALUE);
-//            // 生成sourceTaskInfo
-//            AtomicInteger isGenerateSourceTaskInfoOverNum = new AtomicInteger(0);
-//            // 默认缓存中128个读取任务
-//            BlockingQueue<Range> taskQueue = new LinkedBlockingQueue<>(128);
-//            fullSync.generateSourceTaskInfo(workInfo.getDbTableWhite(), isGenerateSourceTaskInfoOverNum, taskQueue, true);
-//            // 生成写入任务
-//            fullSync.submitTargetTask(workInfo.getTargetThreadNum());
-//            // 生成源数据库数据读取任务
-//            fullSync.generateSource(workInfo.getSourceThreadNum(), taskQueue, isGenerateSourceTaskInfoOverNum, workInfo.getBatchSize());
-//            try {
-//                TimeUnit.SECONDS.sleep(10);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-//            long writeCountOld = 0L;
-//            long lastPrintTime = System.currentTimeMillis();
-//            int loopNum = 0;
-//            long allNsDocumentCount = fullSync.estimatedAllNsDocumentCount(workInfo.getDbTableWhite());
-//
-//            long lastTotalReadSize = 0;
-//            long lastTotalWriteSize = 0;
-//            while (true) {
-//                try {
-//                    // 每次睡眠一s
-//                    TimeUnit.SECONDS.sleep(1);
-//
-//                    {
-//                        // 计算是否限速进行
-//                        long currentTotalReadSize = fullMetaData.getTotalReadSize().sum();
-//                        long currentTotalWriteSize = fullMetaData.getTotalWriteSize().sum();
-//
-//                        long readDiffSize = currentTotalReadSize - lastTotalReadSize;
-//                        long writeDiffSize = currentTotalWriteSize - lastTotalWriteSize;
-//
-//                        log.info("{} bandwidth rate of the current read task:{} mb/s", workInfo.getWorkName(), readDiffSize / 1024L / 1024L);
-//                        log.info("{} bandwidth rate of the current write task:{} mb/s", workInfo.getWorkName(), writeDiffSize / 1024L / 1024L);
-//
-//                        if (readDiffSize >= (workInfo.getMaxBandwidth() * 1024L * 1024L)) {
-//                            // 开启限速就是设置状态为limit
-//                            // 设置全局占位符
-//                            fullMetaData.setLimitBandwidth(true);
-//                        } else {
-//                            if (writeDiffSize >= (workInfo.getMaxBandwidth() * 1024L * 1024L)) {
-//                                // 开启限速就是设置状态为limit
-//                                // 设置全局占位符
-//                                fullMetaData.setLimitBandwidth(true);
-//                            } else {
-//                                fullMetaData.setLimitBandwidth(false);
-//                            }
-//                        }
-//                        if (currentTotalReadSize > Integer.MAX_VALUE || currentTotalWriteSize > Integer.MAX_VALUE) {
-//                            // 重置 以防数据溢出
-//                            fullMetaData.getTotalReadSize().reset();
-//                            fullMetaData.getTotalWriteSize().reset();
-//                        }
-//
-//                        lastTotalReadSize = currentTotalReadSize;
-//                        lastTotalWriteSize = currentTotalWriteSize;
-//                    }
-//
-//                    lastPrintTime = System.currentTimeMillis();
-//                    loopNum++;
-//                    if (loopNum % 10 == 0) {
-//                        if (loopNum >= 600) {
-//                            // 10分钟 计算一次信息
-//                            allNsDocumentCount = fullSync.estimatedAllNsDocumentCount(workInfo.getDbTableWhite());
-//                            loopNum = 0;
-//                        }
-//                        // 计算一共要同步数据量
-//                        log.info("{} this full task is expected to transfer {} bars of data", workInfo.getWorkName(), allNsDocumentCount);
-//                        log.info("{} current task queue cache status:{}", workInfo.getWorkName(), taskQueue.size());
-//                        // 输出缓存区运行情况
-//                        writeCountOld = fullMetaData.printCacheInfo(workInfo.getStartTime(), lastPrintTime, writeCountOld);
-//                        // 输出任务各线程运行情况
-//                        fullSync.printThreadInfo();
-//                        // 输出缓存区中的信息
-//                        if (WorkStatus.getWorkStatus(workInfo.getWorkName()) == WorkStatus.WORK_STOP) {
-//                            break;
-//                        }
-//                        // 判断任务是否结束，如果结束则等待1分钟后退出循环
-//                        if (fullSync.judgeFullSyncOver(fullMetaData, isGenerateSourceTaskInfoOverNum, taskQueue)) {
-//                            TimeUnit.MINUTES.sleep(1);
-//                            WorkStatus.updateWorkStatus(workInfo.getWorkName(), WorkStatus.WORK_STOP);
-//                            // 等待写入线程存活个数为0
-//                            fullSync.waitWriteOver();
-//                        }
-//                    }
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//            // 回收资源
-//            fullSync.destroy(fullMetaData);
-//            workInfo.setEndTime(System.currentTimeMillis());
-//            log.info("end execute task :{}, task configuration information :{}", workInfo.getWorkName(), workInfo.toString());
-//            workInfo.setEndTime(Long.MAX_VALUE);
-//        };
-//        Thread thread = new Thread(runnable);
-//        thread.setName(workInfo.getWorkName() + "_execute");
-//        thread.start();
-//        try {
-//            thread.join();
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-//    }
 
 }

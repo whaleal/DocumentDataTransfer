@@ -93,6 +93,7 @@ public class Reader implements Runnable {
                 if (readNum++ > 1024000 || (((BsonTimestamp) document.get("ts")).getTime() - lastOplogTs.getTime() > 60)) {
                     // 记录当前oplog的时间
                     lastOplogTs = (BsonTimestamp) document.get("ts");
+                    documentCache.setOplogTs(lastOplogTs.getTime());
                     docTime = (BsonTimestamp) document.get("ts");
                     readNum = 0;
                     log.info("{} current read oplog time:{}", workName, lastOplogTs.getTime());

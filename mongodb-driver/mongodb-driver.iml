@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module org.jetbrains.idea.maven.project.MavenProjectsManager.isMavenModule="true" type="JAVA_MODULE" version="4">
-  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_11">
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_8">
     <output url="file://$MODULE_DIR$/target/classes" />
     <output-test url="file://$MODULE_DIR$/target/test-classes" />
     <content url="file://$MODULE_DIR$">
@@ -11,11 +11,12 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="Maven: org.projectlombok:lombok:1.18.28" level="project" />
     <orderEntry type="library" name="Maven: org.mongodb:mongodb-driver-sync:4.10.2" level="project" />
     <orderEntry type="library" name="Maven: org.mongodb:bson:4.10.2" level="project" />
     <orderEntry type="library" name="Maven: org.mongodb:mongodb-driver-core:4.10.2" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Maven: org.mongodb:bson-record-codec:4.10.2" level="project" />
-    <orderEntry type="library" name="Maven: org.projectlombok:lombok:1.18.28" level="project" />
+    <orderEntry type="library" name="Maven: org.projectlombok:lombok:1.18.30" level="project" />
     <orderEntry type="library" name="Maven: org.apache.logging.log4j:log4j-slf4j-impl:2.16.0" level="project" />
     <orderEntry type="library" name="Maven: org.slf4j:slf4j-api:1.7.25" level="project" />
     <orderEntry type="library" name="Maven: org.apache.logging.log4j:log4j-api:2.16.0" level="project" />
