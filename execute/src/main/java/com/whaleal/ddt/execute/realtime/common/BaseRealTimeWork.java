@@ -24,7 +24,7 @@ import com.whaleal.ddt.execute.realtime.BaseRealTimeOplog;
 import com.whaleal.ddt.realtime.common.cache.RealTimeMetaData;
 import com.whaleal.ddt.status.WorkStatus;
 import com.whaleal.ddt.thread.pool.ThreadPoolManager;
-import com.whaleal.ddt.util.HttpClientPost;
+import com.whaleal.ddt.util.HttpClient;
 import lombok.extern.log4j.Log4j2;
 import org.bson.Document;
 
@@ -233,7 +233,7 @@ public abstract class BaseRealTimeWork {
                     TimeUnit.SECONDS.sleep(10);
                     // 输出缓存区运行情况
                     executeCountOld = metadataOplog.printCacheInfo(workInfo.getStartTime(), lastPrintTime, executeCountOld);
-                    HttpClientPost.postJson(workInfo.getWapURL(), new Document().append("totalCount", executeCountOld).toJson());
+                    HttpClient.saveDDTInfo(workInfo.getWapURL(), new Document().append("totalCount", executeCountOld).toJson());
                     // 输出线程运行情况
                     baseRealTimeWork.printThreadInfo();
                     // 判断任务是否结束，如果结束则等待1分钟后退出循环
@@ -252,15 +252,15 @@ public abstract class BaseRealTimeWork {
                 Map<String, Object> ddtInfo = new HashMap<>();
                 ddtInfo.put("status", "true");
                 // 10s 保存一次
-                HttpClientPost.postJson(workInfo.getWapURL(), JSON.toJSONString(ddtInfo));
-                HttpClientPost.postJson(workInfo.getWapURL(), JSON.toJSONString(ddtInfo));
+                HttpClient.saveDDTInfo(workInfo.getWapURL(), JSON.toJSONString(ddtInfo));
+                HttpClient.saveDDTInfo(workInfo.getWapURL(), JSON.toJSONString(ddtInfo));
                 try {
                     TimeUnit.MINUTES.sleep(1);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                HttpClientPost.postJson(workInfo.getWapURL(), JSON.toJSONString(ddtInfo));
-                HttpClientPost.postJson(workInfo.getWapURL(), JSON.toJSONString(ddtInfo));
+                HttpClient.saveDDTInfo(workInfo.getWapURL(), JSON.toJSONString(ddtInfo));
+                HttpClient.saveDDTInfo(workInfo.getWapURL(), JSON.toJSONString(ddtInfo));
             }
             // 回收资源
             baseRealTimeWork.destroy();

@@ -17,10 +17,8 @@
 package com.whaleal.ddt.realtime.common.cache;
 
 
-import com.alibaba.fastjson2.JSON;
 import com.mongodb.client.model.WriteModel;
 import com.whaleal.ddt.cache.BatchDataEntity;
-import com.whaleal.ddt.util.HttpClientPost;
 import lombok.Data;
 import lombok.ToString;
 import lombok.extern.log4j.Log4j2;

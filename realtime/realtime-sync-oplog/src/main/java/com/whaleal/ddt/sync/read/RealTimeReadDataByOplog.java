@@ -21,7 +21,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.whaleal.ddt.realtime.common.read.BaseRealTimeReadData;
 import com.whaleal.ddt.status.WorkStatus;
-import com.whaleal.ddt.util.HttpClientPost;
+import com.whaleal.ddt.util.HttpClient;
 import lombok.extern.log4j.Log4j2;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
@@ -184,7 +184,7 @@ public class RealTimeReadDataByOplog extends BaseRealTimeReadData<Document> {
                     // a: 为避免主线程的业务侵入性，暂时取舍。若是一直无oplog那就不打印罢了
 
                     {
-                        HttpClientPost.postJson(wapURL, new Document("oplogTs", lastOplogTs.getTime()).toJson());
+                        HttpClient.saveDDTInfo(wapURL, new Document("oplogTs", lastOplogTs.getTime()).toJson());
                     }
                     // 只有增量任务才有进度百分比
                     if (endTimeOfOplog != 0) {
@@ -259,12 +259,12 @@ public class RealTimeReadDataByOplog extends BaseRealTimeReadData<Document> {
                     metadata.getReadNum().add(1);
                 }
             }
-            HttpClientPost.postJson(wapURL, new Document("oplogTs", lastOplogTs.getTime()).toJson());
-            HttpClientPost.postJson(wapURL, new Document("oplogTs", lastOplogTs.getTime()).toJson());
+            HttpClient.saveDDTInfo(wapURL, new Document("oplogTs", lastOplogTs.getTime()).toJson());
+            HttpClient.saveDDTInfo(wapURL, new Document("oplogTs", lastOplogTs.getTime()).toJson());
             while (metadata.getTotalCacheNum() > 0) {
                 TimeUnit.MINUTES.sleep(2);
             }
-            HttpClientPost.postJson(wapURL, new Document("oplogTs", lastOplogTs.getTime()).toJson());
+            HttpClient.saveDDTInfo(wapURL, new Document("oplogTs", lastOplogTs.getTime()).toJson());
             // 如果程序能够正常走到这里 则代表查询完毕 更新程序的状态
             WorkStatus.updateWorkStatus(workName, WorkStatus.WORK_STOP);
             isReadScanOver = true;
